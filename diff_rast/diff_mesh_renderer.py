@@ -7,7 +7,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import nvdiffrast.torch as dr
 
-from mesh_processer.mesh import Mesh, safe_normalize
+from ..mesh_processer.mesh import Mesh, safe_normalize
 
 def scale_img_nhwc(x, size, mag='bilinear', min='bilinear'):
     assert (x.shape[1] >= size[0] and x.shape[2] >= size[1]) or (x.shape[1] < size[0] and x.shape[2] < size[1]), "Trying to magnify image in one dimension and minify in the other"

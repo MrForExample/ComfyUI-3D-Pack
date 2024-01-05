@@ -7,9 +7,8 @@ import math
 
 from pytorch_msssim import SSIM, MS_SSIM
 
-import diff_rast.diff_texturing
-from shared_utils.common_utils import cstr
-from mesh_processer.mesh import Mesh
+from .shared_utils.common_utils import cstr
+from .mesh_processer.mesh import Mesh
 
 MANIFEST = {
     "name": "ComfyUI-3D-Pack",
@@ -19,7 +18,7 @@ MANIFEST = {
     "description": "An extensive node suite that enables ComfyUI to process 3D inputs (Mesh & UV Texture, etc) using cutting edge algorithms (3DGS, NeRF, etc.)",
 }
 
-class Load3DFile:
+class Load_3D_File:
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -39,7 +38,7 @@ class Load3DFile:
         "mesh",
     )
     FUNCTION = "load_mesh"
-    CATEGORY = "ComfyUI-3D"
+    CATEGORY = "ComfyUI3D"
     
     SUPPORTED_3D_EXTENSIONS = (
         '.obj',
@@ -60,7 +59,7 @@ class Load3DFile:
             cstr(f"File {mesh_file_path} does not exist").error.print()
         return (mesh, )
 
-class GaussianSplatting:
+class Gaussian_Splatting:
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -77,14 +76,14 @@ class GaussianSplatting:
         "raw_3DGS",
     )
     FUNCTION = "run_3DGS"
-    CATEGORY = "ComfyUI-3D"
+    CATEGORY = "ComfyUI3D"
     
     def run_3DGS(self, reference_images):
         raw_3DGS = None
 
         return (raw_3DGS, )
     
-class BakeTextureToMesh:
+class Bake_Texture_To_Mesh:
     
     @classmethod
     def INPUT_TYPES(cls):
@@ -102,20 +101,9 @@ class BakeTextureToMesh:
         "baked_texture",
     )
     FUNCTION = "bake_texture"
-    CATEGORY = "ComfyUI-3D"
+    CATEGORY = "ComfyUI3D"
     
     def bake_texture(self, reference_images, mesh):
         baked_texture = None
 
         return (baked_texture, )
-
-NODE_CLASS_MAPPINGS = {
-    "Load3DFile": Load3DFile,
-    "3DGS": GaussianSplatting,
-    "BakeTextureToMesh": BakeTextureToMesh
-}
-NODE_DISPLAY_NAME_MAPPINGS = {
-    "Load3DFile": "Load 3D File",
-    "3DGS": "3D Gaussian Splatting",
-    "BakeTextureToMesh": "Bake Texture To Mesh",
-}

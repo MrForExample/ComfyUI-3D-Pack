@@ -1,20 +1,19 @@
-import os
-import sys
-from nodes import NODE_CLASS_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS
+#__all__ = ['NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS']
 
-sys.path.append('.')   # for portable version
+NODE_CLASS_MAPPINGS = {}
+NODE_DISPLAY_NAME_MAPPINGS = {}
 
-all_module_names = (
-    "diff_rast",
-    "gaussian_splatting",
-    "shared_utils",
-    "mesh_processer",
-)
-for module_name in all_module_names:
-    module_path = os.path.join(os.path.dirname(__file__), module_name)
-    sys.path.append(module_path)
+import importlib
+import inspect
 
-    
-import diff_rast.diff_texturing
+nodes_filename = "nodes"
+module = importlib.import_module(f".{nodes_filename}", package=__name__)
+for name, cls in inspect.getmembers(module, inspect.isclass):
+    if cls.__module__ == module.__name__:
+        name = name.replace("_", " ")
 
-__all__ = ['NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS']
+        node = f"[ComfyUI-3D] {name}"
+        disp = f"{name}"
+
+        NODE_CLASS_MAPPINGS[node] = cls
+        NODE_DISPLAY_NAME_MAPPINGS[node] = disp

@@ -207,7 +207,7 @@ class MiniCam:
 
         self.world_view_transform = torch.tensor(w2c).transpose(0, 1).cuda()
         self.projection_matrix = (
-            getProjectionMatrix(
+            get_projection_matrix(
                 znear=self.znear, zfar=self.zfar, fovX=self.FoVx, fovY=self.FoVy
             )
             .transpose(0, 1)
