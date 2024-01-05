@@ -1,0 +1,165 @@
+fatal: destination path 'diff-gaussian-rasterization' already exists and is not an empty directory.
+Processing c:\users\reall\softwares\comfyui_windows_portable\comfyui\custom_nodes\comfyui-3d-pack\diff-gaussian-rasterization
+  Preparing metadata (setup.py) ... done
+Building wheels for collected packages: diff-gaussian-rasterization
+  Building wheel for diff-gaussian-rasterization (setup.py) ... error
+  error: subprocess-exited-with-error
+
+  × python setup.py bdist_wheel did not run successfully.
+  │ exit code: 1
+  ╰─> [148 lines of output]
+      running bdist_wheel
+      running build
+      running build_py
+      creating build
+      creating build\lib.win-amd64-cpython-311
+      creating build\lib.win-amd64-cpython-311\diff_gaussian_rasterization
+      copying diff_gaussian_rasterization\__init__.py -> build\lib.win-amd64-cpython-311\diff_gaussian_rasterization
+      running build_ext
+      building 'diff_gaussian_rasterization._C' extension
+      creating C:\Users\reall\Softwares\ComfyUI_windows_portable\ComfyUI\custom_nodes\ComfyUI-3D-Pack\diff-gaussian-rasterization\build\temp.win-amd64-cpython-311
+      creating C:\Users\reall\Softwares\ComfyUI_windows_portable\ComfyUI\custom_nodes\ComfyUI-3D-Pack\diff-gaussian-rasterization\build\temp.win-amd64-cpython-311\Release
+      creating C:\Users\reall\Softwares\ComfyUI_windows_portable\ComfyUI\custom_nodes\ComfyUI-3D-Pack\diff-gaussian-rasterization\build\temp.win-amd64-cpython-311\Release\cuda_rasterizer
+      Emitting ninja build file C:\Users\reall\Softwares\ComfyUI_windows_portable\ComfyUI\custom_nodes\ComfyUI-3D-Pack\diff-gaussian-rasterization\build\temp.win-amd64-cpython-311\Release\build.ninja...
+      Compiling objects...
+      Allowing ninja to set a default number of workers... (overridable by setting the environment variable MAX_JOBS=N)
+      [1/5] C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\bin\nvcc --generate-dependencies-with-compile --dependency-output C:\Users\reall\Softwares\ComfyUI_windows_portable\ComfyUI\custom_nodes\ComfyUI-3D-Pack\diff-gaussian-rasterization\build\temp.win-amd64-cpython-311\Release\rasterize_points.obj.d -std=c++17 --use-local-env -Xcompiler /MD -Xcompiler /wd4819 -Xcompiler /wd4251 -Xcompiler /wd4244 -Xcompiler /wd4267 -Xcompiler /wd4275 -Xcompiler /wd4018 -Xcompiler /wd4190 -Xcompiler /wd4624 -Xcompiler /wd4067 -Xcompiler /wd4068 -Xcompiler /EHsc -Xcudafe --diag_suppress=base_class_has_different_dll_interface -Xcudafe --diag_suppress=field_without_dll_interface -Xcudafe --diag_suppress=dll_interface_conflict_none_assumed -Xcudafe --diag_suppress=dll_interface_conflict_dllexport_assumed -IC:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\torch\include -IC:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\torch\include\torch\csrc\api\include -IC:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\torch\include\TH -IC:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\torch\include\THC "-IC:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\include" -IC:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\include -IC:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Include "-IC:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.37.32822\include" "-IC:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\VS\include" "-IC:\Program Files (x86)\Windows Kits\10\include\10.0.22621.0\ucrt" "-IC:\Program Files (x86)\Windows Kits\10\\include\10.0.22621.0\\um" "-IC:\Program Files (x86)\Windows Kits\10\\include\10.0.22621.0\\shared" "-IC:\Program Files (x86)\Windows Kits\10\\include\10.0.22621.0\\winrt" "-IC:\Program Files (x86)\Windows Kits\10\\include\10.0.22621.0\\cppwinrt" "-IC:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um" -c C:\Users\reall\Softwares\ComfyUI_windows_portable\ComfyUI\custom_nodes\ComfyUI-3D-Pack\diff-gaussian-rasterization\rasterize_points.cu -o C:\Users\reall\Softwares\ComfyUI_windows_portable\ComfyUI\custom_nodes\ComfyUI-3D-Pack\diff-gaussian-rasterization\build\temp.win-amd64-cpython-311\Release\rasterize_points.obj -D__CUDA_NO_HALF_OPERATORS__ -D__CUDA_NO_HALF_CONVERSIONS__ -D__CUDA_NO_BFLOAT16_CONVERSIONS__ -D__CUDA_NO_HALF2_OPERATORS__ --expt-relaxed-constexpr -IC:\Users\reall\Softwares\ComfyUI_windows_portable\ComfyUI\custom_nodes\ComfyUI-3D-Pack\diff-gaussian-rasterization\third_party/glm/ -DTORCH_API_INCLUDE_EXTENSION_H -DTORCH_EXTENSION_NAME=_C -D_GLIBCXX_USE_CXX11_ABI=0 -gencode=arch=compute_86,code=compute_86 -gencode=arch=compute_86,code=sm_86
+      FAILED: C:/Users/reall/Softwares/ComfyUI_windows_portable/ComfyUI/custom_nodes/ComfyUI-3D-Pack/diff-gaussian-rasterization/build/temp.win-amd64-cpython-311/Release/rasterize_points.obj
+      C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\bin\nvcc --generate-dependencies-with-compile --dependency-output C:\Users\reall\Softwares\ComfyUI_windows_portable\ComfyUI\custom_nodes\ComfyUI-3D-Pack\diff-gaussian-rasterization\build\temp.win-amd64-cpython-311\Release\rasterize_points.obj.d -std=c++17 --use-local-env -Xcompiler /MD -Xcompiler /wd4819 -Xcompiler /wd4251 -Xcompiler /wd4244 -Xcompiler /wd4267 -Xcompiler /wd4275 -Xcompiler /wd4018 -Xcompiler /wd4190 -Xcompiler /wd4624 -Xcompiler /wd4067 -Xcompiler /wd4068 -Xcompiler /EHsc -Xcudafe --diag_suppress=base_class_has_different_dll_interface -Xcudafe --diag_suppress=field_without_dll_interface -Xcudafe --diag_suppress=dll_interface_conflict_none_assumed -Xcudafe --diag_suppress=dll_interface_conflict_dllexport_assumed -IC:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\torch\include -IC:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\torch\include\torch\csrc\api\include -IC:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\torch\include\TH -IC:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\torch\include\THC "-IC:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\include" -IC:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\include -IC:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Include "-IC:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.37.32822\include" "-IC:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\VS\include" "-IC:\Program Files (x86)\Windows Kits\10\include\10.0.22621.0\ucrt" "-IC:\Program Files (x86)\Windows Kits\10\\include\10.0.22621.0\\um" "-IC:\Program Files (x86)\Windows Kits\10\\include\10.0.22621.0\\shared" "-IC:\Program Files (x86)\Windows Kits\10\\include\10.0.22621.0\\winrt" "-IC:\Program Files (x86)\Windows Kits\10\\include\10.0.22621.0\\cppwinrt" "-IC:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um" -c C:\Users\reall\Softwares\ComfyUI_windows_portable\ComfyUI\custom_nodes\ComfyUI-3D-Pack\diff-gaussian-rasterization\rasterize_points.cu -o C:\Users\reall\Softwares\ComfyUI_windows_portable\ComfyUI\custom_nodes\ComfyUI-3D-Pack\diff-gaussian-rasterization\build\temp.win-amd64-cpython-311\Release\rasterize_points.obj -D__CUDA_NO_HALF_OPERATORS__ -D__CUDA_NO_HALF_CONVERSIONS__ -D__CUDA_NO_BFLOAT16_CONVERSIONS__ -D__CUDA_NO_HALF2_OPERATORS__ --expt-relaxed-constexpr -IC:\Users\reall\Softwares\ComfyUI_windows_portable\ComfyUI\custom_nodes\ComfyUI-3D-Pack\diff-gaussian-rasterization\third_party/glm/ -DTORCH_API_INCLUDE_EXTENSION_H -DTORCH_EXTENSION_NAME=_C -D_GLIBCXX_USE_CXX11_ABI=0 -gencode=arch=compute_86,code=compute_86 -gencode=arch=compute_86,code=sm_86
+      C:/Users/reall/Softwares/ComfyUI_windows_portable/python_embeded/Lib/site-packages/torch/include\torch/csrc/python_headers.h(12): fatal error C1083: Cannot open include file: 'Python.h': No such file or directory
+
+      rasterize_points.cu
+
+      [2/5] C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\bin\nvcc --generate-dependencies-with-compile --dependency-output C:\Users\reall\Softwares\ComfyUI_windows_portable\ComfyUI\custom_nodes\ComfyUI-3D-Pack\diff-gaussian-rasterization\build\temp.win-amd64-cpython-311\Release\cuda_rasterizer/forward.obj.d -std=c++17 --use-local-env -Xcompiler /MD -Xcompiler /wd4819 -Xcompiler /wd4251 -Xcompiler /wd4244 -Xcompiler /wd4267 -Xcompiler /wd4275 -Xcompiler /wd4018 -Xcompiler /wd4190 -Xcompiler /wd4624 -Xcompiler /wd4067 -Xcompiler /wd4068 -Xcompiler /EHsc -Xcudafe --diag_suppress=base_class_has_different_dll_interface -Xcudafe --diag_suppress=field_without_dll_interface -Xcudafe --diag_suppress=dll_interface_conflict_none_assumed -Xcudafe --diag_suppress=dll_interface_conflict_dllexport_assumed -IC:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\torch\include -IC:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\torch\include\torch\csrc\api\include -IC:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\torch\include\TH -IC:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\torch\include\THC "-IC:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\include" -IC:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\include -IC:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Include "-IC:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.37.32822\include" "-IC:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\VS\include" "-IC:\Program Files (x86)\Windows Kits\10\include\10.0.22621.0\ucrt" "-IC:\Program Files (x86)\Windows Kits\10\\include\10.0.22621.0\\um" "-IC:\Program Files (x86)\Windows Kits\10\\include\10.0.22621.0\\shared" "-IC:\Program Files (x86)\Windows Kits\10\\include\10.0.22621.0\\winrt" "-IC:\Program Files (x86)\Windows Kits\10\\include\10.0.22621.0\\cppwinrt" "-IC:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um" -c C:\Users\reall\Softwares\ComfyUI_windows_portable\ComfyUI\custom_nodes\ComfyUI-3D-Pack\diff-gaussian-rasterization\cuda_rasterizer\forward.cu -o C:\Users\reall\Softwares\ComfyUI_windows_portable\ComfyUI\custom_nodes\ComfyUI-3D-Pack\diff-gaussian-rasterization\build\temp.win-amd64-cpython-311\Release\cuda_rasterizer/forward.obj -D__CUDA_NO_HALF_OPERATORS__ -D__CUDA_NO_HALF_CONVERSIONS__ -D__CUDA_NO_BFLOAT16_CONVERSIONS__ -D__CUDA_NO_HALF2_OPERATORS__ --expt-relaxed-constexpr -IC:\Users\reall\Softwares\ComfyUI_windows_portable\ComfyUI\custom_nodes\ComfyUI-3D-Pack\diff-gaussian-rasterization\third_party/glm/ -DTORCH_API_INCLUDE_EXTENSION_H -DTORCH_EXTENSION_NAME=_C -D_GLIBCXX_USE_CXX11_ABI=0 -gencode=arch=compute_86,code=compute_86 -gencode=arch=compute_86,code=sm_86
+      C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\include\cuda\std\detail\libcxx\include\support\atomic\atomic_msvc.h(15): warning C4005: '_Compiler_barrier': macro redefinition
+      C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.37.32822/include\xatomic.h(56): note: see previous definition of '_Compiler_barrier'
+      C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\include\cuda\std\detail\libcxx\include\support\atomic\atomic_msvc.h(15): warning C4005: '_Compiler_barrier': macro redefinition
+      C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.37.32822/include\xatomic.h(56): note: see previous definition of '_Compiler_barrier'
+      C:\Users\reall\Softwares\ComfyUI_windows_portable\ComfyUI\custom_nodes\ComfyUI-3D-Pack\diff-gaussian-rasterization\cuda_rasterizer\auxiliary.h(151): warning #177-D: variable "p_proj" was declared but never referenced
+
+          float3 p_proj = { p_hom.x * p_w, p_hom.y * p_w, p_hom.z * p_w };
+
+                 ^
+
+
+
+      Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+
+
+      forward.cu
+
+      tmpxft_00002c5c_00000000-7_forward.cudafe1.cpp
+
+      [3/5] C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\bin\nvcc --generate-dependencies-with-compile --dependency-output C:\Users\reall\Softwares\ComfyUI_windows_portable\ComfyUI\custom_nodes\ComfyUI-3D-Pack\diff-gaussian-rasterization\build\temp.win-amd64-cpython-311\Release\cuda_rasterizer/backward.obj.d -std=c++17 --use-local-env -Xcompiler /MD -Xcompiler /wd4819 -Xcompiler /wd4251 -Xcompiler /wd4244 -Xcompiler /wd4267 -Xcompiler /wd4275 -Xcompiler /wd4018 -Xcompiler /wd4190 -Xcompiler /wd4624 -Xcompiler /wd4067 -Xcompiler /wd4068 -Xcompiler /EHsc -Xcudafe --diag_suppress=base_class_has_different_dll_interface -Xcudafe --diag_suppress=field_without_dll_interface -Xcudafe --diag_suppress=dll_interface_conflict_none_assumed -Xcudafe --diag_suppress=dll_interface_conflict_dllexport_assumed -IC:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\torch\include -IC:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\torch\include\torch\csrc\api\include -IC:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\torch\include\TH -IC:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\torch\include\THC "-IC:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\include" -IC:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\include -IC:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Include "-IC:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.37.32822\include" "-IC:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\VS\include" "-IC:\Program Files (x86)\Windows Kits\10\include\10.0.22621.0\ucrt" "-IC:\Program Files (x86)\Windows Kits\10\\include\10.0.22621.0\\um" "-IC:\Program Files (x86)\Windows Kits\10\\include\10.0.22621.0\\shared" "-IC:\Program Files (x86)\Windows Kits\10\\include\10.0.22621.0\\winrt" "-IC:\Program Files (x86)\Windows Kits\10\\include\10.0.22621.0\\cppwinrt" "-IC:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um" -c C:\Users\reall\Softwares\ComfyUI_windows_portable\ComfyUI\custom_nodes\ComfyUI-3D-Pack\diff-gaussian-rasterization\cuda_rasterizer\backward.cu -o C:\Users\reall\Softwares\ComfyUI_windows_portable\ComfyUI\custom_nodes\ComfyUI-3D-Pack\diff-gaussian-rasterization\build\temp.win-amd64-cpython-311\Release\cuda_rasterizer/backward.obj -D__CUDA_NO_HALF_OPERATORS__ -D__CUDA_NO_HALF_CONVERSIONS__ -D__CUDA_NO_BFLOAT16_CONVERSIONS__ -D__CUDA_NO_HALF2_OPERATORS__ --expt-relaxed-constexpr -IC:\Users\reall\Softwares\ComfyUI_windows_portable\ComfyUI\custom_nodes\ComfyUI-3D-Pack\diff-gaussian-rasterization\third_party/glm/ -DTORCH_API_INCLUDE_EXTENSION_H -DTORCH_EXTENSION_NAME=_C -D_GLIBCXX_USE_CXX11_ABI=0 -gencode=arch=compute_86,code=compute_86 -gencode=arch=compute_86,code=sm_86
+      C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\include\cuda\std\detail\libcxx\include\support\atomic\atomic_msvc.h(15): warning C4005: '_Compiler_barrier': macro redefinition
+      C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.37.32822/include\xatomic.h(56): note: see previous definition of '_Compiler_barrier'
+      C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\include\cuda\std\detail\libcxx\include\support\atomic\atomic_msvc.h(15): warning C4005: '_Compiler_barrier': macro redefinition
+      C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.37.32822/include\xatomic.h(56): note: see previous definition of '_Compiler_barrier'
+      C:\Users\reall\Softwares\ComfyUI_windows_portable\ComfyUI\custom_nodes\ComfyUI-3D-Pack\diff-gaussian-rasterization\cuda_rasterizer\auxiliary.h(151): warning #177-D: variable "p_proj" was declared but never referenced
+
+          float3 p_proj = { p_hom.x * p_w, p_hom.y * p_w, p_hom.z * p_w };
+
+                 ^
+
+
+
+      Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+
+
+      backward.cu
+
+      tmpxft_00002a5c_00000000-7_backward.cudafe1.cpp
+
+      [4/5] cl /showIncludes /nologo /O2 /W3 /GL /DNDEBUG /MD /MD /wd4819 /wd4251 /wd4244 /wd4267 /wd4275 /wd4018 /wd4190 /wd4624 /wd4067 /wd4068 /EHsc -IC:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\torch\include -IC:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\torch\include\torch\csrc\api\include -IC:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\torch\include\TH -IC:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\torch\include\THC "-IC:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\include" -IC:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\include -IC:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Include "-IC:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.37.32822\include" "-IC:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\VS\include" "-IC:\Program Files (x86)\Windows Kits\10\include\10.0.22621.0\ucrt" "-IC:\Program Files (x86)\Windows Kits\10\\include\10.0.22621.0\\um" "-IC:\Program Files (x86)\Windows Kits\10\\include\10.0.22621.0\\shared" "-IC:\Program Files (x86)\Windows Kits\10\\include\10.0.22621.0\\winrt" "-IC:\Program Files (x86)\Windows Kits\10\\include\10.0.22621.0\\cppwinrt" "-IC:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um" -c C:\Users\reall\Softwares\ComfyUI_windows_portable\ComfyUI\custom_nodes\ComfyUI-3D-Pack\diff-gaussian-rasterization\ext.cpp /FoC:\Users\reall\Softwares\ComfyUI_windows_portable\ComfyUI\custom_nodes\ComfyUI-3D-Pack\diff-gaussian-rasterization\build\temp.win-amd64-cpython-311\Release\ext.obj -DTORCH_API_INCLUDE_EXTENSION_H -DTORCH_EXTENSION_NAME=_C -D_GLIBCXX_USE_CXX11_ABI=0 /std:c++17
+      FAILED: C:/Users/reall/Softwares/ComfyUI_windows_portable/ComfyUI/custom_nodes/ComfyUI-3D-Pack/diff-gaussian-rasterization/build/temp.win-amd64-cpython-311/Release/ext.obj
+      cl /showIncludes /nologo /O2 /W3 /GL /DNDEBUG /MD /MD /wd4819 /wd4251 /wd4244 /wd4267 /wd4275 /wd4018 /wd4190 /wd4624 /wd4067 /wd4068 /EHsc -IC:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\torch\include -IC:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\torch\include\torch\csrc\api\include -IC:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\torch\include\TH -IC:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\torch\include\THC "-IC:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\include" -IC:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\include -IC:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Include "-IC:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.37.32822\include" "-IC:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\VS\include" "-IC:\Program Files (x86)\Windows Kits\10\include\10.0.22621.0\ucrt" "-IC:\Program Files (x86)\Windows Kits\10\\include\10.0.22621.0\\um" "-IC:\Program Files (x86)\Windows Kits\10\\include\10.0.22621.0\\shared" "-IC:\Program Files (x86)\Windows Kits\10\\include\10.0.22621.0\\winrt" "-IC:\Program Files (x86)\Windows Kits\10\\include\10.0.22621.0\\cppwinrt" "-IC:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um" -c C:\Users\reall\Softwares\ComfyUI_windows_portable\ComfyUI\custom_nodes\ComfyUI-3D-Pack\diff-gaussian-rasterization\ext.cpp /FoC:\Users\reall\Softwares\ComfyUI_windows_portable\ComfyUI\custom_nodes\ComfyUI-3D-Pack\diff-gaussian-rasterization\build\temp.win-amd64-cpython-311\Release\ext.obj -DTORCH_API_INCLUDE_EXTENSION_H -DTORCH_EXTENSION_NAME=_C -D_GLIBCXX_USE_CXX11_ABI=0 /std:c++17
+      C:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\torch\include\torch/csrc/python_headers.h(12): fatal error C1083: Cannot open include file: 'Python.h': No such file or directory
+      [5/5] C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\bin\nvcc --generate-dependencies-with-compile --dependency-output C:\Users\reall\Softwares\ComfyUI_windows_portable\ComfyUI\custom_nodes\ComfyUI-3D-Pack\diff-gaussian-rasterization\build\temp.win-amd64-cpython-311\Release\cuda_rasterizer/rasterizer_impl.obj.d -std=c++17 --use-local-env -Xcompiler /MD -Xcompiler /wd4819 -Xcompiler /wd4251 -Xcompiler /wd4244 -Xcompiler /wd4267 -Xcompiler /wd4275 -Xcompiler /wd4018 -Xcompiler /wd4190 -Xcompiler /wd4624 -Xcompiler /wd4067 -Xcompiler /wd4068 -Xcompiler /EHsc -Xcudafe --diag_suppress=base_class_has_different_dll_interface -Xcudafe --diag_suppress=field_without_dll_interface -Xcudafe --diag_suppress=dll_interface_conflict_none_assumed -Xcudafe --diag_suppress=dll_interface_conflict_dllexport_assumed -IC:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\torch\include -IC:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\torch\include\torch\csrc\api\include -IC:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\torch\include\TH -IC:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\torch\include\THC "-IC:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\include" -IC:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\include -IC:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Include "-IC:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.37.32822\include" "-IC:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\VS\include" "-IC:\Program Files (x86)\Windows Kits\10\include\10.0.22621.0\ucrt" "-IC:\Program Files (x86)\Windows Kits\10\\include\10.0.22621.0\\um" "-IC:\Program Files (x86)\Windows Kits\10\\include\10.0.22621.0\\shared" "-IC:\Program Files (x86)\Windows Kits\10\\include\10.0.22621.0\\winrt" "-IC:\Program Files (x86)\Windows Kits\10\\include\10.0.22621.0\\cppwinrt" "-IC:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um" -c C:\Users\reall\Softwares\ComfyUI_windows_portable\ComfyUI\custom_nodes\ComfyUI-3D-Pack\diff-gaussian-rasterization\cuda_rasterizer\rasterizer_impl.cu -o C:\Users\reall\Softwares\ComfyUI_windows_portable\ComfyUI\custom_nodes\ComfyUI-3D-Pack\diff-gaussian-rasterization\build\temp.win-amd64-cpython-311\Release\cuda_rasterizer/rasterizer_impl.obj -D__CUDA_NO_HALF_OPERATORS__ -D__CUDA_NO_HALF_CONVERSIONS__ -D__CUDA_NO_BFLOAT16_CONVERSIONS__ -D__CUDA_NO_HALF2_OPERATORS__ --expt-relaxed-constexpr -IC:\Users\reall\Softwares\ComfyUI_windows_portable\ComfyUI\custom_nodes\ComfyUI-3D-Pack\diff-gaussian-rasterization\third_party/glm/ -DTORCH_API_INCLUDE_EXTENSION_H -DTORCH_EXTENSION_NAME=_C -D_GLIBCXX_USE_CXX11_ABI=0 -gencode=arch=compute_86,code=compute_86 -gencode=arch=compute_86,code=sm_86
+      C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\include\cuda\std\detail\libcxx\include\support\atomic\atomic_msvc.h(15): warning C4005: '_Compiler_barrier': macro redefinition
+      C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.37.32822/include\xatomic.h(56): note: see previous definition of '_Compiler_barrier'
+      C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\include\cuda\std\detail\libcxx\include\support\atomic\atomic_msvc.h(15): warning C4005: '_Compiler_barrier': macro redefinition
+      C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.37.32822/include\xatomic.h(56): note: see previous definition of '_Compiler_barrier'
+      C:\Users\reall\Softwares\ComfyUI_windows_portable\ComfyUI\custom_nodes\ComfyUI-3D-Pack\diff-gaussian-rasterization\cuda_rasterizer\auxiliary.h(151): warning #177-D: variable "p_proj" was declared but never referenced
+          float3 p_proj = { p_hom.x * p_w, p_hom.y * p_w, p_hom.z * p_w };
+                 ^
+
+      Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+      rasterizer_impl.cu
+      tmpxft_000011f0_00000000-7_rasterizer_impl.cudafe1.cpp
+
+      ninja: build stopped: subcommand failed.
+      Traceback (most recent call last):
+        File "C:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\torch\utils\cpp_extension.py", line 2100, in _run_ninja_build
+          subprocess.run(
+        File "subprocess.py", line 571, in run
+      subprocess.CalledProcessError: Command '['ninja', '-v']' returned non-zero exit status 1.
+
+      The above exception was the direct cause of the following exception:
+
+      Traceback (most recent call last):
+        File "<string>", line 2, in <module>
+        File "<pip-setuptools-caller>", line 34, in <module>
+        File "C:\Users\reall\Softwares\ComfyUI_windows_portable\ComfyUI\custom_nodes\ComfyUI-3D-Pack\diff-gaussian-rasterization\setup.py", line 17, in <module>
+          setup(
+        File "C:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\setuptools\__init__.py", line 103, in setup
+          return distutils.core.setup(**attrs)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        File "C:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\setuptools\_distutils\core.py", line 185, in setup
+          return run_commands(dist)
+                 ^^^^^^^^^^^^^^^^^^
+        File "C:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\setuptools\_distutils\core.py", line 201, in run_commands
+          dist.run_commands()
+        File "C:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\setuptools\_distutils\dist.py", line 969, in run_commands
+          self.run_command(cmd)
+        File "C:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\setuptools\dist.py", line 989, in run_command
+          super().run_command(command)
+        File "C:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\setuptools\_distutils\dist.py", line 988, in run_command
+          cmd_obj.run()
+        File "C:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\wheel\bdist_wheel.py", line 369, in run
+          self.run_command("build")
+        File "C:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\setuptools\_distutils\cmd.py", line 318, in run_command
+          self.distribution.run_command(command)
+        File "C:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\setuptools\dist.py", line 989, in run_command
+          super().run_command(command)
+        File "C:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\setuptools\_distutils\dist.py", line 988, in run_command
+          cmd_obj.run()
+        File "C:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\setuptools\_distutils\command\build.py", line 131, in run
+          self.run_command(cmd_name)
+        File "C:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\setuptools\_distutils\cmd.py", line 318, in run_command
+          self.distribution.run_command(command)
+        File "C:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\setuptools\dist.py", line 989, in run_command
+          super().run_command(command)
+        File "C:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\setuptools\_distutils\dist.py", line 988, in run_command
+          cmd_obj.run()
+        File "C:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\setuptools\command\build_ext.py", line 88, in run
+          _build_ext.run(self)
+        File "C:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\setuptools\_distutils\command\build_ext.py", line 345, in run
+          self.build_extensions()
+        File "C:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\torch\utils\cpp_extension.py", line 873, in build_extensions
+          build_ext.build_extensions(self)
+        File "C:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\setuptools\_distutils\command\build_ext.py", line 467, in build_extensions
+          self._build_extensions_serial()
+        File "C:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\setuptools\_distutils\command\build_ext.py", line 493, in _build_extensions_serial
+          self.build_extension(ext)
+        File "C:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\setuptools\command\build_ext.py", line 249, in build_extension
+          _build_ext.build_extension(self, ext)
+        File "C:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\setuptools\_distutils\command\build_ext.py", line 548, in build_extension
+          objects = self.compiler.compile(
+                    ^^^^^^^^^^^^^^^^^^^^^^
+        File "C:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\torch\utils\cpp_extension.py", line 845, in win_wrap_ninja_compile
+          _write_ninja_file_and_compile_objects(
+        File "C:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\torch\utils\cpp_extension.py", line 1774, in _write_ninja_file_and_compile_objects
+          _run_ninja_build(
+        File "C:\Users\reall\Softwares\ComfyUI_windows_portable\python_embeded\Lib\site-packages\torch\utils\cpp_extension.py", line 2116, in _run_ninja_build
+          raise RuntimeError(message) from e
+      RuntimeError: Error compiling objects for extension
+      [end of output]
+
+  note: This error originates from a subprocess, and is likely not a problem with pip.
+  ERROR: Failed building wheel for diff-gaussian-rasterization
+  Running setup.py clean for diff-gaussian-rasterization
+Failed to build diff-gaussian-rasterization
+ERROR: Could not build wheels for diff-gaussian-rasterization, which is required to install pyproject.toml-based projects

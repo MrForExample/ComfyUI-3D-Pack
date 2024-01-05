@@ -1,0 +1,16 @@
+#python-dev-tools
+cmake
+ninja
+numpy
+scipy
+opencv-python
+tqdm
+
+# for training differentiable tensors
+pytorch_msssim
+
+# for dmtet and mesh import & export
+trimesh
+plyfile
+pygltflib
+xatlas
