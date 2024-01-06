@@ -7,7 +7,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import nvdiffrast.torch as dr
 
-from ..mesh_processer.mesh import Mesh, safe_normalize
+from ..mesh_processer.mesh import safe_normalize
 
 def scale_img_nhwc(x, size, mag='bilinear', min='bilinear'):
     assert (x.shape[1] >= size[0] and x.shape[2] >= size[1]) or (x.shape[1] < size[0] and x.shape[2] < size[1]), "Trying to magnify image in one dimension and minify in the other"
@@ -38,41 +38,41 @@ def make_divisible(x, m=8):
     return int(math.ceil(x / m) * m)
 
 class Renderer(nn.Module):
-    def __init__(self, opt):
+    def __init__(self, mesh, force_cuda_rast):
         
         super().__init__()
 
-        self.opt = opt
+        self.mesh = mesh
 
-        self.mesh = Mesh.load(self.opt.mesh, resize=False)
-
-        if not self.opt.force_cuda_rast and (not self.opt.gui or os.name == 'nt'):
-            self.glctx = dr.RasterizeGLContext()
-        else:
+        if force_cuda_rast or os.name != 'nt':
             self.glctx = dr.RasterizeCudaContext()
+        else:
+            self.glctx = dr.RasterizeGLContext()
         
         # extract trainable parameters
-        self.v_offsets = nn.Parameter(torch.zeros_like(self.mesh.v))
-        self.raw_albedo = nn.Parameter(trunc_rev_sigmoid(self.mesh.albedo))
+        self.v_offsets = nn.Parameter(torch.zeros_like(self.mesh.v), requires_grad=True)
+        self.raw_albedo = nn.Parameter(trunc_rev_sigmoid(self.mesh.albedo), requires_grad=True)
 
 
-    def get_params(self):
+    def get_params(self, texture_lr, train_geo, geom_lr):
 
         params = [
-            {'params': self.raw_albedo, 'lr': self.opt.texture_lr},
+            {'params': self.raw_albedo, 'lr': texture_lr},
         ]
 
-        if self.opt.train_geo:
-            params.append({'params': self.v_offsets, 'lr': self.opt.geom_lr})
+        self.train_geo = train_geo
+        if train_geo:
+            params.append({'params': self.v_offsets, 'lr': geom_lr})
 
         return params
 
-    @torch.no_grad()
     def export_mesh(self, save_path):
-        self.mesh.v = (self.mesh.v + self.v_offsets).detach()
-        self.mesh.albedo = torch.sigmoid(self.raw_albedo.detach())
         self.mesh.write(save_path)
 
+    @torch.no_grad()
+    def update_mesh(self):
+        self.mesh.v = (self.mesh.v + self.v_offsets).detach()
+        self.mesh.albedo = torch.sigmoid(self.raw_albedo.detach())
     
     def render(self, pose, proj, h0, w0, ssaa=1, bg_color=1, texture_filter='linear-mipmap-linear'):
         
@@ -86,7 +86,7 @@ class Renderer(nn.Module):
         results = {}
 
         # get v
-        if self.opt.train_geo:
+        if self.train_geo:
             v = self.mesh.v + self.v_offsets # [N, 3]
         else:
             v = self.mesh.v
@@ -106,9 +106,10 @@ class Renderer(nn.Module):
 
         texc, texc_db = dr.interpolate(self.mesh.vt.unsqueeze(0).contiguous(), rast, self.mesh.ft, rast_db=rast_db, diff_attrs='all')
         albedo = dr.texture(self.raw_albedo.unsqueeze(0), texc, uv_da=texc_db, filter_mode=texture_filter) # [1, H, W, 3]
+        print(f"albedo = dr.texture: {albedo.requires_grad}")
         albedo = torch.sigmoid(albedo)
         # get vn and render normal
-        if self.opt.train_geo:
+        if self.train_geo:
             i0, i1, i2 = self.mesh.f[:, 0].long(), self.mesh.f[:, 1].long(), self.mesh.f[:, 2].long()
             v0, v1, v2 = v[i0, :], v[i1, :], v[i2, :]
 
@@ -133,6 +134,7 @@ class Renderer(nn.Module):
 
         # antialias
         albedo = dr.antialias(albedo, rast, v_clip, self.mesh.f).squeeze(0) # [H, W, 3]
+        print(f"albedo = dr.antialias: {albedo.requires_grad}")
         albedo = alpha * albedo + (1 - alpha) * bg_color
 
         # ssaa

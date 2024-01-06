@@ -1,10 +1,8 @@
-#__all__ = ['NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS']
+import importlib
+import inspect
 
 NODE_CLASS_MAPPINGS = {}
 NODE_DISPLAY_NAME_MAPPINGS = {}
-
-import importlib
-import inspect
 
 nodes_filename = "nodes"
 module = importlib.import_module(f".{nodes_filename}", package=__name__)
@@ -17,3 +15,5 @@ for name, cls in inspect.getmembers(module, inspect.isclass):
 
         NODE_CLASS_MAPPINGS[node] = cls
         NODE_DISPLAY_NAME_MAPPINGS[node] = disp
+        
+__all__ = ['NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS']

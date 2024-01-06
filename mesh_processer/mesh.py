@@ -49,7 +49,7 @@ class Mesh:
         if path is None:
             mesh = cls(**kwargs)
         # obj supports face uv
-        elif path.endswith(".obj"):
+        elif path.lower().endswith(".obj"):
             mesh = cls.load_obj(path, **kwargs)
         # trimesh only supports vertex uv, but can load more formats
         else:
@@ -421,11 +421,11 @@ class Mesh:
         return self
     
     def write(self, path):
-        if path.endswith(".ply"):
+        if path.lower().endswith(".ply"):
             self.write_ply(path)
-        elif path.endswith(".obj"):
+        elif path.lower().endswith(".obj"):
             self.write_obj(path)
-        elif path.endswith(".glb") or path.endswith(".gltf"):
+        elif path.lower().endswith(".glb") or path.lower().endswith(".gltf"):
             self.write_glb(path)
         else:
             raise NotImplementedError(f"format {path} not supported!")

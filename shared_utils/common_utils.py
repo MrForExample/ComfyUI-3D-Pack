@@ -76,9 +76,9 @@ class cstr(str):
         print(self, **kwargs)
 
 #! MESSAGE TEMPLATES
-cstr.color.add_code("msg", f"{cstr.color.BLUE}WAS Node Suite: {cstr.color.END}")
-cstr.color.add_code("warning", f"{cstr.color.BLUE}WAS Node Suite {cstr.color.LIGHTYELLOW}[WARNING] {cstr.color.END}")
-cstr.color.add_code("error", f"{cstr.color.RED}WAS Node Suite {cstr.color.END}[ERROR] {cstr.color.END}")
+cstr.color.add_code("msg", f"{cstr.color.BLUE}[ComfyUI-3D] {cstr.color.END}")
+cstr.color.add_code("warning", f"{cstr.color.LIGHTYELLOW}[ComfyUI-3D] [WARNING] {cstr.color.END}")
+cstr.color.add_code("error", f"{cstr.color.RED}[ComfyUI-3D] [ERROR] {cstr.color.END}")
 
 def get_persistent_directory(folder_name):
     if sys.platform == "win32":
