@@ -2,10 +2,12 @@ import os
 import re
 import folder_paths as comfy_paths
 
+import torch
 
 from .diff_rast.diff_texturing import DiffTextureBaker
 from .shared_utils.common_utils import cstr
 from .mesh_processer.mesh import Mesh
+from .gaussian_splatting.main_3DGS import GaussianSplatting, GSParams
 
 MANIFEST = {
     "name": "ComfyUI-3D-Pack",
@@ -31,6 +33,7 @@ class Load_3D_Mesh:
                 "resize":  ("BOOLEAN", {"default": False},),
                 "renormal":  ("BOOLEAN", {"default": True},),
                 "retex":  ("BOOLEAN", {"default": False},),
+                "optimizable": ("BOOLEAN", {"default": False},),
             },
         }
 
@@ -43,7 +46,7 @@ class Load_3D_Mesh:
     FUNCTION = "load_mesh"
     CATEGORY = "ComfyUI3D/Import|Export"
     
-    def load_mesh(self, mesh_file_path, resize, renormal, retex):
+    def load_mesh(self, mesh_file_path, resize, renormal, retex, optimizable):
         mesh = None
         
         if not os.path.isabs(mesh_file_path):
@@ -52,7 +55,8 @@ class Load_3D_Mesh:
         if os.path.exists(mesh_file_path):
             folder, filename = os.path.split(mesh_file_path)
             if filename.lower().endswith(SUPPORTED_3D_EXTENSIONS):
-                mesh = Mesh.load(mesh_file_path, resize, renormal, retex)
+                with torch.inference_mode(not optimizable):
+                    mesh = Mesh.load(mesh_file_path, resize, renormal, retex)
             else:
                 cstr(f"[{self.__class__.__name__}] File name {filename} does not end with supported 3D file extensions: {SUPPORTED_3D_EXTENSIONS}").error.print()
         else:        
@@ -86,12 +90,42 @@ class Save_3D_Mesh:
         os.makedirs(mesh_folder_path, exist_ok=True)
         
         if filename.lower().endswith(SUPPORTED_3D_EXTENSIONS):
-            mesh.export_mesh(mesh_save_path)
+            mesh.write(mesh_save_path)
             cstr(f"[{self.__class__.__name__}] saved model to {mesh_save_path}").msg.print()
         else:
             cstr(f"File name {filename} does not end with supported 3D file extensions: {SUPPORTED_3D_EXTENSIONS}").error.print()
         
-        return {"ui": {"mesh": mesh}}
+        return ()
+    
+class Save_3DGS:
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "raw_3DGS": ("GS_RAW",),
+                "save_path": ("STRING", {"default": '3DGS_[time(%Y-%m-%d)].ply', "multiline": False}),
+            },
+        }
+
+    OUTPUT_NODE = True
+    RETURN_TYPES = ()
+    FUNCTION = "save_3DGS"
+    CATEGORY = "ComfyUI3D/Import|Export"
+    
+    def save_3DGS(self, raw_3DGS, save_path):
+        
+        folder_path, filename = os.path.split(save_path)
+        
+        if not os.path.isabs(save_path):
+            folder_path = os.path.join(comfy_paths.output_directory, folder_path)
+            save_path = os.path.join(folder_path, filename)
+        
+        os.makedirs(folder_path, exist_ok=True)
+        
+        raw_3DGS.renderer.gaussians.save_ply(save_path)
+        
+        return ()
     
 class Generate_Orbit_Camera_Poses:
 
@@ -107,7 +141,6 @@ class Generate_Orbit_Camera_Poses:
             },
         }
 
-    OUTPUT_NODE = True
     RETURN_TYPES = (
         "ORBIT_CAMPOSES",   # (orbit radius, elevation, azimuth, orbit center X,  orbit center Y,  orbit center Z)
     )
@@ -178,7 +211,39 @@ class Gaussian_Splatting:
         return {
             "required": {
                 "reference_images": ("IMAGE",), 
+                "reference_masks": ("MASK",),
+                "reference_orbit_camera_poses": ("ORBIT_CAMPOSES",),    # (orbit radius, elevation, azimuth, orbit center X,  orbit center Y,  orbit center Z)
+                "reference_orbit_camera_fovy": ("FLOAT", {"default": 49.1, "min": 0.0, "max": 180.0, "step": 0.1}),
+                "training_iterations": ("INT", {"default": 1000, "min": 1, "max": 100000}),
+                "batch_size": ("INT", {"default": 5, "min": 1, "max": 0xffffffffffffffff}),
+                "loss_value_scale": ("FLOAT", {"default": 10000.0, }),
+                "ms_ssim_loss_weight": ("FLOAT", {"default": 0.2, }),
+                "alpha_loss_weight": ("FLOAT", {"default": 3, }),
+                "offset_loss_weight": ("FLOAT", {"default": 0.0, }),
+                "offset_opacity_loss_weight": ("FLOAT", {"default": 0.0, }),
+                "invert_background_probability": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.1}),
+                "feature_learning_rate": ("FLOAT", {"default": 0.01,  }),
+                "opacity_learning_rate": ("FLOAT", {"default": 0.05,  }),
+                "scaling_learning_rate": ("FLOAT", {"default": 0.005,  }),
+                "rotation_learning_rate": ("FLOAT", {"default": 0.005,  }),
+                "position_learning_rate_init": ("FLOAT", {"default": 0.001,  }),
+                "position_learning_rate_final": ("FLOAT", {"default": 0.00002, }),
+                "position_learning_rate_delay_mult": ("FLOAT", {"default": 0.02, }),
+                "position_learning_rate_max_steps": ("INT", {"default": 500, }),
+                "initial_gaussians_num": ("INT", {"default": 5000, }),
+                "K_nearest_neighbors": ("INT", {"default": 3, }),
+                "percent_dense": ("FLOAT", {"default": 0.01, }),
+                "density_start_iterations": ("INT", {"default": 100, }),
+                "density_end_iterations": ("INT", {"default": 100000, }),
+                "densification_interval": ("INT", {"default": 100, }),
+                "opacity_reset_interval": ("INT", {"default": 700, }),
+                "densify_grad_threshold": ("FLOAT", {"default": 0.01 }),
+                "gaussian_sh_degree": ("INT", {"default": 0, }),
             },
+            
+            "optional": {
+                "mesh_to_initialize_gaussian": ("MESH",),
+            }
         }
 
     RETURN_TYPES = (
@@ -190,8 +255,90 @@ class Gaussian_Splatting:
     FUNCTION = "run_3DGS"
     CATEGORY = "ComfyUI3D/Algorithm"
     
-    def run_3DGS(self, reference_images):
+    def run_3DGS(self,
+                 reference_images,
+                 reference_masks,
+                 reference_orbit_camera_poses,
+                 reference_orbit_camera_fovy,
+                 training_iterations,
+                 batch_size,
+                 loss_value_scale,
+                 ms_ssim_loss_weight,
+                 alpha_loss_weight,
+                 offset_loss_weight,
+                 offset_opacity_loss_weight,
+                 invert_background_probability,
+                 feature_learning_rate,
+                 opacity_learning_rate,
+                 scaling_learning_rate,
+                 rotation_learning_rate,
+                 position_learning_rate_init,
+                 position_learning_rate_final,
+                 position_learning_rate_delay_mult,
+                 position_learning_rate_max_steps,
+                 initial_gaussians_num,
+                 K_nearest_neighbors,
+                 percent_dense,
+                 density_start_iterations,
+                 density_end_iterations,
+                 densification_interval,
+                 opacity_reset_interval,
+                 densify_grad_threshold,
+                 gaussian_sh_degree,
+                 mesh_to_initialize_gaussian=None):
+        
+        
         raw_3DGS = None
+        
+        ref_imgs_num = len(reference_images)
+        ref_masks_num = len(reference_masks)
+        if ref_imgs_num == ref_masks_num:
+            
+            ref_cam_poses_num = len(reference_orbit_camera_poses)
+            if ref_imgs_num == ref_cam_poses_num:
+                
+                if batch_size > ref_imgs_num:
+                    cstr(f"[{self.__class__.__name__}] Batch size {batch_size} is bigger than number of reference images {ref_imgs_num}! Set batch size to {ref_imgs_num} instead").warning.print()
+                    batch_size = ref_imgs_num
+                
+                with torch.inference_mode(False):
+                
+                    gs_params = GSParams(training_iterations,
+                                        batch_size,
+                                        loss_value_scale,
+                                        ms_ssim_loss_weight,
+                                        alpha_loss_weight,
+                                        offset_loss_weight,
+                                        offset_opacity_loss_weight,
+                                        invert_background_probability,
+                                        feature_learning_rate,
+                                        opacity_learning_rate,
+                                        scaling_learning_rate,
+                                        rotation_learning_rate,
+                                        position_learning_rate_init,
+                                        position_learning_rate_final,
+                                        position_learning_rate_delay_mult,
+                                        position_learning_rate_max_steps,
+                                        initial_gaussians_num,
+                                        K_nearest_neighbors,
+                                        percent_dense,
+                                        density_start_iterations,
+                                        density_end_iterations,
+                                        densification_interval,
+                                        opacity_reset_interval,
+                                        densify_grad_threshold,
+                                        gaussian_sh_degree)
+                    
+                    gs = GaussianSplatting(reference_images, reference_masks, reference_orbit_camera_poses, reference_orbit_camera_fovy, gs_params, mesh_to_initialize_gaussian)
+                    
+                    gs.training()
+
+                    raw_3DGS = gs
+                
+            else:
+                cstr(f"[{self.__class__.__name__}] Number of reference images {ref_imgs_num} does not equal to number of reference camera poses {ref_cam_poses_num}").error.print()
+        else:
+            cstr(f"[{self.__class__.__name__}] Number of reference images {ref_imgs_num} does not equal to number of masks {ref_masks_num}").error.print()
 
         return (raw_3DGS, )
     
@@ -246,13 +393,15 @@ class Bake_Texture_To_Mesh:
                 if batch_size > ref_imgs_num:
                     cstr(f"[{self.__class__.__name__}] Batch size {batch_size} is bigger than number of reference images {ref_imgs_num}! Set batch size to {ref_imgs_num} instead").warning.print()
                     batch_size = ref_imgs_num
+                    
+                with torch.inference_mode(False):
                 
-                texture_baker = DiffTextureBaker(reference_images, reference_masks, reference_orbit_camera_poses, reference_orbit_camera_fovy, mesh, 
-                                    training_iterations, batch_size, texture_learning_rate, train_mesh_geometry, geometry_learning_rate, ms_ssim_loss_weight, force_cuda_rasterize)
-                
-                texture_baker.training()
-                
-                trained_mesh, baked_texture = texture_baker.get_mesh_and_texture()
+                    texture_baker = DiffTextureBaker(reference_images, reference_masks, reference_orbit_camera_poses, reference_orbit_camera_fovy, mesh, 
+                                        training_iterations, batch_size, texture_learning_rate, train_mesh_geometry, geometry_learning_rate, ms_ssim_loss_weight, force_cuda_rasterize)
+                    
+                    texture_baker.training()
+                    
+                    trained_mesh, baked_texture = texture_baker.get_mesh_and_texture()
                     
             else:
                 cstr(f"[{self.__class__.__name__}] Number of reference images {ref_imgs_num} does not equal to number of reference camera poses {ref_cam_poses_num}").error.print()

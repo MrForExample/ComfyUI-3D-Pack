@@ -66,10 +66,6 @@ class Renderer(nn.Module):
 
         return params
 
-    def export_mesh(self, save_path):
-        self.mesh.write(save_path)
-
-    @torch.no_grad()
     def update_mesh(self):
         self.mesh.v = (self.mesh.v + self.v_offsets).detach()
         self.mesh.albedo = torch.sigmoid(self.raw_albedo.detach())
@@ -106,7 +102,6 @@ class Renderer(nn.Module):
 
         texc, texc_db = dr.interpolate(self.mesh.vt.unsqueeze(0).contiguous(), rast, self.mesh.ft, rast_db=rast_db, diff_attrs='all')
         albedo = dr.texture(self.raw_albedo.unsqueeze(0), texc, uv_da=texc_db, filter_mode=texture_filter) # [1, H, W, 3]
-        print(f"albedo = dr.texture: {albedo.requires_grad}")
         albedo = torch.sigmoid(albedo)
         # get vn and render normal
         if self.train_geo:
@@ -134,7 +129,6 @@ class Renderer(nn.Module):
 
         # antialias
         albedo = dr.antialias(albedo, rast, v_clip, self.mesh.f).squeeze(0) # [H, W, 3]
-        print(f"albedo = dr.antialias: {albedo.requires_grad}")
         albedo = alpha * albedo + (1 - alpha) * bg_color
 
         # ssaa

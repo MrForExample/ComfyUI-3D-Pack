@@ -1,10 +1,10 @@
-#python-dev-tools
+#base
 cmake
 ninja
 numpy
 scipy
 opencv-python
-tqdm
+kornia
 
 # for training differentiable tensors
 pytorch_msssim
@@ -14,3 +14,8 @@ trimesh
 plyfile
 pygltflib
 xatlas
+pymeshlab
+
+# extra
+torchtyping
+tqdm

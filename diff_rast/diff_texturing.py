@@ -1,4 +1,5 @@
 import random
+import tqdm
 
 import torch
 import torch.nn.functional as F
@@ -8,7 +9,7 @@ from pytorch_msssim import SSIM, MS_SSIM
 from ..diff_rast.diff_mesh_renderer import Renderer
 from ..shared_utils.camera_utils import orbit_camera, OrbitCamera
 
-class DiffTextureBaker:        
+class DiffTextureBaker:
     
     def __init__(self, reference_images, reference_masks, reference_orbit_camera_poses, reference_orbit_camera_fovy, mesh, 
                      training_iterations, batch_size, texture_learning_rate, train_mesh_geometry, geometry_learning_rate, ms_ssim_loss_weight, force_cuda_rasterize):
@@ -62,7 +63,7 @@ class DiffTextureBaker:
             
         ref_imgs_num_minus_1 = self.ref_imgs_num-1
 
-        for step in range(self.training_iterations):
+        for step in tqdm.trange(self.training_iterations):
 
             ### calculate loss between reference and rendered image from known view
             loss = 0
@@ -83,12 +84,7 @@ class DiffTextureBaker:
                 image = out["image"]    # [H, W, 3] in [0, 1]
                 image = image.permute(2, 0, 1).contiguous()  # [3, H, W] in [0, 1]
                 
-                #print(f"image.requires_grad: {image.requires_grad}")
-                
                 image_masked = (image * self.ref_masks_torch[i]).unsqueeze(0)
-                
-                #print(f"image_masked.requires_grad: {image_masked.requires_grad}")
-                #print(f"ref_imgs_masked[i].requires_grad: {ref_imgs_masked[i].requires_grad}")
                 
                 masked_rendered_img_batch.append(image_masked)
                 masked_ref_img_batch.append(ref_imgs_masked[i])
@@ -103,33 +99,22 @@ class DiffTextureBaker:
             # [1, 3, H, W] in [0, 1]
             #loss += self.lambda_ssim * (1 - self.ssim_loss(X, Y))
             loss += self.lambda_ssim * (1 - self.ms_ssim_loss(masked_ref_img_batch_torch, masked_rendered_img_batch_torch))
-            
-            print(f"masked_rendered_img_batch_torch.requires_grad: {masked_rendered_img_batch_torch.requires_grad}")
-            print(f"masked_ref_img_batch_torch.requires_grad: {masked_ref_img_batch_torch.requires_grad}")
-
-            print(f"loss.requires_grad: {loss.requires_grad}")
-            
-            print(f"self.renderer.raw_albedo.requires_grad: {self.renderer.raw_albedo.requires_grad}")
-
-            # import kiui
-            # kiui.lo(hor, ver)
-            # kiui.vis.plot_image(image)
 
             # optimize step
             loss.backward()
             self.optimizer.step()
             self.optimizer.zero_grad()
             
-            torch.cuda.synchronize()
+        torch.cuda.synchronize()
             
-            self.need_update = True
+        self.need_update = True
             
-            print(f"Step: {step}")
+        print(f"Step: {step}")
 
         self.renderer.update_mesh()
         
         ender.record()
-        t = starter.elapsed_time(ender)
+        #t = starter.elapsed_time(ender)
         
     def get_mesh_and_texture(self):
         return (self.renderer.mesh, self.renderer.mesh.albedo, )

@@ -1,0 +1,486 @@
+{
+  "last_node_id": 16,
+  "last_link_id": 12,
+  "nodes": [
+    {
+      "id": 10,
+      "type": "PreviewImage",
+      "pos": [
+        1410,
+        -320
+      ],
+      "size": {
+        "0": 210,
+        "1": 246
+      },
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 4
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 8,
+      "type": "InvertMask",
+      "pos": [
+        746,
+        -14
+      ],
+      "size": {
+        "0": 210,
+        "1": 26
+      },
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mask",
+          "type": "MASK",
+          "link": 2
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            7,
+            8
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "InvertMask"
+      }
+    },
+    {
+      "id": 9,
+      "type": "MaskToImage",
+      "pos": [
+        1110,
+        -320
+      ],
+      "size": {
+        "0": 210,
+        "1": 26
+      },
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mask",
+          "type": "MASK",
+          "link": 8
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            4
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MaskToImage"
+      }
+    },
+    {
+      "id": 14,
+      "type": "[ComfyUI-3D] Save 3D Mesh",
+      "pos": [
+        2132,
+        54
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 10
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[ComfyUI-3D] Save 3D Mesh"
+      },
+      "widgets_values": [
+        "MeshTest\\Mesh_01.obj"
+      ]
+    },
+    {
+      "id": 15,
+      "type": "PreviewImage",
+      "pos": [
+        2138,
+        349
+      ],
+      "size": {
+        "0": 210,
+        "1": 246
+      },
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 11
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 4,
+      "type": "[ComfyUI-3D] Generate Orbit Camera Poses",
+      "pos": [
+        830,
+        132
+      ],
+      "size": {
+        "0": 400,
+        "1": 200
+      },
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "reference_images",
+          "type": "IMAGE",
+          "link": 1
+        }
+      ],
+      "outputs": [
+        {
+          "name": "orbit_camposes",
+          "type": "ORBIT_CAMPOSES",
+          "links": [
+            6
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[ComfyUI-3D] Generate Orbit Camera Poses"
+      },
+      "widgets_values": [
+        "([0:120], 1.75, 0, 0, 360)"
+      ]
+    },
+    {
+      "id": 13,
+      "type": "[ComfyUI-3D] Load 3D Mesh",
+      "pos": [
+        999,
+        412
+      ],
+      "size": {
+        "0": 315,
+        "1": 154
+      },
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "links": [
+            9
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[ComfyUI-3D] Load 3D Mesh"
+      },
+      "widgets_values": [
+        "Meshes\\Cammy_Uniform.obj",
+        false,
+        true,
+        false,
+        true
+      ]
+    },
+    {
+      "id": 7,
+      "type": "VHS_LoadImages",
+      "pos": [
+        212,
+        54
+      ],
+      "size": [
+        243.60000610351562,
+        194
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            1,
+            5,
+            12
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            2
+          ],
+          "shape": 3,
+          "slot_index": 1
+        },
+        {
+          "name": "INT",
+          "type": "INT",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VHS_LoadImages"
+      },
+      "widgets_values": {
+        "directory": "Images_enhanced",
+        "image_load_cap": 0,
+        "skip_first_images": 0,
+        "select_every_nth": 1,
+        "choose folder to upload": "image",
+        "videopreview": {
+          "hidden": false,
+          "paused": false,
+          "params": {
+            "frame_load_cap": 0,
+            "skip_first_images": 0,
+            "filename": "Images_enhanced",
+            "type": "input",
+            "format": "folder",
+            "select_every_nth": 1
+          }
+        }
+      }
+    },
+    {
+      "id": 16,
+      "type": "PreviewImage",
+      "pos": [
+        504,
+        -302
+      ],
+      "size": {
+        "0": 210,
+        "1": 26
+      },
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 12
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 12,
+      "type": "[ComfyUI-3D] Bake Texture To Mesh",
+      "pos": [
+        1419,
+        55
+      ],
+      "size": {
+        "0": 531.5999755859375,
+        "1": 286
+      },
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "reference_images",
+          "type": "IMAGE",
+          "link": 5
+        },
+        {
+          "name": "reference_masks",
+          "type": "MASK",
+          "link": 7
+        },
+        {
+          "name": "reference_orbit_camera_poses",
+          "type": "ORBIT_CAMPOSES",
+          "link": 6
+        },
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 9
+        }
+      ],
+      "outputs": [
+        {
+          "name": "trained_mesh",
+          "type": "MESH",
+          "links": [
+            10
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "baked_texture",
+          "type": "IMAGE",
+          "links": [
+            11
+          ],
+          "shape": 3,
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[ComfyUI-3D] Bake Texture To Mesh"
+      },
+      "widgets_values": [
+        49.1,
+        1000,
+        5,
+        0.1,
+        false,
+        0.01,
+        0.5,
+        false
+      ]
+    }
+  ],
+  "links": [
+    [
+      1,
+      7,
+      0,
+      4,
+      0,
+      "IMAGE"
+    ],
+    [
+      2,
+      7,
+      1,
+      8,
+      0,
+      "MASK"
+    ],
+    [
+      4,
+      9,
+      0,
+      10,
+      0,
+      "IMAGE"
+    ],
+    [
+      5,
+      7,
+      0,
+      12,
+      0,
+      "IMAGE"
+    ],
+    [
+      6,
+      4,
+      0,
+      12,
+      2,
+      "ORBIT_CAMPOSES"
+    ],
+    [
+      7,
+      8,
+      0,
+      12,
+      1,
+      "MASK"
+    ],
+    [
+      8,
+      8,
+      0,
+      9,
+      0,
+      "MASK"
+    ],
+    [
+      9,
+      13,
+      0,
+      12,
+      3,
+      "MESH"
+    ],
+    [
+      10,
+      12,
+      0,
+      14,
+      0,
+      "MESH"
+    ],
+    [
+      11,
+      12,
+      1,
+      15,
+      0,
+      "IMAGE"
+    ],
+    [
+      12,
+      7,
+      0,
+      16,
+      0,
+      "IMAGE"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {},
+  "version": 0.4
+}
