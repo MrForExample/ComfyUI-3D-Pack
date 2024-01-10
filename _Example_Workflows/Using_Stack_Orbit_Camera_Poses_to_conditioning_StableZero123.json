@@ -1,0 +1,610 @@
+{
+  "last_node_id": 41,
+  "last_link_id": 80,
+  "nodes": [
+    {
+      "id": 15,
+      "type": "ImageOnlyCheckpointLoader",
+      "pos": [
+        -60,
+        239
+      ],
+      "size": {
+        "0": 369.6000061035156,
+        "1": 98
+      },
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            42
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "CLIP_VISION",
+          "type": "CLIP_VISION",
+          "links": [
+            50
+          ],
+          "shape": 3,
+          "slot_index": 1
+        },
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "links": [
+            26,
+            52
+          ],
+          "shape": 3,
+          "slot_index": 2
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ImageOnlyCheckpointLoader"
+      },
+      "widgets_values": [
+        "stable_zero123.ckpt"
+      ]
+    },
+    {
+      "id": 3,
+      "type": "KSampler",
+      "pos": [
+        864,
+        344
+      ],
+      "size": {
+        "0": 315,
+        "1": 262
+      },
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 42
+        },
+        {
+          "name": "positive",
+          "type": "CONDITIONING",
+          "link": 53
+        },
+        {
+          "name": "negative",
+          "type": "CONDITIONING",
+          "link": 54
+        },
+        {
+          "name": "latent_image",
+          "type": "LATENT",
+          "link": 55
+        }
+      ],
+      "outputs": [
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [
+            7
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "KSampler"
+      },
+      "widgets_values": [
+        999999999,
+        "fixed",
+        10,
+        3,
+        "euler_ancestral",
+        "karras",
+        1
+      ]
+    },
+    {
+      "id": 26,
+      "type": "StableZero123_Conditioning",
+      "pos": [
+        436,
+        410
+      ],
+      "size": {
+        "0": 315,
+        "1": 194
+      },
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip_vision",
+          "type": "CLIP_VISION",
+          "link": 50
+        },
+        {
+          "name": "init_image",
+          "type": "IMAGE",
+          "link": 51
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 52
+        },
+        {
+          "name": "elevation",
+          "type": "FLOAT",
+          "link": 80,
+          "widget": {
+            "name": "elevation"
+          }
+        },
+        {
+          "name": "azimuth",
+          "type": "FLOAT",
+          "link": 79,
+          "widget": {
+            "name": "azimuth"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "name": "positive",
+          "type": "CONDITIONING",
+          "links": [
+            53
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "negative",
+          "type": "CONDITIONING",
+          "links": [
+            54
+          ],
+          "shape": 3,
+          "slot_index": 1
+        },
+        {
+          "name": "latent",
+          "type": "LATENT",
+          "links": [
+            55
+          ],
+          "shape": 3,
+          "slot_index": 2
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "StableZero123_Conditioning"
+      },
+      "widgets_values": [
+        256,
+        256,
+        1,
+        0,
+        145
+      ]
+    },
+    {
+      "id": 23,
+      "type": "LoadImage",
+      "pos": [
+        -477,
+        430
+      ],
+      "size": {
+        "0": 316.5220947265625,
+        "1": 405.7098693847656
+      },
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            51
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "Cammy_Style_0-NoBG_Square.png",
+        "image"
+      ]
+    },
+    {
+      "id": 8,
+      "type": "VAEDecode",
+      "pos": [
+        1280,
+        258
+      ],
+      "size": {
+        "0": 210,
+        "1": 46
+      },
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "samples",
+          "type": "LATENT",
+          "link": 7
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 26
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            49,
+            74
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VAEDecode"
+      }
+    },
+    {
+      "id": 39,
+      "type": "ImageListToImageBatch",
+      "pos": [
+        1584,
+        491
+      ],
+      "size": {
+        "0": 210,
+        "1": 26
+      },
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 74
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            75
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ImageListToImageBatch"
+      }
+    },
+    {
+      "id": 38,
+      "type": "VHS_VideoCombine",
+      "pos": [
+        1831,
+        491
+      ],
+      "size": [
+        315,
+        559
+      ],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 75
+        },
+        {
+          "name": "audio",
+          "type": "VHS_AUDIO",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "Filenames",
+          "type": "VHS_FILENAMES",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VHS_VideoCombine"
+      },
+      "widgets_values": {
+        "frame_rate": 8,
+        "loop_count": 0,
+        "filename_prefix": "StableZero123/Test/Cammy",
+        "format": "video/h265-mp4",
+        "pix_fmt": "yuv420p10le",
+        "crf": 22,
+        "save_metadata": true,
+        "pingpong": false,
+        "save_output": true,
+        "videopreview": {
+          "hidden": false,
+          "paused": false,
+          "params": {
+            "filename": "Cammy_00492.mp4",
+            "subfolder": "StableZero123\\Test",
+            "type": "output",
+            "format": "video/h265-mp4"
+          }
+        }
+      }
+    },
+    {
+      "id": 25,
+      "type": "SaveImage",
+      "pos": [
+        1582,
+        121
+      ],
+      "size": {
+        "0": 671.7539672851562,
+        "1": 270.0038757324219
+      },
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 49
+        }
+      ],
+      "properties": {},
+      "widgets_values": [
+        "StableZero123/Test/Cammy"
+      ]
+    },
+    {
+      "id": 41,
+      "type": "[ComfyUI-3D] Stack Orbit Camera Poses",
+      "pos": [
+        -10,
+        540
+      ],
+      "size": {
+        "0": 315,
+        "1": 586
+      },
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "orbit_camposes",
+          "type": "ORBIT_CAMPOSES",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "orbit_radius_list",
+          "type": "FLOAT",
+          "links": null,
+          "shape": 6
+        },
+        {
+          "name": "elevation_list",
+          "type": "FLOAT",
+          "links": [
+            80
+          ],
+          "shape": 6,
+          "slot_index": 2
+        },
+        {
+          "name": "azimuth_list",
+          "type": "FLOAT",
+          "links": [
+            79
+          ],
+          "shape": 6,
+          "slot_index": 3
+        },
+        {
+          "name": "orbit_center_X_list",
+          "type": "FLOAT",
+          "links": null,
+          "shape": 6
+        },
+        {
+          "name": "orbit_center_Y_list",
+          "type": "FLOAT",
+          "links": null,
+          "shape": 6
+        },
+        {
+          "name": "orbit_center_Z_list",
+          "type": "FLOAT",
+          "links": null,
+          "shape": 6
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[ComfyUI-3D] Stack Orbit Camera Poses"
+      },
+      "widgets_values": [
+        0,
+        0,
+        0.1,
+        -45,
+        45,
+        45,
+        0,
+        0.1,
+        -45,
+        0,
+        0,
+        0.1,
+        0,
+        0,
+        0.1,
+        0,
+        0,
+        0.1
+      ]
+    }
+  ],
+  "links": [
+    [
+      7,
+      3,
+      0,
+      8,
+      0,
+      "LATENT"
+    ],
+    [
+      26,
+      15,
+      2,
+      8,
+      1,
+      "VAE"
+    ],
+    [
+      42,
+      15,
+      0,
+      3,
+      0,
+      "MODEL"
+    ],
+    [
+      49,
+      8,
+      0,
+      25,
+      0,
+      "IMAGE"
+    ],
+    [
+      50,
+      15,
+      1,
+      26,
+      0,
+      "CLIP_VISION"
+    ],
+    [
+      51,
+      23,
+      0,
+      26,
+      1,
+      "IMAGE"
+    ],
+    [
+      52,
+      15,
+      2,
+      26,
+      2,
+      "VAE"
+    ],
+    [
+      53,
+      26,
+      0,
+      3,
+      1,
+      "CONDITIONING"
+    ],
+    [
+      54,
+      26,
+      1,
+      3,
+      2,
+      "CONDITIONING"
+    ],
+    [
+      55,
+      26,
+      2,
+      3,
+      3,
+      "LATENT"
+    ],
+    [
+      74,
+      8,
+      0,
+      39,
+      0,
+      "IMAGE"
+    ],
+    [
+      75,
+      39,
+      0,
+      38,
+      0,
+      "IMAGE"
+    ],
+    [
+      79,
+      41,
+      3,
+      26,
+      4,
+      "FLOAT"
+    ],
+    [
+      80,
+      41,
+      2,
+      26,
+      3,
+      "FLOAT"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {},
+  "version": 0.4
+}

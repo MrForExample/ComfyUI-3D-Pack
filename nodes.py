@@ -1,8 +1,12 @@
 import os
 import re
+import math
+import copy
+from enum import Enum
 import folder_paths as comfy_paths
 
 import torch
+import numpy as np
 
 from .diff_rast.diff_texturing import DiffTextureBaker
 from .shared_utils.common_utils import cstr
@@ -22,6 +26,11 @@ SUPPORTED_3D_EXTENSIONS = (
     '.ply',
     '.glb',
 )
+
+ELEVATION_MIN = -90
+ELEVATION_MAX = 90.0
+AZIMUTH_MIN = -180.0
+AZIMUTH_MAX = 180.0
 
 class Load_3D_Mesh:
 
@@ -126,6 +135,194 @@ class Save_3DGS:
         raw_3DGS.renderer.gaussians.save_ply(save_path)
         
         return ()
+    
+class Stack_Orbit_Camera_Poses:
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "orbit_radius_start": ("FLOAT", {"default": 0.0, 'step': 0.0001}),
+                "orbit_radius_stop": ("FLOAT", {"default": 0.0, 'step': 0.0001}),
+                "orbit_radius_step": ("FLOAT", {"default": 0.1, 'step': 0.0001}),
+                "elevation_start": ("FLOAT", {"default": 0.0, "min": ELEVATION_MIN, "max": ELEVATION_MAX, 'step': 0.0001}),
+                "elevation_stop": ("FLOAT", {"default": 0.0, "min": ELEVATION_MIN, "max": ELEVATION_MAX, 'step': 0.0001}),
+                "elevation_step": ("FLOAT", {"default": 0.0, "min": ELEVATION_MIN, "max": ELEVATION_MAX, 'step': 0.0001}),
+                "azimuth_start": ("FLOAT", {"default": 0.0, "min": AZIMUTH_MIN, "max": AZIMUTH_MAX, 'step': 0.0001}),
+                "azimuth_stop": ("FLOAT", {"default": 0.0, "min": AZIMUTH_MIN, "max": AZIMUTH_MAX, 'step': 0.0001}),
+                "azimuth_step": ("FLOAT", {"default": 0.0, "min": AZIMUTH_MIN, "max": AZIMUTH_MAX, 'step': 0.0001}),
+                "orbit_center_X_start": ("FLOAT", {"default": 0.0, 'step': 0.0001}),
+                "orbit_center_X_stop": ("FLOAT", {"default": 0.0, 'step': 0.0001}),
+                "orbit_center_X_step": ("FLOAT", {"default": 0.1, 'step': 0.0001}),
+                "orbit_center_Y_start": ("FLOAT", {"default": 0.0, 'step': 0.0001}),
+                "orbit_center_Y_stop": ("FLOAT", {"default": 0.0, 'step': 0.0001}),
+                "orbit_center_Y_step": ("FLOAT", {"default": 0.1, 'step': 0.0001}),
+                "orbit_center_Z_start": ("FLOAT", {"default": 0.0, 'step': 0.0001}),
+                "orbit_center_Z_stop": ("FLOAT", {"default": 0.0, 'step': 0.0001}),
+                "orbit_center_Z_step": ("FLOAT", {"default": 0.1, 'step': 0.0001}),
+            },
+        }
+
+    RETURN_TYPES = (
+        "ORBIT_CAMPOSES",   # (orbit radius, elevation, azimuth, orbit center X,  orbit center Y,  orbit center Z)
+        "FLOAT",
+        "FLOAT",
+        "FLOAT",
+        "FLOAT",
+        "FLOAT",
+        "FLOAT",
+    )
+    RETURN_NAMES = (
+        "orbit_camposes",
+        "orbit_radius_list",
+        "elevation_list", 
+        "azimuth_list", 
+        "orbit_center_X_list",  
+        "orbit_center_Y_list",  
+        "orbit_center_Z_list",
+    )
+    OUTPUT_IS_LIST = (
+        False,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+    )
+    
+    FUNCTION = "get_camposes"
+    CATEGORY = "ComfyUI3D/Preprocessor"
+    
+    class Pose_Config(Enum):
+        STOP_LARGER_STEP_POS = 0
+        START_LARGER_STEP_POS = 1
+        START_LARGER_STEP_NEG = 2
+        STOP_LARGER_STEP_NEG = 3
+    
+    class Pose_Type:
+        def __init__(self, start, stop, step, min_value=-math.inf, max_value=math.inf, is_linear = True):
+            if abs(step) < 0.0001:
+                step = 0.0001 * (-1.0 if step < 0 else 1.0)
+            
+            if is_linear and ( (step > 0 and stop < start) or (step < 0 and stop > start)):
+                cstr(f"[{self.__class__.__name__}] stop value: {stop} cannot be reached from start value {start} with step value {step}, will reverse the sign of step value to {-step}").warning.print()
+                self.step = -step
+            else:
+                self.step = step
+                      
+            self.start = start
+            self.stop = stop
+            
+            self.min = min_value
+            self.max = max_value
+            
+            self.is_linear = is_linear  # linear or circular (i.e. min and max value are connected, e.g. -180 & 180 degree in azimuth angle) value
+                
+    
+    def stack_camposes(self, pose_type_index=None, last_camposes=[[]]):
+        if pose_type_index == None:
+            pose_type_index = len(self.all_pose_types) - 1
+            
+        if pose_type_index == -1:
+            return last_camposes
+        else:
+            current_pose_type = self.all_pose_types[pose_type_index]
+            
+            all_camposes = []
+            
+            # There are four different kind of situation we need to deal with to make this function generalize for any combination of inputs
+            if current_pose_type.step > 0:
+                if current_pose_type.start < current_pose_type.stop or current_pose_type.is_linear:
+                    pose_config = Stack_Orbit_Camera_Poses.Pose_Config.STOP_LARGER_STEP_POS
+                else:
+                    pose_config = Stack_Orbit_Camera_Poses.Pose_Config.START_LARGER_STEP_POS
+            else:
+                if current_pose_type.start > current_pose_type.stop or current_pose_type.is_linear:
+                    pose_config = Stack_Orbit_Camera_Poses.Pose_Config.START_LARGER_STEP_NEG
+                else:
+                    pose_config = Stack_Orbit_Camera_Poses.Pose_Config.STOP_LARGER_STEP_NEG
+                    
+            p = current_pose_type.start
+            p_passed_min_max_seam = False
+            
+            while ( (pose_config == Stack_Orbit_Camera_Poses.Pose_Config.STOP_LARGER_STEP_POS and p <= current_pose_type.stop) or 
+                    (pose_config == Stack_Orbit_Camera_Poses.Pose_Config.START_LARGER_STEP_POS and (not p_passed_min_max_seam or p <= current_pose_type.stop)) or
+                    (pose_config == Stack_Orbit_Camera_Poses.Pose_Config.START_LARGER_STEP_NEG and p >= current_pose_type.stop) or 
+                    (pose_config == Stack_Orbit_Camera_Poses.Pose_Config.STOP_LARGER_STEP_NEG and (not p_passed_min_max_seam or p >= current_pose_type.stop)) ):
+                
+                # If current pose value surpass the either min/max value then we map its vaule to the oppsite sign
+                if pose_config == Stack_Orbit_Camera_Poses.Pose_Config.START_LARGER_STEP_POS and p > current_pose_type.max:
+                    p = current_pose_type.min + p % current_pose_type.max
+                    p_passed_min_max_seam = True    
+                elif pose_config == Stack_Orbit_Camera_Poses.Pose_Config.STOP_LARGER_STEP_NEG and p < current_pose_type.min:
+                    p = current_pose_type.max + p % current_pose_type.min
+                    p_passed_min_max_seam = True
+                    
+                new_camposes = copy.deepcopy(last_camposes)
+                    
+                for campose in new_camposes:
+                    campose.insert(0, p)
+                    
+                all_camposes.extend(new_camposes)
+                
+                p += current_pose_type.step
+                    
+            return self.stack_camposes(pose_type_index-1, all_camposes)
+    
+    def get_camposes(self, 
+                     orbit_radius_start, 
+                     orbit_radius_stop, 
+                     orbit_radius_step, 
+                     elevation_start, 
+                     elevation_stop, 
+                     elevation_step, 
+                     azimuth_start, 
+                     azimuth_stop, 
+                     azimuth_step, 
+                     orbit_center_X_start, 
+                     orbit_center_X_stop, 
+                     orbit_center_X_step, 
+                     orbit_center_Y_start, 
+                     orbit_center_Y_stop, 
+                     orbit_center_Y_step, 
+                     orbit_center_Z_start, 
+                     orbit_center_Z_stop, 
+                     orbit_center_Z_step):
+        
+        """
+            Return the combination of all the pose types interpolation values
+            Return values in two ways:
+            orbit_camposes: CAMPOSES type list can directly input to other 3D process node (e.g. GaussianSplatting)
+            all the camera pose types seperated in different list, becasue some 3D model's conditioner only takes a sub set of all camera pose types (e.g. StableZero123)
+        """
+        
+        orbit_radius_list = []
+        elevation_list = []
+        azimuth_list = []
+        orbit_center_X_list = []
+        orbit_center_Y_list = []
+        orbit_center_Z_list = []
+        
+        self.all_pose_types = []
+        self.all_pose_types.append( Stack_Orbit_Camera_Poses.Pose_Type(orbit_radius_start, orbit_radius_stop, orbit_radius_step) )
+        self.all_pose_types.append( Stack_Orbit_Camera_Poses.Pose_Type(elevation_start, elevation_stop, elevation_step, ELEVATION_MIN, ELEVATION_MAX) )
+        self.all_pose_types.append( Stack_Orbit_Camera_Poses.Pose_Type(azimuth_start, azimuth_stop, azimuth_step, AZIMUTH_MIN, AZIMUTH_MAX, False) )
+        self.all_pose_types.append( Stack_Orbit_Camera_Poses.Pose_Type(orbit_center_X_start, orbit_center_X_stop, orbit_center_X_step) )
+        self.all_pose_types.append( Stack_Orbit_Camera_Poses.Pose_Type(orbit_center_Y_start, orbit_center_Y_stop, orbit_center_Y_step) )
+        self.all_pose_types.append( Stack_Orbit_Camera_Poses.Pose_Type(orbit_center_Z_start, orbit_center_Z_stop, orbit_center_Z_step) )
+        
+        orbit_camposes = self.stack_camposes()
+        
+        for campose in orbit_camposes:
+            orbit_radius_list.append(campose[0])
+            elevation_list.append(campose[1])
+            azimuth_list.append(campose[2])
+            orbit_center_X_list.append(campose[3])
+            orbit_center_Y_list.append(campose[4])
+            orbit_center_Z_list.append(campose[5])
+        
+        return (orbit_camposes, orbit_radius_list, elevation_list, azimuth_list, orbit_center_X_list, orbit_center_Y_list, orbit_center_Z_list, )
     
 class Generate_Orbit_Camera_Poses:
 

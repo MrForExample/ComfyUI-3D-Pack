@@ -63,7 +63,10 @@ Copy the files inside folder [__New_ComfyUI_Bats](./_New_ComfyUI_Bats/) to your 
 
 ### Currently support:
 - For use case please check [example workflows](./_Example_Workflows/)
-  - **Note:** you need to put [Images_enhanced](_Example_Workflows/_Example_Inputs_Files/Images_enhanced) and [Meshes](./_Example_Workflows/_Example_Inputs_Files/Meshes) under ComfyUI Root Directory\ComfyUI\input folder before you can run the example workflow
+  - **Note:** you need to put [Example Inputs Files & Folders](_Example_Workflows/_Example_Inputs_Files/) under ComfyUI Root Directory\ComfyUI\input folder before you can run the example workflow
+- Stack Orbit Camera Poses node to automatically generate all range of camera pose combinations
+  - You can use it to conditioning the [StableZero123 (You need to Download the checkpoint first)](https://comfyanonymous.github.io/ComfyUI_examples/3d/), with full range of camera poses in one prompt pass
+  - You can use it to generate the orbit camera poses and directly input to other 3D process node (e.g. GaussianSplatting and BakeTextureToMesh)
 - Load 3D file (.obj, .ply, .glb)
 - 3D Gaussian Splatting, with:
   - [Improved Differential Gaussian Rasterization](https://github.com/ashawkey/diff-gaussian-rasterization)
@@ -81,3 +84,26 @@ Copy the files inside folder [__New_ComfyUI_Bats](./_New_ComfyUI_Bats/) to your 
 - Add DMTet algorithm to allow convertion from points cloud(Gaussian/.ply) to mesh (.obj, .ply, .glb)
 - Add a general SDS/VSD Optimization algorithm to allow training 3D representations with diffusion model, *The real fun begins here* ;) 
 - Add a few best Nerf algorithms (No idea yet, [instant-ngp](https://github.com/NVlabs/instant-ngp) maybe?)
+
+
+---
+
+## Tips
+* The world & camera coordinate system is the same as OpenGL:
+```
+    World            Camera        
+  
+     +y              up  target                                              
+     |               |  /                                            
+     |               | /                                                
+     |______+x       |/______right                                      
+    /                /         
+   /                /          
+  /                /           
+ +z               forward           
+
+elevation: in (-90, 90), from +y to -y is (-90, 90)
+azimuth: in (-180, 180), from +z to +x is (0, 90)
+```
+
+* If you encounter OpenGL errors (e.g., `[F glutil.cpp:338] eglInitialize() failed`), then set `force_cuda_rasterize` to true on corresponding node
