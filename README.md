@@ -72,6 +72,7 @@ Copy the files inside folder [__New_ComfyUI_Bats](./_New_ComfyUI_Bats/) to your 
     <img src="_Example_Workflows/_Example_Outputs/Cammy_Cam_Rotate_Clockwise_Camposes.png" width="256"/> <img src="_Example_Workflows/_Example_Outputs/Cammy_Cam_Rotate_Counter_Clockwise_Camposes.png" width="256"/> 
     <img src="_Example_Workflows/_Example_Outputs/Cammy_Cam_Rotate_Clockwise.gif" width="256"/> <img src="_Example_Workflows/_Example_Outputs/Cammy_Cam_Rotate_Counter_Clockwise.gif" width="256"/> 
 - Load 3D file (.obj, .ply, .glb)
+  - Also have node that support save and load 3DGS .ply file
 - 3D Gaussian Splatting, with:
   - [Improved Differential Gaussian Rasterization](https://github.com/ashawkey/diff-gaussian-rasterization)
   - Better Compactness-based Densification method from [Gsgen](https://gsgen3d.github.io/), 
@@ -83,9 +84,14 @@ Copy the files inside folder [__New_ComfyUI_Bats](./_New_ComfyUI_Bats/) to your 
 - Bake Multi-View images into UVTexture of given 3D mesh using [Nvdiffrast](https://github.com/NVlabs/nvdiffrast), supports:
   - Export to .obj, .ply, .glb
 
+- Deep Marching Tetrahedrons
+  - Allow convert 3DGS .ply file to 3D mesh <br>
+  *Note: I didn't spent time to turn the hyperprameters yet, the result will be improved in the future!*
+
 ### To-Do Next:
 - Add interactive 3D UI inside ComfuUI to visulaize training and generated results for 3D representations
-- Add DMTet algorithm to allow convertion from points cloud(Gaussian/.ply) to mesh (.obj, .ply, .glb)
+- ~~Add DMTet algorithm to allow convertion from points cloud(Gaussian/.ply) to mesh (.obj, .ply, .glb)~~
+- Improve DMTet result & add support to training it with images(RGB, Alpha, Normal Map)
 - Add a general SDS/VSD Optimization algorithm to allow training 3D representations with diffusion model, *The real fun begins here* ;) 
 - Add a few best Nerf algorithms (No idea yet, [instant-ngp](https://github.com/NVlabs/instant-ngp) maybe?)
 

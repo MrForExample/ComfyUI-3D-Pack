@@ -1,8 +1,12 @@
 import os
 import cv2
+from typing import NamedTuple
 import torch
 import trimesh
 import numpy as np
+
+
+from ..shared_utils.sh_utils import SH2RGB
 
 def dot(x, y):
     return torch.sum(x * y, -1, keepdim=True)
@@ -42,6 +46,8 @@ class Mesh:
 
         self.ori_center = 0
         self.ori_scale = 1
+        
+    
 
     @classmethod
     def load(cls, path=None, resize=True, renormal=True, retex=False, front_dir='+z', **kwargs):
@@ -615,8 +621,24 @@ class Mesh:
             fp.write(f"Tr 1 \n")
             fp.write(f"illum 1 \n")
             fp.write(f"Ns 0 \n")
-            fp.write(f"map_Kd {os.path.basename(albedo_path)} \n")
+            if self.albedo is not None:
+                fp.write(f"map_Kd {os.path.basename(albedo_path)} \n")
 
-        albedo = self.albedo.detach().cpu().numpy()
-        albedo = (albedo * 255).astype(np.uint8)
-        cv2.imwrite(albedo_path, cv2.cvtColor(albedo, cv2.COLOR_RGB2BGR))
+        if self.albedo is not None:
+            albedo = self.albedo.detach().cpu().numpy()
+            albedo = (albedo * 255).astype(np.uint8)
+            cv2.imwrite(albedo_path, cv2.cvtColor(albedo, cv2.COLOR_RGB2BGR))
+        
+    def convert_to_pointcloud(self):
+        xyz = self.v.detach().cpu().numpy()
+        num_pts = self.v.shape[0]
+        shs = np.random.random((num_pts, 3)) / 255.0
+        normals = np.zeros((num_pts, 3))
+        pcd = PointCloud(points=xyz, colors=SH2RGB(shs), normals=normals)
+        return pcd
+        
+        
+class PointCloud(NamedTuple):
+    points: np.array
+    colors: np.array
+    normals: np.array

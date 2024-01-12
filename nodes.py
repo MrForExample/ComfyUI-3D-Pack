@@ -8,10 +8,11 @@ import folder_paths as comfy_paths
 import torch
 import numpy as np
 
-from .diff_rast.diff_texturing import DiffTextureBaker
 from .shared_utils.common_utils import cstr
 from .mesh_processer.mesh import Mesh
-from .gaussian_splatting.main_3DGS import GaussianSplatting, GSParams
+from .algorithms.main_3DGS import GaussianSplatting, GSParams
+from .algorithms.diff_texturing import DiffTextureBaker
+from .algorithms.dmtet import DMTetMesh
 
 MANIFEST = {
     "name": "ComfyUI-3D-Pack",
@@ -25,6 +26,10 @@ SUPPORTED_3D_EXTENSIONS = (
     '.obj',
     '.ply',
     '.glb',
+)
+
+SUPPORTED_3DGS_EXTENSIONS = (
+    '.ply',
 )
 
 ELEVATION_MIN = -90
@@ -71,6 +76,45 @@ class Load_3D_Mesh:
         else:        
             cstr(f"[{self.__class__.__name__}] File {mesh_file_path} does not exist").error.print()
         return (mesh, )
+    
+class Load_3DGS:
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "raw_3DGS_file_path": ("STRING", {"default": '', "multiline": False}),
+            },
+        }
+
+    RETURN_TYPES = (
+        "GS_RAW",
+
+    )
+    RETURN_NAMES = (
+        "raw_3DGS",
+    )
+    FUNCTION = "load_mesh"
+    CATEGORY = "ComfyUI3D/Import|Export"
+    
+    def load_mesh(self, raw_3DGS_file_path):
+        raw_3DGS = None
+        
+        if not os.path.isabs(raw_3DGS_file_path):
+            raw_3DGS_file_path = os.path.join(comfy_paths.input_directory, raw_3DGS_file_path)
+        
+        if os.path.exists(raw_3DGS_file_path):
+            folder, filename = os.path.split(raw_3DGS_file_path)
+            if filename.lower().endswith(SUPPORTED_3DGS_EXTENSIONS):
+                with torch.inference_mode(False):
+                    raw_3DGS = GaussianSplatting()
+                    raw_3DGS.renderer.gaussians.load_ply(raw_3DGS_file_path)
+                    # TODO: better way of loading 3DGS, since this method omit render & training parameters
+            else:
+                cstr(f"[{self.__class__.__name__}] File name {filename} does not end with supported 3DGS file extensions: {SUPPORTED_3DGS_EXTENSIONS}").error.print()
+        else:        
+            cstr(f"[{self.__class__.__name__}] File {raw_3DGS_file_path} does not exist").error.print()
+        return (raw_3DGS, )
     
 class Save_3D_Mesh:
 
@@ -126,15 +170,69 @@ class Save_3DGS:
         
         folder_path, filename = os.path.split(save_path)
         
-        if not os.path.isabs(save_path):
-            folder_path = os.path.join(comfy_paths.output_directory, folder_path)
-            save_path = os.path.join(folder_path, filename)
-        
-        os.makedirs(folder_path, exist_ok=True)
-        
-        raw_3DGS.renderer.gaussians.save_ply(save_path)
+        if filename.lower().endswith(SUPPORTED_3DGS_EXTENSIONS):
+            if not os.path.isabs(save_path):
+                folder_path = os.path.join(comfy_paths.output_directory, folder_path)
+                save_path = os.path.join(folder_path, filename)
+            
+            os.makedirs(folder_path, exist_ok=True)
+            
+            raw_3DGS.renderer.gaussians.save_ply(save_path)
+            # TODO: better way of saving 3DGS, since this method omit render & training parameters
+        else:
+            cstr(f"[{self.__class__.__name__}] File name {filename} does not end with supported 3DGS file extensions: {SUPPORTED_3DGS_EXTENSIONS}").error.print()
         
         return ()
+    
+class Convert_3DGS_To_Pointcloud:
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "raw_3DGS": ("GS_RAW",),
+            },
+        }
+
+    RETURN_TYPES = (
+        "POINTCLOUD",
+    )
+    RETURN_NAMES = (
+        "points_cloud",
+    )
+    FUNCTION = "convert_3DGS"
+    CATEGORY = "ComfyUI3D/Preprocessor"
+    
+    def convert_3DGS(self, raw_3DGS):
+        
+        points_cloud = raw_3DGS.renderer.gaussians.get_points_cloud()
+        
+        return (points_cloud, )
+    
+class Convert_Mesh_To_Pointcloud:
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "mesh": ("MESH",),
+            },
+        }
+
+    RETURN_TYPES = (
+        "POINTCLOUD",
+    )
+    RETURN_NAMES = (
+        "points_cloud",
+    )
+    FUNCTION = "convert_mesh"
+    CATEGORY = "ComfyUI3D/Preprocessor"
+    
+    def convert_mesh(self, mesh):
+        
+        points_cloud = mesh.convert_to_pointcloud()
+        
+        return (points_cloud, )
     
 class Stack_Orbit_Camera_Poses:
     
@@ -413,29 +511,29 @@ class Gaussian_Splatting:
                 "reference_orbit_camera_fovy": ("FLOAT", {"default": 49.1, "min": 0.0, "max": 180.0, "step": 0.1}),
                 "training_iterations": ("INT", {"default": 1000, "min": 1, "max": 100000}),
                 "batch_size": ("INT", {"default": 5, "min": 1, "max": 0xffffffffffffffff}),
-                "loss_value_scale": ("FLOAT", {"default": 10000.0, }),
-                "ms_ssim_loss_weight": ("FLOAT", {"default": 0.2, }),
-                "alpha_loss_weight": ("FLOAT", {"default": 3, }),
-                "offset_loss_weight": ("FLOAT", {"default": 0.0, }),
-                "offset_opacity_loss_weight": ("FLOAT", {"default": 0.0, }),
+                "loss_value_scale": ("FLOAT", {"default": 10000.0, "min": 1.0}),
+                "ms_ssim_loss_weight": ("FLOAT", {"default": 0.2, "min": 0.0, "max": 1.0, }),
+                "alpha_loss_weight": ("FLOAT", {"default": 3, "min": 0.0, }),
+                "offset_loss_weight": ("FLOAT", {"default": 0.0, "min": 0.0, }),
+                "offset_opacity_loss_weight": ("FLOAT", {"default": 0.0, "min": 0.0, }),
                 "invert_background_probability": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.1}),
-                "feature_learning_rate": ("FLOAT", {"default": 0.01,  }),
-                "opacity_learning_rate": ("FLOAT", {"default": 0.05,  }),
-                "scaling_learning_rate": ("FLOAT", {"default": 0.005,  }),
-                "rotation_learning_rate": ("FLOAT", {"default": 0.005,  }),
-                "position_learning_rate_init": ("FLOAT", {"default": 0.001,  }),
-                "position_learning_rate_final": ("FLOAT", {"default": 0.00002, }),
-                "position_learning_rate_delay_mult": ("FLOAT", {"default": 0.02, }),
-                "position_learning_rate_max_steps": ("INT", {"default": 500, }),
-                "initial_gaussians_num": ("INT", {"default": 5000, }),
-                "K_nearest_neighbors": ("INT", {"default": 3, }),
-                "percent_dense": ("FLOAT", {"default": 0.01, }),
-                "density_start_iterations": ("INT", {"default": 100, }),
-                "density_end_iterations": ("INT", {"default": 100000, }),
-                "densification_interval": ("INT", {"default": 100, }),
-                "opacity_reset_interval": ("INT", {"default": 700, }),
-                "densify_grad_threshold": ("FLOAT", {"default": 0.01 }),
-                "gaussian_sh_degree": ("INT", {"default": 0, }),
+                "feature_learning_rate": ("FLOAT", {"default": 0.01, "min": 0.00001, "step": 0.00001}),
+                "opacity_learning_rate": ("FLOAT", {"default": 0.05,  "min": 0.00001, "step": 0.00001}),
+                "scaling_learning_rate": ("FLOAT", {"default": 0.005,  "min": 0.00001, "step": 0.00001}),
+                "rotation_learning_rate": ("FLOAT", {"default": 0.005,  "min": 0.00001, "step": 0.00001}),
+                "position_learning_rate_init": ("FLOAT", {"default": 0.001,  "min": 0.00001, "step": 0.00001}),
+                "position_learning_rate_final": ("FLOAT", {"default": 0.00002, "min": 0.00001, "step": 0.00001}),
+                "position_learning_rate_delay_mult": ("FLOAT", {"default": 0.02, "min": 0.00001, "step": 0.00001}),
+                "position_learning_rate_max_steps": ("INT", {"default": 500, "min": 1}),
+                "initial_gaussians_num": ("INT", {"default": 5000, "min": 1}),
+                "K_nearest_neighbors": ("INT", {"default": 3, "min": 1}),
+                "percent_dense": ("FLOAT", {"default": 0.01,  "min": 0.00001, "step": 0.00001}),
+                "density_start_iterations": ("INT", {"default": 100, "min": 0}),
+                "density_end_iterations": ("INT", {"default": 100000, "min": 0}),
+                "densification_interval": ("INT", {"default": 100, "min": 1}),
+                "opacity_reset_interval": ("INT", {"default": 700, "min": 1}),
+                "densify_grad_threshold": ("FLOAT", {"default": 0.01, "min": 0.00001, "step": 0.00001}),
+                "gaussian_sh_degree": ("INT", {"default": 0, "min": 0}),
             },
             
             "optional": {
@@ -526,8 +624,8 @@ class Gaussian_Splatting:
                                         densify_grad_threshold,
                                         gaussian_sh_degree)
                     
-                    gs = GaussianSplatting(reference_images, reference_masks, reference_orbit_camera_poses, reference_orbit_camera_fovy, gs_params, mesh_to_initialize_gaussian)
-                    
+                    gs = GaussianSplatting(gs_params, mesh_to_initialize_gaussian)
+                    gs.prepare_training(reference_images, reference_masks, reference_orbit_camera_poses, reference_orbit_camera_fovy)
                     gs.training()
 
                     raw_3DGS = gs
@@ -555,9 +653,9 @@ class Bake_Texture_To_Mesh:
                 "mesh": ("MESH",),
                 "training_iterations": ("INT", {"default": 1000, "min": 1, "max": 100000}),
                 "batch_size": ("INT", {"default": 5, "min": 1, "max": 0xffffffffffffffff}),
-                "texture_learning_rate": ("FLOAT", {"default": 0.1, "min": 0.0, "max": 1.0, "step": 0.01}),
+                "texture_learning_rate": ("FLOAT", {"default": 0.1, "min": 0.00001, "step": 0.00001}),
                 "train_mesh_geometry": ("BOOLEAN", {"default": False},),
-                "geometry_learning_rate": ("FLOAT", {"default": 0.01, "min": 0.0, "max": 0.1, "step": 0.001}),
+                "geometry_learning_rate": ("FLOAT", {"default": 0.01, "min": 0.00001, "step": 0.00001}),
                 "ms_ssim_loss_weight": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.01}),
                 "force_cuda_rasterize": ("BOOLEAN", {"default": False},),
             },
@@ -593,9 +691,9 @@ class Bake_Texture_To_Mesh:
                     
                 with torch.inference_mode(False):
                 
-                    texture_baker = DiffTextureBaker(reference_images, reference_masks, reference_orbit_camera_poses, reference_orbit_camera_fovy, mesh, 
-                                        training_iterations, batch_size, texture_learning_rate, train_mesh_geometry, geometry_learning_rate, ms_ssim_loss_weight, force_cuda_rasterize)
+                    texture_baker = DiffTextureBaker(mesh, training_iterations, batch_size, texture_learning_rate, train_mesh_geometry, geometry_learning_rate, ms_ssim_loss_weight, force_cuda_rasterize)
                     
+                    texture_baker.prepare_training(reference_images, reference_masks, reference_orbit_camera_poses, reference_orbit_camera_fovy)
                     texture_baker.training()
                     
                     trained_mesh, baked_texture = texture_baker.get_mesh_and_texture()
@@ -606,3 +704,61 @@ class Bake_Texture_To_Mesh:
             cstr(f"[{self.__class__.__name__}] Number of reference images {ref_imgs_num} does not equal to number of masks {ref_masks_num}").error.print()
         
         return (trained_mesh, baked_texture, )
+    
+class Deep_Marching_Tetrahedrons:
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "training_iterations": ("INT", {"default": 5000, "min": 1, "max": 100000}),
+                "points_cloud_fitting_weight": ("FLOAT", {"default": 1.0, "min": 0.0, "step": 0.01}),
+                "mesh_smoothing_weight": ("FLOAT", {"default": 0.1, "min": 0.0, "step": 0.01}),
+                "chamfer_faces_sample_scale": ("FLOAT", {"default": 1.0, "min": 0.01, "step": 0.01}),
+                "mesh_scale": ("FLOAT", {"default": 1.0, "min": 0.01, "step": 0.01}),
+                "grid_resolution": ([128, 64, 32], ),
+                "geometry_learning_rate": ("FLOAT", {"default": 0.0001, "min": 0.00001, "step": 0.00001}),
+                "positional_encoding_multires": ("INT", {"default": 2, "min": 2}),
+                "mlp_internal_dims": ("INT", {"default": 128, "min": 8}),
+                "mlp_hidden_layer_num": ("INT", {"default": 5, "min": 1}),
+            },
+            
+            "optional": {
+                "reference_points_cloud": ("POINTCLOUD",),
+                "reference_images": ("IMAGE",), 
+                "reference_masks": ("MASK",),
+            }
+        }
+    
+    RETURN_TYPES = (
+        "MESH",
+    )
+    RETURN_NAMES = (
+        "trained_mesh",
+    )
+    FUNCTION = "run_dmtet"
+    CATEGORY = "ComfyUI3D/Algorithm"
+    
+    def run_dmtet(self, training_iterations, points_cloud_fitting_weight, mesh_smoothing_weight, chamfer_faces_sample_scale, mesh_scale, grid_resolution, geometry_learning_rate,
+                  positional_encoding_multires, mlp_internal_dims, mlp_hidden_layer_num, 
+                  reference_points_cloud=None, reference_images=None, reference_masks=None):
+        
+        with torch.inference_mode(False):
+            dmtet_mesh = DMTetMesh(training_iterations, 
+                                points_cloud_fitting_weight, 
+                                mesh_smoothing_weight, 
+                                chamfer_faces_sample_scale, 
+                                mesh_scale, 
+                                grid_resolution, 
+                                geometry_learning_rate, 
+                                positional_encoding_multires, 
+                                mlp_internal_dims, 
+                                mlp_hidden_layer_num)
+            
+            if reference_points_cloud is None and reference_images is None:
+                cstr(f"[{self.__class__.__name__}] reference_points_cloud and reference_images cannot both be None, you need at least provide one of them!").error.print()
+                raise Exception("User didn't provide necessary inputs, stop executing the code!")
+            
+            dmtet_mesh.training(reference_points_cloud, reference_images, reference_masks)
+            mesh = dmtet_mesh.get_mesh()
+            return (mesh, )

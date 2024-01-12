@@ -1,0 +1,190 @@
+{
+  "last_node_id": 4,
+  "last_link_id": 3,
+  "nodes": [
+    {
+      "id": 2,
+      "type": "[ComfyUI-3D] Convert 3DGS To Pointcloud",
+      "pos": [
+        561,
+        484
+      ],
+      "size": {
+        "0": 267,
+        "1": 26
+      },
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "raw_3DGS",
+          "type": "GS_RAW",
+          "link": 1
+        }
+      ],
+      "outputs": [
+        {
+          "name": "points_cloud",
+          "type": "POINTCLOUD",
+          "links": [
+            2
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[ComfyUI-3D] Convert 3DGS To Pointcloud"
+      }
+    },
+    {
+      "id": 1,
+      "type": "[ComfyUI-3D] Load 3DGS",
+      "pos": [
+        166,
+        484
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "raw_3DGS",
+          "type": "GS_RAW",
+          "links": [
+            1
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[ComfyUI-3D] Load 3DGS"
+      },
+      "widgets_values": [
+        "Meshes\\Generated\\Cammy_Uniform_3DGS_01.ply"
+      ]
+    },
+    {
+      "id": 4,
+      "type": "[ComfyUI-3D] Save 3D Mesh",
+      "pos": [
+        1446,
+        485
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[ComfyUI-3D] Save 3D Mesh"
+      },
+      "widgets_values": [
+        "MeshTest\\Cammy_Uniform_DMTet_01.obj"
+      ]
+    },
+    {
+      "id": 3,
+      "type": "[ComfyUI-3D] Deep Marching Tetrahedrons",
+      "pos": [
+        913,
+        484
+      ],
+      "size": {
+        "0": 443.4000244140625,
+        "1": 314
+      },
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "reference_points_cloud",
+          "type": "POINTCLOUD",
+          "link": 2
+        },
+        {
+          "name": "reference_images",
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "reference_masks",
+          "type": "MASK",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "trained_mesh",
+          "type": "MESH",
+          "links": [
+            3
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[ComfyUI-3D] Deep Marching Tetrahedrons"
+      },
+      "widgets_values": [
+        5000,
+        1,
+        0.1,
+        1,
+        1,
+        128,
+        0.0001,
+        2,
+        128,
+        5
+      ]
+    }
+  ],
+  "links": [
+    [
+      1,
+      1,
+      0,
+      2,
+      0,
+      "GS_RAW"
+    ],
+    [
+      2,
+      2,
+      0,
+      3,
+      0,
+      "POINTCLOUD"
+    ],
+    [
+      3,
+      3,
+      0,
+      4,
+      0,
+      "MESH"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {},
+  "version": 0.4
+}
