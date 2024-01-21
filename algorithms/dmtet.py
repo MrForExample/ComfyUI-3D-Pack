@@ -6,6 +6,8 @@ import torch
 from pytorch3d.loss import chamfer_distance, mesh_laplacian_smoothing
 from pytorch3d.structures.meshes import Meshes
 
+import comfy.utils
+
 from ..mesh_processer.mesh import Mesh
 from ..mesh_processer.mesh_utils import sample_points
 from .dmtet_network import Decoder
@@ -247,6 +249,8 @@ class DMTetMesh:
         allow_imgs_loss = ref_imgs is not None
         allow_masks_loss = ref_masks is not None
         
+        comfy_pbar = comfy.utils.ProgressBar(self.iterations)
+        
         for step in tqdm.trange(self.iterations):
             
             loss = 0
@@ -269,3 +273,5 @@ class DMTetMesh:
             self.geom_optimizer.step()
             self.geom_scheduler.step()
             self.geom_optimizer.zero_grad()
+            
+            comfy_pbar.update_absolute(step + 1)

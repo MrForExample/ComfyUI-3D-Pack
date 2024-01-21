@@ -6,6 +6,8 @@ import torch.nn.functional as F
 import numpy as np
 from pytorch_msssim import SSIM, MS_SSIM
 
+import comfy.utils
+
 from .main_3DGS_renderer import Renderer
 from ..shared_utils.camera_utils import orbit_camera, OrbitCamera, MiniCam, calculate_fovX, get_projection_matrix
 
@@ -132,6 +134,8 @@ class GaussianSplatting:
             ref_imgs_masked.append((self.ref_imgs_torch[i] * self.ref_masks_torch[i]).unsqueeze(0))
             
         ref_imgs_num_minus_1 = self.ref_imgs_num-1
+        
+        comfy_pbar = comfy.utils.ProgressBar(self.gs_params.training_iterations)
 
         for step in tqdm.trange(self.gs_params.training_iterations):
 
@@ -221,6 +225,8 @@ class GaussianSplatting:
                 
                 if step % self.gs_params.opacity_reset_interval == 0:
                     self.renderer.gaussians.reset_opacity()
+                    
+            comfy_pbar.update_absolute(step + 1)
 
         ender.record()
         torch.cuda.synchronize()

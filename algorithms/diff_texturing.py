@@ -6,6 +6,8 @@ import torch.nn.functional as F
 import numpy as np
 from pytorch_msssim import SSIM, MS_SSIM
 
+import comfy.utils
+
 from .diff_mesh_renderer import Renderer
 from ..shared_utils.camera_utils import orbit_camera, OrbitCamera
 
@@ -62,6 +64,8 @@ class DiffTextureBaker:
             ref_imgs_masked.append((self.ref_imgs_torch[i] * self.ref_masks_torch[i]).unsqueeze(0))
             
         ref_imgs_num_minus_1 = self.ref_imgs_num-1
+        
+        comfy_pbar = comfy.utils.ProgressBar(self.training_iterations)
 
         for step in tqdm.trange(self.training_iterations):
 
@@ -104,6 +108,8 @@ class DiffTextureBaker:
             loss.backward()
             self.optimizer.step()
             self.optimizer.zero_grad()
+            
+            comfy_pbar.update_absolute(step + 1)
             
         torch.cuda.synchronize()
             
