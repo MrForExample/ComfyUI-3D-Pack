@@ -14,6 +14,50 @@ ps: I'll show some generated result soon
   - I tried install this package with ComfyUI embed python env first, but I can't find a way to build CUDA related libraries, e.g. diff-gaussian-rasterization, nvdiffrast, simple-knn.
 - Torch version: 2.1.2+cu121/V.2.1.2+cu118
 
+## Currently support:
+- For use case please check [example workflows](./_Example_Workflows/)
+  - **Note:** you need to put [Example Inputs Files & Folders](_Example_Workflows/_Example_Inputs_Files/) under ComfyUI Root Directory\ComfyUI\input folder before you can run the example workflow
+- Triplane Gaussian Transformers:
+  - Enable single image to 3D Gaussian, then you can use Deep Marching Tetrahedrons node to convert it to mesh
+  
+  
+- Stack Orbit Camera Poses node to automatically generate all range of camera pose combinations
+  - You can use it to conditioning the [StableZero123 (You need to Download the checkpoint first)](https://comfyanonymous.github.io/ComfyUI_examples/3d/), with full range of camera poses in one prompt pass
+  - You can use it to generate the orbit camera poses and directly input to other 3D process node (e.g. GaussianSplatting and BakeTextureToMesh)
+  - Example usage:
+
+    <img src="_Example_Workflows/_Example_Outputs/Cammy_Cam_Rotate_Clockwise_Camposes.png" width="256"/> <img src="_Example_Workflows/_Example_Outputs/Cammy_Cam_Rotate_Counter_Clockwise_Camposes.png" width="256"/> 
+    <img src="_Example_Workflows/_Example_Outputs/Cammy_Cam_Rotate_Clockwise.gif" width="256"/> <img src="_Example_Workflows/_Example_Outputs/Cammy_Cam_Rotate_Counter_Clockwise.gif" width="256"/> 
+- Load 3D file (.obj, .ply, .glb)
+  - Also have node that support save and load 3DGS .ply file
+- 3D Gaussian Splatting, with:
+  - [Improved Differential Gaussian Rasterization](https://github.com/ashawkey/diff-gaussian-rasterization)
+  - Better Compactness-based Densification method from [Gsgen](https://gsgen3d.github.io/), 
+  - Support initialize gaussians from given 3D mesh (Optional)
+  - Support mini-batch optimazation
+  - Multi-View images as inputs
+  - Export to .ply support
+
+- Bake Multi-View images into UVTexture of given 3D mesh using [Nvdiffrast](https://github.com/NVlabs/nvdiffrast), supports:
+  - Export to .obj, .ply, .glb
+
+- Deep Marching Tetrahedrons
+  - Allow convert 3DGS .ply file to 3D mesh <br>
+  *Note: I didn't spent time to turn the hyperprameters yet, the result will be improved in the future!*
+
+## Roadmap:
+- [x] Add DMTet algorithm to allow convertion from points cloud(Gaussian/.ply) to mesh (.obj, .ply, .glb)
+
+- [x] Integrate [Triplane Meets Gaussian Splatting: Fast and Generalizable Single-View 3D Reconstruction with Transformers](https://github.com/VAST-AI-Research/TriplaneGaussian)
+
+- [ ] Add interactive 3D UI inside ComfuUI to visulaize training and generated results for 3D representations
+
+- [ ] Improve DMTet result & add support to training it with images(RGB, Alpha, Normal Map)
+
+- [ ] Add a general SDS/VSD Optimization algorithm to allow training 3D representations with diffusion model, *The real fun begins here* ;)
+
+- [ ] Add a few best Nerf algorithms (No idea yet, [instant-ngp](https://github.com/NVlabs/instant-ngp) maybe?)
+
 ## Install:
 
 Assume you have already downloaded [ComfyUI](https://github.com/comfyanonymous/ComfyUI)
@@ -56,52 +100,20 @@ install.bat
 
     git clone --recursive https://github.com/NVlabs/nvdiffrast/`
     pip install ./nvdiffrast
+
+    # Install pointnet2_ops
+    cd tgs/models/snowflake/pointnet2_ops_lib && python setup.py install && cd ../../../../
+
+    # Install pytorch_scatter
+    pip install git+https://github.com/rusty1s/pytorch_scatter.git
+
+    # Install pytorch3d
+    pip install git+https://github.com/facebookresearch/pytorch3d.git@stable
     ```
 
 ## Run:
 Copy the files inside folder [__New_ComfyUI_Bats](./_New_ComfyUI_Bats/) to your ComfyUI root directory, and double click run_nvidia_gpu_miniconda.bat to start ComfyUI!
 - Alternatively you can just activate the Conda env: python_miniconda_env\ComfyUI, and go to your ComfyUI root directory then run command `python ./ComfyUI/main.py`
-
-## Currently support:
-- For use case please check [example workflows](./_Example_Workflows/)
-  - **Note:** you need to put [Example Inputs Files & Folders](_Example_Workflows/_Example_Inputs_Files/) under ComfyUI Root Directory\ComfyUI\input folder before you can run the example workflow
-- Stack Orbit Camera Poses node to automatically generate all range of camera pose combinations
-  - You can use it to conditioning the [StableZero123 (You need to Download the checkpoint first)](https://comfyanonymous.github.io/ComfyUI_examples/3d/), with full range of camera poses in one prompt pass
-  - You can use it to generate the orbit camera poses and directly input to other 3D process node (e.g. GaussianSplatting and BakeTextureToMesh)
-  - Example usage:
-
-    <img src="_Example_Workflows/_Example_Outputs/Cammy_Cam_Rotate_Clockwise_Camposes.png" width="256"/> <img src="_Example_Workflows/_Example_Outputs/Cammy_Cam_Rotate_Counter_Clockwise_Camposes.png" width="256"/> 
-    <img src="_Example_Workflows/_Example_Outputs/Cammy_Cam_Rotate_Clockwise.gif" width="256"/> <img src="_Example_Workflows/_Example_Outputs/Cammy_Cam_Rotate_Counter_Clockwise.gif" width="256"/> 
-- Load 3D file (.obj, .ply, .glb)
-  - Also have node that support save and load 3DGS .ply file
-- 3D Gaussian Splatting, with:
-  - [Improved Differential Gaussian Rasterization](https://github.com/ashawkey/diff-gaussian-rasterization)
-  - Better Compactness-based Densification method from [Gsgen](https://gsgen3d.github.io/), 
-  - Support initialize gaussians from given 3D mesh (Optional)
-  - Support mini-batch optimazation
-  - Multi-View images as inputs
-  - Export to .ply support
-
-- Bake Multi-View images into UVTexture of given 3D mesh using [Nvdiffrast](https://github.com/NVlabs/nvdiffrast), supports:
-  - Export to .obj, .ply, .glb
-
-- Deep Marching Tetrahedrons
-  - Allow convert 3DGS .ply file to 3D mesh <br>
-  *Note: I didn't spent time to turn the hyperprameters yet, the result will be improved in the future!*
-
-## Roadmap:
-- [x] Add DMTet algorithm to allow convertion from points cloud(Gaussian/.ply) to mesh (.obj, .ply, .glb)
-
-- [ ] Integrate [Triplane Meets Gaussian Splatting: Fast and Generalizable Single-View 3D Reconstruction with Transformers](https://github.com/VAST-AI-Research/TriplaneGaussian)
-
-- [ ] Add interactive 3D UI inside ComfuUI to visulaize training and generated results for 3D representations
-
-- [ ] Improve DMTet result & add support to training it with images(RGB, Alpha, Normal Map)
-
-- [ ] Add a general SDS/VSD Optimization algorithm to allow training 3D representations with diffusion model, *The real fun begins here* ;)
-
-- [ ] Add a few best Nerf algorithms (No idea yet, [instant-ngp](https://github.com/NVlabs/instant-ngp) maybe?)
-
 
 ## Tips
 * The world & camera coordinate system is the same as OpenGL:

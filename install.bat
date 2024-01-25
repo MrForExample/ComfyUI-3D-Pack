@@ -16,8 +16,13 @@ if exist "%python_miniconda_exec%" (
     git clone --recursive https://github.com/NVlabs/nvdiffrast
     "%python_miniconda_exec%" -s -m pip install ./nvdiffrast
     "%python_miniconda_exec%" -s -m pip install git+https://github.com/facebookresearch/pytorch3d.git@stable
-)
-else (
+
+    "%python_miniconda_exec%" -s -m pip install git+https://github.com/rusty1s/pytorch_scatter.git
+
+    set "python_miniconda_exec=..\..\..\..\..\..\..\python_miniconda_env\ComfyUI\python.exe"
+
+    cd tgs/models/snowflake/pointnet2_ops_lib && "%python_miniconda_exec%" -s setup.py install && cd ../../../../
+) else (
     echo ERROR: Cannot find Miniconda Environment "%python_miniconda_exec%"
 )
 

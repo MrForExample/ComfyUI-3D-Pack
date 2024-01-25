@@ -1,18 +1,31 @@
 import os
+import sys
 import re
 import math
 import copy
 from enum import Enum
+import subprocess
 import folder_paths as comfy_paths
 
 import torch
+from torch.utils.data import DataLoader
 import numpy as np
+
+from plyfile import PlyData
 
 from .shared_utils.common_utils import cstr
 from .mesh_processer.mesh import Mesh
+from .mesh_processer.mesh_utils import ply_to_points_cloud
 from .algorithms.main_3DGS import GaussianSplatting, GSParams
 from .algorithms.diff_texturing import DiffTextureBaker
 from .algorithms.dmtet import DMTetMesh
+from .algorithms.triplane_gaussian_transformers import TGS
+from .tgs.utils.config import ExperimentConfig, load_config
+from .tgs.data import CustomImageOrbitDataset
+from .tgs.utils.misc import todevice, get_device
+
+ROOT_PATH = os.path.join(comfy_paths.get_folder_paths("custom_nodes")[0], "ComfyUI-3D-Pack")
+sys.path.append(ROOT_PATH)
 
 MANIFEST = {
     "name": "ComfyUI-3D-Pack",
@@ -83,38 +96,34 @@ class Load_3DGS:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "raw_3DGS_file_path": ("STRING", {"default": '', "multiline": False}),
+                "gs_ply_file_path": ("STRING", {"default": '', "multiline": False}),
             },
         }
 
     RETURN_TYPES = (
-        "GS_RAW",
-
+        "GS_PLY",
     )
     RETURN_NAMES = (
-        "raw_3DGS",
+        "gs_ply",
     )
-    FUNCTION = "load_mesh"
+    FUNCTION = "load_gs"
     CATEGORY = "ComfyUI3D/Import|Export"
     
-    def load_mesh(self, raw_3DGS_file_path):
-        raw_3DGS = None
+    def load_gs(self, gs_ply_file_path):
+        gs_ply = None
         
-        if not os.path.isabs(raw_3DGS_file_path):
-            raw_3DGS_file_path = os.path.join(comfy_paths.input_directory, raw_3DGS_file_path)
+        if not os.path.isabs(gs_ply_file_path):
+            gs_ply_file_path = os.path.join(comfy_paths.input_directory, gs_ply_file_path)
         
-        if os.path.exists(raw_3DGS_file_path):
-            folder, filename = os.path.split(raw_3DGS_file_path)
+        if os.path.exists(gs_ply_file_path):
+            folder, filename = os.path.split(gs_ply_file_path)
             if filename.lower().endswith(SUPPORTED_3DGS_EXTENSIONS):
-                with torch.inference_mode(False):
-                    raw_3DGS = GaussianSplatting()
-                    raw_3DGS.renderer.gaussians.load_ply(raw_3DGS_file_path)
-                    # TODO: better way of loading 3DGS, since this method omit render & training parameters
+                gs_ply = PlyData.read(gs_ply_file_path)
             else:
                 cstr(f"[{self.__class__.__name__}] File name {filename} does not end with supported 3DGS file extensions: {SUPPORTED_3DGS_EXTENSIONS}").error.print()
         else:        
-            cstr(f"[{self.__class__.__name__}] File {raw_3DGS_file_path} does not exist").error.print()
-        return (raw_3DGS, )
+            cstr(f"[{self.__class__.__name__}] File {gs_ply_file_path} does not exist").error.print()
+        return (gs_ply, )
     
 class Save_3D_Mesh:
 
@@ -156,7 +165,7 @@ class Save_3DGS:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "raw_3DGS": ("GS_RAW",),
+                "gs_ply": ("GS_PLY",),
                 "save_path": ("STRING", {"default": '3DGS_[time(%Y-%m-%d)].ply', "multiline": False}),
             },
         }
@@ -166,7 +175,7 @@ class Save_3DGS:
     FUNCTION = "save_3DGS"
     CATEGORY = "ComfyUI3D/Import|Export"
     
-    def save_3DGS(self, raw_3DGS, save_path):
+    def save_3DGS(self, gs_ply, save_path):
         
         folder_path, filename = os.path.split(save_path)
         
@@ -177,8 +186,7 @@ class Save_3DGS:
             
             os.makedirs(folder_path, exist_ok=True)
             
-            raw_3DGS.renderer.gaussians.save_ply(save_path)
-            # TODO: better way of saving 3DGS, since this method omit render & training parameters
+            gs_ply.write(save_path)
         else:
             cstr(f"[{self.__class__.__name__}] File name {filename} does not end with supported 3DGS file extensions: {SUPPORTED_3DGS_EXTENSIONS}").error.print()
         
@@ -190,7 +198,7 @@ class Convert_3DGS_To_Pointcloud:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "raw_3DGS": ("GS_RAW",),
+                "gs_ply": ("GS_PLY",),
             },
         }
 
@@ -200,12 +208,12 @@ class Convert_3DGS_To_Pointcloud:
     RETURN_NAMES = (
         "points_cloud",
     )
-    FUNCTION = "convert_3DGS"
+    FUNCTION = "convert_gs_ply"
     CATEGORY = "ComfyUI3D/Preprocessor"
     
-    def convert_3DGS(self, raw_3DGS):
+    def convert_gs_ply(self, gs_ply):
         
-        points_cloud = raw_3DGS.renderer.gaussians.get_points_cloud()
+        points_cloud = ply_to_points_cloud(gs_ply)
         
         return (points_cloud, )
     
@@ -510,7 +518,7 @@ class Gaussian_Splatting:
                 "reference_orbit_camera_poses": ("ORBIT_CAMPOSES",),    # (orbit radius, elevation, azimuth, orbit center X,  orbit center Y,  orbit center Z)
                 "reference_orbit_camera_fovy": ("FLOAT", {"default": 49.1, "min": 0.0, "max": 180.0, "step": 0.1}),
                 "training_iterations": ("INT", {"default": 1000, "min": 1, "max": 100000}),
-                "batch_size": ("INT", {"default": 5, "min": 1, "max": 0xffffffffffffffff}),
+                "batch_size": ("INT", {"default": 3, "min": 1, "max": 0xffffffffffffffff}),
                 "loss_value_scale": ("FLOAT", {"default": 10000.0, "min": 1.0}),
                 "ms_ssim_loss_weight": ("FLOAT", {"default": 0.2, "min": 0.0, "max": 1.0, }),
                 "alpha_loss_weight": ("FLOAT", {"default": 3, "min": 0.0, }),
@@ -537,53 +545,58 @@ class Gaussian_Splatting:
             },
             
             "optional": {
+                "points_cloud": ("POINTCLOUD",),
+                "ply_to_initialize_gaussian": ("GS_PLY",),
                 "mesh_to_initialize_gaussian": ("MESH",),
             }
         }
 
     RETURN_TYPES = (
-        "GS_RAW",
+        "GS_PLY",
     )
     RETURN_NAMES = (
-        "raw_3DGS",
+        "gs_ply",
     )
     FUNCTION = "run_3DGS"
     CATEGORY = "ComfyUI3D/Algorithm"
     
-    def run_3DGS(self,
-                 reference_images,
-                 reference_masks,
-                 reference_orbit_camera_poses,
-                 reference_orbit_camera_fovy,
-                 training_iterations,
-                 batch_size,
-                 loss_value_scale,
-                 ms_ssim_loss_weight,
-                 alpha_loss_weight,
-                 offset_loss_weight,
-                 offset_opacity_loss_weight,
-                 invert_background_probability,
-                 feature_learning_rate,
-                 opacity_learning_rate,
-                 scaling_learning_rate,
-                 rotation_learning_rate,
-                 position_learning_rate_init,
-                 position_learning_rate_final,
-                 position_learning_rate_delay_mult,
-                 position_learning_rate_max_steps,
-                 initial_gaussians_num,
-                 K_nearest_neighbors,
-                 percent_dense,
-                 density_start_iterations,
-                 density_end_iterations,
-                 densification_interval,
-                 opacity_reset_interval,
-                 densify_grad_threshold,
-                 gaussian_sh_degree,
-                 mesh_to_initialize_gaussian=None):
+    def run_3DGS(
+        self,
+        reference_images,
+        reference_masks,
+        reference_orbit_camera_poses,
+        reference_orbit_camera_fovy,
+        training_iterations,
+        batch_size,
+        loss_value_scale,
+        ms_ssim_loss_weight,
+        alpha_loss_weight,
+        offset_loss_weight,
+        offset_opacity_loss_weight,
+        invert_background_probability,
+        feature_learning_rate,
+        opacity_learning_rate,
+        scaling_learning_rate,
+        rotation_learning_rate,
+        position_learning_rate_init,
+        position_learning_rate_final,
+        position_learning_rate_delay_mult,
+        position_learning_rate_max_steps,
+        initial_gaussians_num,
+        K_nearest_neighbors,
+        percent_dense,
+        density_start_iterations,
+        density_end_iterations,
+        densification_interval,
+        opacity_reset_interval,
+        densify_grad_threshold,
+        gaussian_sh_degree,
+        points_cloud=None,
+        ply_to_initialize_gaussian=None,
+        mesh_to_initialize_gaussian=None,
+    ):
         
-        
-        raw_3DGS = None
+        gs_ply = None
         
         ref_imgs_num = len(reference_images)
         ref_masks_num = len(reference_masks)
@@ -624,18 +637,26 @@ class Gaussian_Splatting:
                                         densify_grad_threshold,
                                         gaussian_sh_degree)
                     
-                    gs = GaussianSplatting(gs_params, mesh_to_initialize_gaussian)
+                    
+                    if points_cloud is not None:
+                        gs_init_input = points_cloud
+                    elif ply_to_initialize_gaussian is not None:
+                        gs_init_input = ply_to_initialize_gaussian
+                    else:
+                        gs_init_input = mesh_to_initialize_gaussian
+                    
+                    gs = GaussianSplatting(gs_params, gs_init_input)
                     gs.prepare_training(reference_images, reference_masks, reference_orbit_camera_poses, reference_orbit_camera_fovy)
                     gs.training()
 
-                    raw_3DGS = gs
+                    gs_ply = gs.renderer.gaussians.to_ply()
                 
             else:
                 cstr(f"[{self.__class__.__name__}] Number of reference images {ref_imgs_num} does not equal to number of reference camera poses {ref_cam_poses_num}").error.print()
         else:
             cstr(f"[{self.__class__.__name__}] Number of reference images {ref_imgs_num} does not equal to number of masks {ref_masks_num}").error.print()
 
-        return (raw_3DGS, )
+        return (gs_ply, )
     
 class Bake_Texture_To_Mesh:
     
@@ -652,7 +673,7 @@ class Bake_Texture_To_Mesh:
                 "reference_orbit_camera_fovy": ("FLOAT", {"default": 49.1, "min": 0.0, "max": 180.0, "step": 0.1}),
                 "mesh": ("MESH",),
                 "training_iterations": ("INT", {"default": 1000, "min": 1, "max": 100000}),
-                "batch_size": ("INT", {"default": 5, "min": 1, "max": 0xffffffffffffffff}),
+                "batch_size": ("INT", {"default": 3, "min": 1, "max": 0xffffffffffffffff}),
                 "texture_learning_rate": ("FLOAT", {"default": 0.1, "min": 0.00001, "step": 0.00001}),
                 "train_mesh_geometry": ("BOOLEAN", {"default": False},),
                 "geometry_learning_rate": ("FLOAT", {"default": 0.01, "min": 0.00001, "step": 0.00001}),
@@ -762,3 +783,111 @@ class Deep_Marching_Tetrahedrons:
             dmtet_mesh.training(reference_points_cloud, reference_images, reference_masks)
             mesh = dmtet_mesh.get_mesh()
             return (mesh, )
+        
+TGS_CONFIG_PATH = "configs/tgs_config.yaml"
+
+class Load_Triplane_Gaussian_Transformers:
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+            },
+
+            "optional": {
+            }
+        }
+    
+    RETURN_TYPES = (
+        "TGS_MODEL",
+    )
+    RETURN_NAMES = (
+        "tgs_model",
+    )
+    FUNCTION = "load_TGS"
+    CATEGORY = "ComfyUI3D/Import|Export"
+    
+    def load_TGS(self):
+
+        device = get_device()
+        
+        config_path = os.path.join(ROOT_PATH, TGS_CONFIG_PATH)
+        cfg: ExperimentConfig = load_config(config_path)
+        
+        # Download pre-trained model if it not exist locally
+        model_name = "model_lvis_rel.ckpt"
+        model_path = os.path.join(ROOT_PATH, f"checkpoints/{model_name}")
+        if not os.path.isfile(model_path):
+            from huggingface_hub import hf_hub_download
+            hf_hub_download(repo_id="VAST-AI/TriplaneGaussian", local_dir="./checkpoints", filename=model_name, repo_type="model")
+        
+        cfg.system.weights=model_path
+        tgs_model = TGS(cfg=cfg.system).to(device)
+        
+        save_path = os.path.join(ROOT_PATH, "outputs")
+        tgs_model.set_save_dir(save_path)
+        
+        cstr(f"[{self.__class__.__name__}] loaded model ckpt from {model_path}").msg.print()
+
+        return (tgs_model, )
+    
+class Run_Triplane_Gaussian_Transformers:
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "reference_image": ("IMAGE", ),
+                "reference_mask": ("MASK",),
+                "tgs_model": ("TGS_MODEL", ),
+                "cam_dist": ("FLOAT", {"default": 1.9, "min": 0.01, "step": 0.01}),
+            },
+        }
+    
+    OUTPUT_NODE = True
+    RETURN_TYPES = (
+        "GS_PLY",
+        "FLOAT"
+    )
+    RETURN_NAMES = (
+        "gs_ply",
+        "gaussian_sh_degree"
+    )
+    FUNCTION = "run_TGS"
+    CATEGORY = "ComfyUI3D/Algorithm"
+    
+    def run_TGS(self, reference_image, reference_mask, tgs_model, cam_dist):        
+        config_path = os.path.join(ROOT_PATH, TGS_CONFIG_PATH)
+        cfg: ExperimentConfig = load_config(config_path)
+        
+        #save_path = os.path.join(ROOT_PATH, "outputs")
+        #tgs_model.set_save_dir(save_path)
+
+        cfg.data.cond_camera_distance = cam_dist
+        cfg.data.eval_camera_distance = cam_dist
+        dataset = CustomImageOrbitDataset(reference_image, reference_mask, cfg.data)
+        dataloader = DataLoader(dataset,
+                            batch_size=cfg.data.eval_batch_size, 
+                            shuffle=False,
+                            collate_fn=dataset.collate
+                        )
+
+
+        gs_ply = []
+        for batch in dataloader:
+            batch = todevice(batch)
+            gs_ply.extend(tgs_model(batch))
+            
+        """
+        # Output rendered video, for testing this node only
+        tgs_model.save_img_sequences(
+            "video",
+            "(\d+)\.png",
+            save_format="mp4",
+            fps=30,
+            delete=True,
+        )
+        """
+        
+        return (gs_ply[0], tgs_model.renderer.cfg.sh_degree)
+        

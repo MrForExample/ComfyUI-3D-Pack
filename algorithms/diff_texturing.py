@@ -29,6 +29,7 @@ class DiffTextureBaker:
         self.batch_size = batch_size
     
     def prepare_img(self, img):
+        # (H, W, C) -> (C, H, W)
         img_new = img.permute(2, 0, 1).unsqueeze(0).to(self.device)
         img_new = F.interpolate(img_new, (self.ref_size_H, self.ref_size_W), mode="bilinear", align_corners=False).contiguous()
         return img_new

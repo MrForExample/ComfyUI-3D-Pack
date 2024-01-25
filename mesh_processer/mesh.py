@@ -240,10 +240,6 @@ class Mesh:
                 albedo = albedo.astype(np.float32) / 255
                 print(f"[load_obj] load texture: {albedo.shape}")
 
-                # import matplotlib.pyplot as plt
-                # plt.imshow(albedo)
-                # plt.show()
-
             mesh.albedo = torch.tensor(albedo, dtype=torch.float32, device=device)
 
         return mesh

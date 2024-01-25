@@ -1,5 +1,3 @@
-set "python_miniconda_exec=..\..\..\python_miniconda_env\ComfyUI\python.exe"
+set "python_miniconda_exec=..\..\..\..\..\..\..\python_miniconda_env\ComfyUI\python.exe"
 
-echo ERROR: Cannot find Miniconda Environment "%python_miniconda_exec%"
-
-pause
+cd tgs/models/snowflake/pointnet2_ops_lib && "%python_miniconda_exec%" -s setup.py install && cd ../../../../

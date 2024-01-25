@@ -1,6 +1,6 @@
 {
-  "last_node_id": 22,
-  "last_link_id": 26,
+  "last_node_id": 27,
+  "last_link_id": 36,
   "nodes": [
     {
       "id": 10,
@@ -14,7 +14,7 @@
         "1": 246
       },
       "flags": {},
-      "order": 7,
+      "order": 8,
       "mode": 0,
       "inputs": [
         {
@@ -39,7 +39,7 @@
         "1": 26
       },
       "flags": {},
-      "order": 5,
+      "order": 6,
       "mode": 0,
       "inputs": [
         {
@@ -64,79 +64,63 @@
       }
     },
     {
-      "id": 8,
-      "type": "InvertMask",
+      "id": 19,
+      "type": "PreviewImage",
       "pos": [
-        746,
-        -14
+        420,
+        -320
       ],
       "size": {
         "0": 210,
-        "1": 26
+        "1": 246
       },
       "flags": {},
       "order": 4,
       "mode": 0,
       "inputs": [
         {
-          "name": "mask",
-          "type": "MASK",
-          "link": 2
-        }
-      ],
-      "outputs": [
-        {
-          "name": "MASK",
-          "type": "MASK",
-          "links": [
-            8,
-            18
-          ],
-          "shape": 3,
-          "slot_index": 0
+          "name": "images",
+          "type": "IMAGE",
+          "link": 22
         }
       ],
       "properties": {
-        "Node name for S&R": "InvertMask"
+        "Node name for S&R": "PreviewImage"
       }
     },
     {
-      "id": 4,
-      "type": "[ComfyUI-3D] Generate Orbit Camera Poses",
+      "id": 13,
+      "type": "[ComfyUI-3D] Load 3D Mesh",
       "pos": [
-        830,
-        132
+        1053,
+        415
       ],
       "size": {
-        "0": 400,
-        "1": 200
+        "0": 315,
+        "1": 154
       },
       "flags": {},
-      "order": 2,
+      "order": 0,
       "mode": 0,
-      "inputs": [
-        {
-          "name": "reference_images",
-          "type": "IMAGE",
-          "link": 1
-        }
-      ],
       "outputs": [
         {
-          "name": "orbit_camposes",
-          "type": "ORBIT_CAMPOSES",
-          "links": [
-            19
-          ],
+          "name": "mesh",
+          "type": "MESH",
+          "links": [],
           "shape": 3,
           "slot_index": 0
         }
       ],
+      "title": "Load 3D Mesh [Optional]",
       "properties": {
-        "Node name for S&R": "[ComfyUI-3D] Generate Orbit Camera Poses"
+        "Node name for S&R": "[ComfyUI-3D] Load 3D Mesh"
       },
       "widgets_values": [
-        "([0:120], 1.75, 0, 0, 360)"
+        "Meshes\\Cammy_Uniform.obj",
+        false,
+        true,
+        false,
+        false
       ]
     },
     {
@@ -151,7 +135,7 @@
         194
       ],
       "flags": {},
-      "order": 0,
+      "order": 1,
       "mode": 0,
       "outputs": [
         {
@@ -159,8 +143,8 @@
           "type": "IMAGE",
           "links": [
             1,
-            17,
-            22
+            22,
+            27
           ],
           "shape": 3,
           "slot_index": 0
@@ -205,258 +189,128 @@
       }
     },
     {
-      "id": 19,
-      "type": "PreviewImage",
+      "id": 8,
+      "type": "InvertMask",
       "pos": [
-        420,
-        -320
+        746,
+        -14
       ],
       "size": {
         "0": 210,
-        "1": 246
+        "1": 26
+      },
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mask",
+          "type": "MASK",
+          "link": 2
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            8,
+            28
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "InvertMask"
+      }
+    },
+    {
+      "id": 4,
+      "type": "[ComfyUI-3D] Generate Orbit Camera Poses",
+      "pos": [
+        830,
+        132
+      ],
+      "size": {
+        "0": 400,
+        "1": 200
       },
       "flags": {},
       "order": 3,
       "mode": 0,
       "inputs": [
         {
-          "name": "images",
-          "type": "IMAGE",
-          "link": 22
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "PreviewImage"
-      }
-    },
-    {
-      "id": 18,
-      "type": "[ComfyUI-3D] Gaussian Splatting",
-      "pos": [
-        1486,
-        53
-      ],
-      "size": {
-        "0": 468.5999755859375,
-        "1": 718
-      },
-      "flags": {
-        "collapsed": false
-      },
-      "order": 6,
-      "mode": 0,
-      "inputs": [
-        {
           "name": "reference_images",
           "type": "IMAGE",
-          "link": 17
-        },
-        {
-          "name": "reference_masks",
-          "type": "MASK",
-          "link": 18
-        },
-        {
-          "name": "reference_orbit_camera_poses",
-          "type": "ORBIT_CAMPOSES",
-          "link": 19
-        },
-        {
-          "name": "mesh_to_initialize_gaussian",
-          "type": "MESH",
-          "link": null
+          "link": 1
         }
       ],
       "outputs": [
         {
-          "name": "raw_3DGS",
-          "type": "GS_RAW",
+          "name": "orbit_camposes",
+          "type": "ORBIT_CAMPOSES",
           "links": [
-            21,
-            24
+            29
           ],
           "shape": 3,
           "slot_index": 0
         }
       ],
       "properties": {
-        "Node name for S&R": "[ComfyUI-3D] Gaussian Splatting"
+        "Node name for S&R": "[ComfyUI-3D] Generate Orbit Camera Poses"
       },
       "widgets_values": [
-        49.1,
-        1000,
-        1,
-        10000,
-        0.2,
-        3,
-        0,
-        0,
-        0.5,
-        0.01,
-        0.05,
-        0.005,
-        0.005,
-        0.001,
-        0.00002,
-        0.02,
-        500,
-        5000,
-        3,
-        0.01,
-        100,
-        100000,
-        100,
-        700,
-        0.01,
-        0
+        "([0:120], 1.75, 0, 0, 360)"
       ]
     },
     {
-      "id": 17,
+      "id": 24,
       "type": "[ComfyUI-3D] Save 3DGS",
       "pos": [
-        2243,
-        52
+        2122,
+        -131
       ],
       "size": {
         "0": 315,
         "1": 58
       },
       "flags": {},
-      "order": 8,
+      "order": 9,
       "mode": 0,
       "inputs": [
         {
-          "name": "raw_3DGS",
-          "type": "GS_RAW",
-          "link": 21
+          "name": "gs_ply",
+          "type": "GS_PLY",
+          "link": 30
         }
       ],
       "properties": {
         "Node name for S&R": "[ComfyUI-3D] Save 3DGS"
       },
       "widgets_values": [
-        "MeshTest\\3DGS_01.ply"
-      ]
-    },
-    {
-      "id": 20,
-      "type": "[ComfyUI-3D] Convert 3DGS To Pointcloud",
-      "pos": [
-        2242,
-        251
-      ],
-      "size": {
-        "0": 267,
-        "1": 26
-      },
-      "flags": {},
-      "order": 9,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "raw_3DGS",
-          "type": "GS_RAW",
-          "link": 24
-        }
-      ],
-      "outputs": [
-        {
-          "name": "points_cloud",
-          "type": "POINTCLOUD",
-          "links": [
-            25
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "[ComfyUI-3D] Convert 3DGS To Pointcloud"
-      }
-    },
-    {
-      "id": 13,
-      "type": "[ComfyUI-3D] Load 3D Mesh",
-      "pos": [
-        1053,
-        415
-      ],
-      "size": {
-        "0": 315,
-        "1": 154
-      },
-      "flags": {},
-      "order": 1,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "mesh",
-          "type": "MESH",
-          "links": [],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "title": "Load 3D Mesh [Optional]",
-      "properties": {
-        "Node name for S&R": "[ComfyUI-3D] Load 3D Mesh"
-      },
-      "widgets_values": [
-        "Meshes\\Cammy_Uniform.obj",
-        false,
-        true,
-        false,
-        false
-      ]
-    },
-    {
-      "id": 22,
-      "type": "[ComfyUI-3D] Save 3D Mesh",
-      "pos": [
-        3261,
-        55
-      ],
-      "size": {
-        "0": 353.38916015625,
-        "1": 61.879417419433594
-      },
-      "flags": {},
-      "order": 11,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "mesh",
-          "type": "MESH",
-          "link": 26
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "[ComfyUI-3D] Save 3D Mesh"
-      },
-      "widgets_values": [
-        "MeshTest\\Cammy_Uniform_DMTet_01.obj"
+        "MeshTest/3DGS_01.ply"
       ]
     },
     {
       "id": 21,
       "type": "[ComfyUI-3D] Deep Marching Tetrahedrons",
       "pos": [
-        2710,
-        56
+        2963,
+        55
       ],
       "size": {
         "0": 443.4000244140625,
         "1": 314
       },
       "flags": {},
-      "order": 10,
+      "order": 11,
       "mode": 0,
       "inputs": [
         {
           "name": "reference_points_cloud",
           "type": "POINTCLOUD",
-          "link": 25
+          "link": 35
         },
         {
           "name": "reference_images",
@@ -495,6 +349,190 @@
         128,
         5
       ]
+    },
+    {
+      "id": 22,
+      "type": "[ComfyUI-3D] Save 3D Mesh",
+      "pos": [
+        3534,
+        56
+      ],
+      "size": {
+        "0": 353.38916015625,
+        "1": 61.879417419433594
+      },
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 26
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[ComfyUI-3D] Save 3D Mesh"
+      },
+      "widgets_values": [
+        "MeshTest\\Cammy_Uniform_DMTet_01.obj"
+      ]
+    },
+    {
+      "id": 26,
+      "type": "[ComfyUI-3D] Load 3DGS",
+      "pos": [
+        2107,
+        194
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "gs_ply",
+          "type": "GS_PLY",
+          "links": [],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[ComfyUI-3D] Load 3DGS"
+      },
+      "widgets_values": [
+        "Meshes/3DGS_01.ply"
+      ]
+    },
+    {
+      "id": 23,
+      "type": "[ComfyUI-3D] Gaussian Splatting",
+      "pos": [
+        1501,
+        53
+      ],
+      "size": {
+        "0": 443.4000244140625,
+        "1": 758
+      },
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "reference_images",
+          "type": "IMAGE",
+          "link": 27
+        },
+        {
+          "name": "reference_masks",
+          "type": "MASK",
+          "link": 28
+        },
+        {
+          "name": "reference_orbit_camera_poses",
+          "type": "ORBIT_CAMPOSES",
+          "link": 29
+        },
+        {
+          "name": "points_cloud",
+          "type": "POINTCLOUD",
+          "link": null
+        },
+        {
+          "name": "ply_to_initialize_gaussian",
+          "type": "GS_PLY",
+          "link": null
+        },
+        {
+          "name": "mesh_to_initialize_gaussian",
+          "type": "MESH",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "gs_ply",
+          "type": "GS_PLY",
+          "links": [
+            30,
+            36
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[ComfyUI-3D] Gaussian Splatting"
+      },
+      "widgets_values": [
+        49.1,
+        1000,
+        3,
+        10000,
+        0.2,
+        3,
+        0,
+        0,
+        0.5,
+        0.01,
+        0.05,
+        0.005,
+        0.005,
+        0.001,
+        0.00002,
+        0.02,
+        500,
+        5000,
+        3,
+        0.01,
+        100,
+        100000,
+        100,
+        700,
+        0.01,
+        0
+      ]
+    },
+    {
+      "id": 27,
+      "type": "[ComfyUI-3D] Convert 3DGS To Pointcloud",
+      "pos": [
+        2555,
+        53
+      ],
+      "size": {
+        "0": 241.79998779296875,
+        "1": 26
+      },
+      "flags": {},
+      "order": 10,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "gs_ply",
+          "type": "GS_PLY",
+          "link": 36
+        }
+      ],
+      "outputs": [
+        {
+          "name": "points_cloud",
+          "type": "POINTCLOUD",
+          "links": [
+            35
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[ComfyUI-3D] Convert 3DGS To Pointcloud"
+      }
     }
   ],
   "links": [
@@ -531,60 +569,12 @@
       "MASK"
     ],
     [
-      17,
-      7,
-      0,
-      18,
-      0,
-      "IMAGE"
-    ],
-    [
-      18,
-      8,
-      0,
-      18,
-      1,
-      "MASK"
-    ],
-    [
-      19,
-      4,
-      0,
-      18,
-      2,
-      "ORBIT_CAMPOSES"
-    ],
-    [
-      21,
-      18,
-      0,
-      17,
-      0,
-      "GS_RAW"
-    ],
-    [
       22,
       7,
       0,
       19,
       0,
       "IMAGE"
-    ],
-    [
-      24,
-      18,
-      0,
-      20,
-      0,
-      "GS_RAW"
-    ],
-    [
-      25,
-      20,
-      0,
-      21,
-      0,
-      "POINTCLOUD"
     ],
     [
       26,
@@ -593,6 +583,54 @@
       22,
       0,
       "MESH"
+    ],
+    [
+      27,
+      7,
+      0,
+      23,
+      0,
+      "IMAGE"
+    ],
+    [
+      28,
+      8,
+      0,
+      23,
+      1,
+      "MASK"
+    ],
+    [
+      29,
+      4,
+      0,
+      23,
+      2,
+      "ORBIT_CAMPOSES"
+    ],
+    [
+      30,
+      23,
+      0,
+      24,
+      0,
+      "GS_PLY"
+    ],
+    [
+      35,
+      27,
+      0,
+      21,
+      0,
+      "POINTCLOUD"
+    ],
+    [
+      36,
+      23,
+      0,
+      27,
+      0,
+      "GS_PLY"
     ]
   ],
   "groups": [],

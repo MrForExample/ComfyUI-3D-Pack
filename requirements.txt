@@ -1,13 +1,23 @@
 #base
 cmake
 ninja
+kornia
+OmegaConf
 numpy
+einops
 scipy
 opencv-python
-kornia
+
+# for use ML models
+diffusers
+transformers
 
 # for training differentiable tensors
 pytorch_msssim
+
+# for process images & videos
+imageio
+imageio-ffmpeg
 
 # for dmtet and mesh import & export
 trimesh
@@ -19,3 +29,4 @@ pymeshlab
 # extra
 torchtyping
 tqdm
+jaxtyping

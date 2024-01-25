@@ -1,0 +1,242 @@
+{
+  "last_node_id": 9,
+  "last_link_id": 11,
+  "nodes": [
+    {
+      "id": 7,
+      "type": "[ComfyUI-3D] Run Triplane Gaussian Transformers",
+      "pos": [
+        1032,
+        627
+      ],
+      "size": {
+        "0": 430.8000183105469,
+        "1": 98
+      },
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "reference_image",
+          "type": "IMAGE",
+          "link": 6
+        },
+        {
+          "name": "reference_mask",
+          "type": "MASK",
+          "link": 11
+        },
+        {
+          "name": "tgs_model",
+          "type": "TGS_MODEL",
+          "link": 8
+        }
+      ],
+      "outputs": [
+        {
+          "name": "gs_ply",
+          "type": "GS_PLY",
+          "links": [
+            9
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "gaussian_sh_degree",
+          "type": "FLOAT",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[ComfyUI-3D] Run Triplane Gaussian Transformers"
+      },
+      "widgets_values": [
+        1.9
+      ]
+    },
+    {
+      "id": 9,
+      "type": "InvertMask",
+      "pos": [
+        506,
+        647
+      ],
+      "size": {
+        "0": 210,
+        "1": 26
+      },
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mask",
+          "type": "MASK",
+          "link": 10
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            11
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "InvertMask"
+      }
+    },
+    {
+      "id": 2,
+      "type": "[ComfyUI-3D] Load Triplane Gaussian Transformers",
+      "pos": [
+        579,
+        735
+      ],
+      "size": {
+        "0": 369,
+        "1": 47.66668701171875
+      },
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "tgs_model",
+          "type": "TGS_MODEL",
+          "links": [
+            8
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[ComfyUI-3D] Load Triplane Gaussian Transformers"
+      }
+    },
+    {
+      "id": 8,
+      "type": "[ComfyUI-3D] Save 3DGS",
+      "pos": [
+        1531,
+        627
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "gs_ply",
+          "type": "GS_PLY",
+          "link": 9
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[ComfyUI-3D] Save 3DGS"
+      },
+      "widgets_values": [
+        "MeshTest/3DGS_TGS.ply"
+      ]
+    },
+    {
+      "id": 4,
+      "type": "LoadImage",
+      "pos": [
+        87,
+        211
+      ],
+      "size": {
+        "0": 354.32330322265625,
+        "1": 315.4895935058594
+      },
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            6
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            10
+          ],
+          "shape": 3,
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "a_pikachu_with_smily_face-removebg.png",
+        "image"
+      ]
+    }
+  ],
+  "links": [
+    [
+      6,
+      4,
+      0,
+      7,
+      0,
+      "IMAGE"
+    ],
+    [
+      8,
+      2,
+      0,
+      7,
+      2,
+      "TGS_MODEL"
+    ],
+    [
+      9,
+      7,
+      0,
+      8,
+      0,
+      "GS_PLY"
+    ],
+    [
+      10,
+      4,
+      1,
+      9,
+      0,
+      "MASK"
+    ],
+    [
+      11,
+      9,
+      0,
+      7,
+      1,
+      "MASK"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {},
+  "version": 0.4
+}

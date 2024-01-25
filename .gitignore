@@ -156,3 +156,12 @@ diff-gaussian-rasterization/
 
 # Nvdiffrast
 nvdiffrast/
+
+# Model files
+*.ckpt
+*.bin
+*.pth
+*.safetensors
+
+# Ignore test outputs
+outputs/
