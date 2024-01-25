@@ -19,8 +19,19 @@ ps: I'll show some generated result soon
   - **Note:** you need to put [Example Inputs Files & Folders](_Example_Workflows/_Example_Inputs_Files/) under ComfyUI Root Directory\ComfyUI\input folder before you can run the example workflow
 - Triplane Gaussian Transformers:
   - Enable single image to 3D Gaussian, then you can use Deep Marching Tetrahedrons node to convert it to mesh
-  
-  
+ 
+  <table class="center">
+      
+  <tr>
+      <td width=50% style="border: none">
+          <img src="_Example_Workflows/_Example_Inputs_Files/a_pikachu_with_smily_face-removebg.png"/>
+      </td>
+      <td width=50% style="border: none">
+          <video controls autoplay loop src="https://github.com/MrForExample/ComfyUI-3D-Pack/assets/62230687/aae7c16b-8d57-460d-b5b0-362f105a9d02" muted="false" width="256"></video>
+      </td>
+  </tr>
+  </table>
+
 - Stack Orbit Camera Poses node to automatically generate all range of camera pose combinations
   - You can use it to conditioning the [StableZero123 (You need to Download the checkpoint first)](https://comfyanonymous.github.io/ComfyUI_examples/3d/), with full range of camera poses in one prompt pass
   - You can use it to generate the orbit camera poses and directly input to other 3D process node (e.g. GaussianSplatting and BakeTextureToMesh)
