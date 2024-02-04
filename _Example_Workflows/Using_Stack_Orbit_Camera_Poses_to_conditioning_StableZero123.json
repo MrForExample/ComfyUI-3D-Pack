@@ -402,7 +402,7 @@
     },
     {
       "id": 41,
-      "type": "[ComfyUI-3D] Stack Orbit Camera Poses",
+      "type": "[Comfy3D] Stack Orbit Camera Poses",
       "pos": [
         -10,
         540
@@ -465,7 +465,7 @@
         }
       ],
       "properties": {
-        "Node name for S&R": "[ComfyUI-3D] Stack Orbit Camera Poses"
+        "Node name for S&R": "[Comfy3D] Stack Orbit Camera Poses"
       },
       "widgets_values": [
         0,

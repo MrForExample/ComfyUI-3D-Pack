@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="/extensions/ComfyUI-3D-Pack/style/gsStyle.css">
+  <link type="text/css" rel="stylesheet" href="/extensions/ComfyUI-3D-Pack/style/progressStyle.css">
+</head>
+<body>
+  <div id="root">
+    <div id="progress-container">
+        <dialog open id="progress-dialog">
+            <p>
+                <label for="progress-indicator">Loading scene...</label>
+            </p>
+            <progress max="100" id="progress-indicator"></progress>
+        </dialog>
+    </div>
+
+    <canvas id="canvas"></canvas>
+		<script type="importmap">
+			{
+			  "imports": {
+				"gsplat": "https://unpkg.com/gsplat@latest/dist/index.js"
+			  }
+			}
+		</script>
+    <script id="visualizer" type="module" filepath="" crossorigin src="/extensions/ComfyUI-3D-Pack/js/gsVisualizer.js"></script>
+  </div>
+</body>
+</html>

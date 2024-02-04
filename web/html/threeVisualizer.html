@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<link type="text/css" rel="stylesheet" href="/extensions/ComfyUI-3D-Pack/style/threeStyle.css">
+		<link type="text/css" rel="stylesheet" href="/extensions/ComfyUI-3D-Pack/style/progressStyle.css">
+	</head>
+
+	<body>
+		<div id="progress-container">
+			<dialog open id="progress-dialog">
+				<p>
+					<label for="progress-indicator">Loading scene...</label>
+				</p>
+				<progress max="100" id="progress-indicator"></progress>
+			</dialog>
+		</div>
+
+		<div id="container"></div>
+		<script type="importmap">
+			{
+			  "imports": {
+				"three": "https://unpkg.com/three@latest/build/three.module.js",
+				"three/addons/": "https://unpkg.com/three@latest/examples/jsm/"
+			  }
+			}
+		</script>
+		<script id="visualizer" type="module" filepath="" crossorigin src="/extensions/ComfyUI-3D-Pack/js/threeVisualizer.js"></script>
+	</body>
+
+</html>

@@ -8,8 +8,9 @@ from pytorch_msssim import SSIM, MS_SSIM
 
 import comfy.utils
 
-from .main_3DGS_renderer import Renderer
+from .main_3DGS_renderer import GaussianSplattingRenderer
 from ..shared_utils.camera_utils import orbit_camera, OrbitCamera, MiniCam, calculate_fovX, get_projection_matrix
+from ..shared_utils.image_utils import prepare_torch_img
 
 class GSParams:
     def __init__(self,
@@ -72,6 +73,46 @@ class GSParams:
         # other gaussian params
         self.sh_degree = sh_degree
         
+class GaussianSplattingCameraController:
+    def __init__(self, renderer, cam_size_W, cam_size_H, reference_orbit_camera_fovy, invert_bg_prob=1.0, static_bg=None, device='cuda'):
+        self.device = torch.device(device)
+        
+        self.renderer = renderer
+        self.cam = OrbitCamera(cam_size_W, cam_size_H, fovy=reference_orbit_camera_fovy)
+        self.projection_matrix = get_projection_matrix(self.cam.near, self.cam.far, self.cam.fovx, self.cam.fovy).transpose(0, 1).cuda()
+        
+        self.invert_bg_prob = invert_bg_prob
+        self.black_bg = torch.tensor([0, 0, 0], dtype=torch.float32, device=self.device)
+        self.white_bg = torch.tensor([1, 1, 1], dtype=torch.float32, device=self.device)
+        self.static_bg = None if static_bg is None else torch.tensor(static_bg, dtype=torch.float32, device=self.device)
+        
+    def render_at_pose(self, cam_pose):
+        radius, elevation, azimuth, center_X, center_Y, center_Z = cam_pose
+        
+        orbit_target = np.array([center_X, center_Y, center_Z], dtype=np.float32)
+        render_pose = orbit_camera(elevation, azimuth, radius, target=orbit_target)
+        render_cam = MiniCam(render_pose, self.cam.W, self.cam.H, self.cam.fovy, self.cam.fovx, self.cam.near, self.cam.far, self.projection_matrix)
+        
+        if self.static_bg is None:
+            bg_color = self.white_bg if np.random.rand() > self.invert_bg_prob else self.black_bg
+        else:
+            bg_color = self.static_bg
+            
+        return self.renderer.render(render_cam, bg_color=bg_color)
+    
+    def render_all_pose(self, all_cam_poses):
+        all_rendered_images, all_rendered_masks = [], []
+        for cam_pose in all_cam_poses:
+            out = self.render_at_pose(cam_pose)
+            
+            image = out["image"] # [3, H, W] in [0, 1]
+            mask = out["alpha"] # [1, H, W] in [0, 1]
+            
+            all_rendered_images.append(image)
+            all_rendered_masks.append(mask)
+            
+        # [Number of Poses, 3, H, W], [Number of Poses, 1, H, W] both in [0, 1]
+        return torch.stack(all_rendered_images, dim=0), torch.stack(all_rendered_masks, dim=0)
 
 class GaussianSplatting:
             
@@ -82,8 +123,7 @@ class GaussianSplatting:
         if gs_params is None:
             gs_params = GSParams()
             
-        self.renderer = Renderer(sh_degree=gs_params.sh_degree)
-        self.gaussain_scale_factor = 1
+        self.renderer = GaussianSplattingRenderer(sh_degree=gs_params.sh_degree)
         self.renderer.initialize(init_input, num_pts=gs_params.num_pts)
 
         # setup training
@@ -95,31 +135,26 @@ class GaussianSplatting:
         self.ms_ssim_loss = MS_SSIM(data_range=1, size_average=True, channel=3)
         
         self.gs_params = gs_params
-        
-    def prepare_img(self, img):
-        img_new = img.permute(2, 0, 1).unsqueeze(0).to(self.device)
-        img_new = F.interpolate(img_new, (self.ref_size_H, self.ref_size_W), mode="bilinear", align_corners=False).contiguous()
-        return img_new
     
     def prepare_training(self, reference_images, reference_masks, reference_orbit_camera_poses, reference_orbit_camera_fovy):
         self.ref_imgs_num = len(reference_images)
-
-        self.all_ref_cam_poses = reference_orbit_camera_poses
-        self.ref_cam_fovy = reference_orbit_camera_fovy
-    
+        
         self.ref_size_H = reference_images[0].shape[0]
         self.ref_size_W = reference_images[0].shape[1]
         
         # default camera settings
-        self.cam = OrbitCamera(self.ref_size_W, self.ref_size_H, fovy=reference_orbit_camera_fovy)
-        self.projection_matrix = get_projection_matrix(self.cam.near, self.cam.far, self.cam.fovx, self.cam.fovy).transpose(0, 1).cuda()
+        self.cam_controller = GaussianSplattingCameraController(
+            self.renderer, self.ref_size_W, self.ref_size_H, reference_orbit_camera_fovy, self.gs_params.invert_bg_prob, None, self.device
+        )
+
+        self.all_ref_cam_poses = reference_orbit_camera_poses
         
         # prepare reference images and masks
         ref_imgs_torch_list = []
         ref_masks_torch_list = []
         for i in range(self.ref_imgs_num):
-            ref_imgs_torch_list.append(self.prepare_img(reference_images[i]))
-            ref_masks_torch_list.append(self.prepare_img(reference_masks[i].unsqueeze(2)))
+            ref_imgs_torch_list.append(prepare_torch_img(reference_images[i], self.ref_size_H, self.ref_size_W, self.device))
+            ref_masks_torch_list.append(prepare_torch_img(reference_masks[i].unsqueeze(2), self.ref_size_H, self.ref_size_W, self.device))
             
         self.ref_imgs_torch = torch.cat(ref_imgs_torch_list, dim=0)
         self.ref_masks_torch = torch.cat(ref_masks_torch_list, dim=0)
@@ -158,14 +193,7 @@ class GaussianSplatting:
                     
                 i = random.randint(0, ref_imgs_num_minus_1)
                 
-                radius, elevation, azimuth, center_X, center_Y, center_Z = self.all_ref_cam_poses[i]
-                
-                orbit_target = np.array([center_X, center_Y, center_Z], dtype=np.float32)
-                ref_pose = orbit_camera(elevation, azimuth, radius, target=orbit_target)
-                ref_cam = MiniCam(ref_pose, self.ref_size_W, self.ref_size_H, self.cam.fovy, self.cam.fovx, self.cam.near, self.cam.far, self.projection_matrix)
-                
-                bg_color = torch.tensor([1, 1, 1] if np.random.rand() > self.gs_params.invert_bg_prob else [0, 0, 0], dtype=torch.float32, device=self.device)
-                out = self.renderer.render(ref_cam, bg_color=bg_color)
+                out = self.cam_controller.render_at_pose(self.all_ref_cam_poses[i])
                 
                 image = out["image"] # [3, H, W] in [0, 1]
                 mask = out["alpha"] # [1, H, W] in [0, 1]

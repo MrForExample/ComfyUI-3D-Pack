@@ -6,7 +6,8 @@ import trimesh
 import numpy as np
 
 
-from ..shared_utils.sh_utils import SH2RGB
+from shared_utils.sh_utils import SH2RGB
+from shared_utils.image_utils import prepare_torch_img
 
 def dot(x, y):
     return torch.sum(x * y, -1, keepdim=True)
@@ -285,8 +286,7 @@ class Mesh:
             mesh.albedo = torch.tensor(texture, dtype=torch.float32, device=device)
             print(f"[load_trimesh] load texture: {texture.shape}")
         else:
-            texture = np.ones((1024, 1024, 3), dtype=np.float32) * np.array([0.5, 0.5, 0.5])
-            mesh.albedo = torch.tensor(texture, dtype=torch.float32, device=device)
+            mesh.set_new_albedo(1024, 1024)
             print(f"[load_trimesh] failed to load texture.")
 
         vertices = _mesh.vertices
@@ -330,6 +330,13 @@ class Mesh:
         )
 
         return mesh
+    
+    def set_new_albedo(self, res_H, res_W):
+        if self.albedo is None:
+            texture = np.ones((res_H, res_W, 3), dtype=np.float32) * np.array([0.5, 0.5, 0.5])
+            self.albedo = torch.tensor(texture, dtype=torch.float32, device=self.device)
+        else:
+            self.albedo = prepare_torch_img(self.albedo, res_H, res_W, self.device).squeeze(0).permute(1, 2, 0).contiguous() # (1, 3, H, W) -> (H, W, 3)
 
     # aabb
     def aabb(self):
@@ -614,7 +621,7 @@ class Mesh:
             fp.write(f"Ka 1 1 1 \n")
             fp.write(f"Kd 1 1 1 \n")
             fp.write(f"Ks 0 0 0 \n")
-            fp.write(f"Tr 1 \n")
+            #fp.write(f"Tr 1 \n") # will cause the mesh materials in three.js completely transparent
             fp.write(f"illum 1 \n")
             fp.write(f"Ns 0 \n")
             if self.albedo is not None:

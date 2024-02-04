@@ -15,6 +15,8 @@ from ..utils.ops import scale_tensor
 from .networks import MLP
 from einops import rearrange, reduce
 
+from mesh_processer.mesh_utils import construct_list_of_gs_attributes, write_gs_ply
+
 inverse_sigmoid = lambda x: np.log(x / (1 - x))
 
 def getWorld2View2(R, t, translate=np.array([.0, .0, .0]), scale=1.0):
@@ -90,21 +92,6 @@ class GaussianModel(NamedTuple):
     scaling: Tensor
     shs: Tensor
 
-    def construct_list_of_attributes(self):
-        l = ['x', 'y', 'z', 'nx', 'ny', 'nz']
-        features_dc = self.shs[:, :1]
-        features_rest = self.shs[:, 1:]
-        for i in range(features_dc.shape[1]*features_dc.shape[2]):
-            l.append('f_dc_{}'.format(i))
-        for i in range(features_rest.shape[1]*features_rest.shape[2]):
-            l.append('f_rest_{}'.format(i))
-        l.append('opacity')
-        for i in range(self.scaling.shape[1]):
-            l.append('scale_{}'.format(i))
-        for i in range(self.rotation.shape[1]):
-            l.append('rot_{}'.format(i))
-        return l
-
     def to_ply(self):
         
         xyz = self.xyz.detach().cpu().numpy()
@@ -117,13 +104,7 @@ class GaussianModel(NamedTuple):
         scale = np.log(self.scaling.detach().cpu().numpy())
         rotation = self.rotation.detach().cpu().numpy()
 
-        dtype_full = [(attribute, 'f4') for attribute in self.construct_list_of_attributes()]
-
-        elements = np.empty(xyz.shape[0], dtype=dtype_full)
-        attributes = np.concatenate((xyz, normals, f_dc, f_rest, opacities, scale, rotation), axis=1)
-        elements[:] = list(map(tuple, attributes))
-        el = PlyElement.describe(elements, 'vertex')
-        return PlyData([el])
+        return write_gs_ply(xyz, normals, f_dc, f_rest, opacities, scale, rotation, construct_list_of_gs_attributes(features_dc, features_rest, self.scaling, self.rotation))
 
 class GSLayer(BaseModule):
     @dataclass

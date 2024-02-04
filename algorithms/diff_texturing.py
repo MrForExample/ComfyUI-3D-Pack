@@ -8,8 +8,9 @@ from pytorch_msssim import SSIM, MS_SSIM
 
 import comfy.utils
 
-from .diff_mesh_renderer import Renderer
+from .diff_mesh_renderer import DiffRastRenderer
 from ..shared_utils.camera_utils import orbit_camera, OrbitCamera
+from ..shared_utils.image_utils import prepare_torch_img
 
 class DiffTextureBaker:
     
@@ -17,7 +18,7 @@ class DiffTextureBaker:
         self.device = torch.device("cuda")
         
         # prepare main components for optimization
-        self.renderer = Renderer(mesh, force_cuda_rasterize).to(self.device)
+        self.renderer = DiffRastRenderer(mesh, force_cuda_rasterize).to(self.device)
 
         self.optimizer = torch.optim.Adam(self.renderer.get_params(texture_learning_rate, train_mesh_geometry, geometry_learning_rate))
         #self.ssim_loss = SSIM(data_range=1, size_average=True, channel=3)
@@ -27,12 +28,6 @@ class DiffTextureBaker:
         self.training_iterations = training_iterations
         
         self.batch_size = batch_size
-    
-    def prepare_img(self, img):
-        # (H, W, C) -> (C, H, W)
-        img_new = img.permute(2, 0, 1).unsqueeze(0).to(self.device)
-        img_new = F.interpolate(img_new, (self.ref_size_H, self.ref_size_W), mode="bilinear", align_corners=False).contiguous()
-        return img_new
     
     def prepare_training(self, reference_images, reference_masks, reference_orbit_camera_poses, reference_orbit_camera_fovy):
         self.ref_imgs_num = len(reference_images)
@@ -49,8 +44,8 @@ class DiffTextureBaker:
         ref_imgs_torch_list = []
         ref_masks_torch_list = []
         for i in range(self.ref_imgs_num):
-            ref_imgs_torch_list.append(self.prepare_img(reference_images[i]))
-            ref_masks_torch_list.append(self.prepare_img(reference_masks[i].unsqueeze(2)))
+            ref_imgs_torch_list.append(prepare_torch_img(reference_images[i], self.ref_size_H, self.ref_size_W, self.device))
+            ref_masks_torch_list.append(prepare_torch_img(reference_masks[i].unsqueeze(2), self.ref_size_H, self.ref_size_W, self.device))
             
         self.ref_imgs_torch = torch.cat(ref_imgs_torch_list, dim=0)
         self.ref_masks_torch = torch.cat(ref_masks_torch_list, dim=0)

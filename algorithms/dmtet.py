@@ -229,7 +229,7 @@ class DMTetMesh:
             
     def get_mesh(self):
         verts, faces = self.pred_verts_faces()
-        mesh = Mesh(v=verts, f=faces)
+        mesh = Mesh(v=verts.detach(), f=faces.detach(), device=self.device)
         mesh.auto_normal()
         mesh.auto_uv()
         return mesh

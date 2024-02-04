@@ -1,175 +1,27 @@
 {
-  "last_node_id": 9,
-  "last_link_id": 11,
+  "last_node_id": 31,
+  "last_link_id": 46,
   "nodes": [
-    {
-      "id": 7,
-      "type": "[ComfyUI-3D] Run Triplane Gaussian Transformers",
-      "pos": [
-        1032,
-        627
-      ],
-      "size": {
-        "0": 430.8000183105469,
-        "1": 98
-      },
-      "flags": {},
-      "order": 3,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "reference_image",
-          "type": "IMAGE",
-          "link": 6
-        },
-        {
-          "name": "reference_mask",
-          "type": "MASK",
-          "link": 11
-        },
-        {
-          "name": "tgs_model",
-          "type": "TGS_MODEL",
-          "link": 8
-        }
-      ],
-      "outputs": [
-        {
-          "name": "gs_ply",
-          "type": "GS_PLY",
-          "links": [
-            9
-          ],
-          "shape": 3,
-          "slot_index": 0
-        },
-        {
-          "name": "gaussian_sh_degree",
-          "type": "FLOAT",
-          "links": null,
-          "shape": 3
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "[ComfyUI-3D] Run Triplane Gaussian Transformers"
-      },
-      "widgets_values": [
-        1.9
-      ]
-    },
-    {
-      "id": 9,
-      "type": "InvertMask",
-      "pos": [
-        506,
-        647
-      ],
-      "size": {
-        "0": 210,
-        "1": 26
-      },
-      "flags": {},
-      "order": 2,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "mask",
-          "type": "MASK",
-          "link": 10
-        }
-      ],
-      "outputs": [
-        {
-          "name": "MASK",
-          "type": "MASK",
-          "links": [
-            11
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "InvertMask"
-      }
-    },
-    {
-      "id": 2,
-      "type": "[ComfyUI-3D] Load Triplane Gaussian Transformers",
-      "pos": [
-        579,
-        735
-      ],
-      "size": {
-        "0": 369,
-        "1": 47.66668701171875
-      },
-      "flags": {},
-      "order": 0,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "tgs_model",
-          "type": "TGS_MODEL",
-          "links": [
-            8
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "[ComfyUI-3D] Load Triplane Gaussian Transformers"
-      }
-    },
-    {
-      "id": 8,
-      "type": "[ComfyUI-3D] Save 3DGS",
-      "pos": [
-        1531,
-        627
-      ],
-      "size": {
-        "0": 315,
-        "1": 58
-      },
-      "flags": {},
-      "order": 4,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "gs_ply",
-          "type": "GS_PLY",
-          "link": 9
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "[ComfyUI-3D] Save 3DGS"
-      },
-      "widgets_values": [
-        "MeshTest/3DGS_TGS.ply"
-      ]
-    },
     {
       "id": 4,
       "type": "LoadImage",
       "pos": [
-        87,
-        211
+        192,
+        214
       ],
       "size": {
         "0": 354.32330322265625,
         "1": 315.4895935058594
       },
       "flags": {},
-      "order": 1,
+      "order": 0,
       "mode": 0,
       "outputs": [
         {
           "name": "IMAGE",
           "type": "IMAGE",
           "links": [
-            6
+            14
           ],
           "shape": 3,
           "slot_index": 0
@@ -191,33 +43,960 @@
         "a_pikachu_with_smily_face-removebg.png",
         "image"
       ]
+    },
+    {
+      "id": 11,
+      "type": "Note",
+      "pos": [
+        859,
+        428
+      ],
+      "size": {
+        "0": 347.9384460449219,
+        "1": 141.6276092529297
+      },
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "title": "Switch 3DGS Axis Note",
+      "properties": {
+        "text": ""
+      },
+      "widgets_values": [
+        "Triplane Gaussian Transformers to Preview:\n  axis x to: -y\n  axis y to: +z\n  axis z to: -x\n\nGaussian Splatting to Preview:\n  axis x to: +x\n  axis y to: -y\n  axis z to: -z"
+      ],
+      "color": "#432",
+      "bgcolor": "#653"
+    },
+    {
+      "id": 14,
+      "type": "[Comfy3D] Triplane Gaussian Transformers",
+      "pos": [
+        767,
+        631
+      ],
+      "size": {
+        "0": 252,
+        "1": 98
+      },
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "reference_image",
+          "type": "IMAGE",
+          "link": 14
+        },
+        {
+          "name": "reference_mask",
+          "type": "MASK",
+          "link": 15
+        },
+        {
+          "name": "tgs_model",
+          "type": "TGS_MODEL",
+          "link": 16
+        },
+        {
+          "name": "cam_dist",
+          "type": "FLOAT",
+          "link": 28,
+          "widget": {
+            "name": "cam_dist"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "name": "gs_ply",
+          "type": "GS_PLY",
+          "links": [
+            17
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Triplane Gaussian Transformers"
+      },
+      "widgets_values": [
+        1.9000000000000001
+      ]
+    },
+    {
+      "id": 9,
+      "type": "InvertMask",
+      "pos": [
+        576,
+        690
+      ],
+      "size": {
+        "0": 140,
+        "1": 26
+      },
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mask",
+          "type": "MASK",
+          "link": 10
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            15
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "InvertMask"
+      }
+    },
+    {
+      "id": 2,
+      "type": "[Comfy3D] Load Triplane Gaussian Transformers",
+      "pos": [
+        441,
+        765
+      ],
+      "size": {
+        "0": 294,
+        "1": 41.596431732177734
+      },
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "tgs_model",
+          "type": "TGS_MODEL",
+          "links": [
+            16
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Load Triplane Gaussian Transformers"
+      }
+    },
+    {
+      "id": 10,
+      "type": "[Comfy3D] Save 3DGS",
+      "pos": [
+        1285,
+        800
+      ],
+      "size": {
+        "0": 275.57391357421875,
+        "1": 58
+      },
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "gs_ply",
+          "type": "GS_PLY",
+          "link": 12
+        }
+      ],
+      "outputs": [
+        {
+          "name": "save_path",
+          "type": "STRING",
+          "links": [
+            13
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Save 3DGS"
+      },
+      "widgets_values": [
+        "MeshTest\\3DGS_Picacho.ply"
+      ]
+    },
+    {
+      "id": 24,
+      "type": "ImpactFloat",
+      "pos": [
+        434,
+        41
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "FLOAT",
+          "type": "FLOAT",
+          "links": [
+            28,
+            29,
+            30
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "title": "Camera Distance",
+      "properties": {
+        "Node name for S&R": "ImpactFloat"
+      },
+      "widgets_values": [
+        1.9000000000000001
+      ]
+    },
+    {
+      "id": 23,
+      "type": "[Comfy3D] Stack Orbit Camera Poses",
+      "pos": [
+        884,
+        -218
+      ],
+      "size": {
+        "0": 320.79998779296875,
+        "1": 586
+      },
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "orbit_radius_start",
+          "type": "FLOAT",
+          "link": 29,
+          "widget": {
+            "name": "orbit_radius_start"
+          }
+        },
+        {
+          "name": "orbit_radius_stop",
+          "type": "FLOAT",
+          "link": 30,
+          "widget": {
+            "name": "orbit_radius_stop"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "name": "orbit_camposes",
+          "type": "ORBIT_CAMPOSES",
+          "links": [
+            27,
+            33
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "orbit_radius_list",
+          "type": "FLOAT",
+          "links": null,
+          "shape": 6
+        },
+        {
+          "name": "elevation_list",
+          "type": "FLOAT",
+          "links": null,
+          "shape": 6
+        },
+        {
+          "name": "azimuth_list",
+          "type": "FLOAT",
+          "links": null,
+          "shape": 6
+        },
+        {
+          "name": "orbit_center_X_list",
+          "type": "FLOAT",
+          "links": null,
+          "shape": 6
+        },
+        {
+          "name": "orbit_center_Y_list",
+          "type": "FLOAT",
+          "links": null,
+          "shape": 6
+        },
+        {
+          "name": "orbit_center_Z_list",
+          "type": "FLOAT",
+          "links": null,
+          "shape": 6
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Stack Orbit Camera Poses"
+      },
+      "widgets_values": [
+        1.9000000000000001,
+        1.9000000000000001,
+        0.1,
+        -45,
+        45,
+        45,
+        0,
+        -0.01,
+        12,
+        0,
+        0,
+        0.1,
+        0,
+        0,
+        0.1,
+        0,
+        0,
+        0.1
+      ]
+    },
+    {
+      "id": 27,
+      "type": "ImpactFloat",
+      "pos": [
+        915,
+        -357
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "FLOAT",
+          "type": "FLOAT",
+          "links": [
+            35,
+            36
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "title": "Camera Fovy",
+      "properties": {
+        "Node name for S&R": "ImpactFloat"
+      },
+      "widgets_values": [
+        49.1
+      ]
+    },
+    {
+      "id": 13,
+      "type": "[Comfy3D] Switch 3DGS Axis",
+      "pos": [
+        1052,
+        630
+      ],
+      "size": {
+        "0": 210,
+        "1": 106
+      },
+      "flags": {},
+      "order": 10,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "gs_ply",
+          "type": "GS_PLY",
+          "link": 17
+        }
+      ],
+      "outputs": [
+        {
+          "name": "switched_gs_ply",
+          "type": "GS_PLY",
+          "links": [
+            12,
+            38
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Switch 3DGS Axis"
+      },
+      "widgets_values": [
+        "-y",
+        "+z",
+        "-x"
+      ]
+    },
+    {
+      "id": 16,
+      "type": "MaskToImage",
+      "pos": [
+        2390,
+        150
+      ],
+      "size": {
+        "0": 210,
+        "1": 26
+      },
+      "flags": {},
+      "order": 17,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mask",
+          "type": "MASK",
+          "link": 19
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            20
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MaskToImage"
+      }
+    },
+    {
+      "id": 18,
+      "type": "[Comfy3D] Gaussian Splatting Orbit Renderer",
+      "pos": [
+        1695.2593051633276,
+        22.362099354583734
+      ],
+      "size": {
+        "0": 556.800048828125,
+        "1": 198
+      },
+      "flags": {},
+      "order": 14,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "gs_ply",
+          "type": "GS_PLY",
+          "link": 39
+        },
+        {
+          "name": "render_orbit_camera_poses",
+          "type": "ORBIT_CAMPOSES",
+          "link": 27
+        },
+        {
+          "name": "render_orbit_camera_fovy",
+          "type": "FLOAT",
+          "link": 35,
+          "widget": {
+            "name": "render_orbit_camera_fovy"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "name": "rendered_gs_images",
+          "type": "IMAGE",
+          "links": [
+            18,
+            41
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "rendered_gs_masks",
+          "type": "MASK",
+          "links": [
+            19,
+            42
+          ],
+          "shape": 3,
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Gaussian Splatting Orbit Renderer"
+      },
+      "widgets_values": [
+        1024,
+        1024,
+        49.1,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": 29,
+      "type": "Reroute",
+      "pos": [
+        2121.2593051633326,
+        -47.637900645416266
+      ],
+      "size": [
+        75,
+        26
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "",
+          "type": "*",
+          "link": 36,
+          "widget": {
+            "name": "value"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "FLOAT",
+          "links": [
+            44
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "showOutputText": false,
+        "horizontal": false
+      }
+    },
+    {
+      "id": 28,
+      "type": "Reroute",
+      "pos": [
+        1292,
+        325
+      ],
+      "size": [
+        75,
+        26
+      ],
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "",
+          "type": "*",
+          "link": 33
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "ORBIT_CAMPOSES",
+          "links": [
+            45
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "showOutputText": false,
+        "horizontal": false
+      }
+    },
+    {
+      "id": 12,
+      "type": "[Comfy3D] Preview 3DGS",
+      "pos": [
+        1590,
+        800
+      ],
+      "size": [
+        600,
+        500
+      ],
+      "flags": {
+        "collapsed": false
+      },
+      "order": 13,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "gs_file_path",
+          "type": "STRING",
+          "link": 13,
+          "widget": {
+            "name": "gs_file_path"
+          }
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Preview 3DGS"
+      },
+      "widgets_values": [
+        "",
+        null
+      ]
+    },
+    {
+      "id": 17,
+      "type": "PreviewImage",
+      "pos": [
+        2650,
+        -160
+      ],
+      "size": {
+        "0": 215.39028930664062,
+        "1": 246
+      },
+      "flags": {
+        "collapsed": false
+      },
+      "order": 19,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 20
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 30,
+      "type": "[Comfy3D] Switch 3DGS Axis",
+      "pos": [
+        1301,
+        420
+      ],
+      "size": {
+        "0": 210,
+        "1": 106
+      },
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "gs_ply",
+          "type": "GS_PLY",
+          "link": 38
+        }
+      ],
+      "outputs": [
+        {
+          "name": "switched_gs_ply",
+          "type": "GS_PLY",
+          "links": [
+            39,
+            46
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Switch 3DGS Axis"
+      },
+      "widgets_values": [
+        "+x",
+        "-y",
+        "-z"
+      ]
+    },
+    {
+      "id": 20,
+      "type": "[Comfy3D] Convert 3DGS To Pointcloud",
+      "pos": [
+        1580,
+        494
+      ],
+      "size": {
+        "0": 218.39999389648438,
+        "1": 26
+      },
+      "flags": {},
+      "order": 15,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "gs_ply",
+          "type": "GS_PLY",
+          "link": 46
+        }
+      ],
+      "outputs": [
+        {
+          "name": "points_cloud",
+          "type": "POINTCLOUD",
+          "links": [
+            23
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Convert 3DGS To Pointcloud"
+      }
+    },
+    {
+      "id": 31,
+      "type": "[Comfy3D] Bake Texture To Mesh",
+      "pos": [
+        2343,
+        286
+      ],
+      "size": {
+        "0": 531.5999755859375,
+        "1": 334
+      },
+      "flags": {},
+      "order": 20,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "reference_images",
+          "type": "IMAGE",
+          "link": 41
+        },
+        {
+          "name": "reference_masks",
+          "type": "MASK",
+          "link": 42
+        },
+        {
+          "name": "reference_orbit_camera_poses",
+          "type": "ORBIT_CAMPOSES",
+          "link": 45
+        },
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 43
+        },
+        {
+          "name": "reference_orbit_camera_fovy",
+          "type": "FLOAT",
+          "link": 44,
+          "widget": {
+            "name": "reference_orbit_camera_fovy"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "name": "trained_mesh",
+          "type": "MESH",
+          "links": [
+            40
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "baked_texture",
+          "type": "IMAGE",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Bake Texture To Mesh"
+      },
+      "widgets_values": [
+        49.1,
+        1024,
+        1024,
+        1000,
+        3,
+        0.1,
+        false,
+        0.01,
+        0.5,
+        false
+      ]
+    },
+    {
+      "id": 25,
+      "type": "[Comfy3D] Save 3D Mesh",
+      "pos": [
+        2904,
+        286
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 21,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 40
+        }
+      ],
+      "outputs": [
+        {
+          "name": "save_path",
+          "type": "STRING",
+          "links": [
+            32
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Save 3D Mesh"
+      },
+      "widgets_values": [
+        "MeshTest\\3DMesh_Picacho.obj"
+      ]
+    },
+    {
+      "id": 26,
+      "type": "[Comfy3D] Preview 3DMesh",
+      "pos": [
+        3250,
+        286
+      ],
+      "size": [
+        600,
+        500
+      ],
+      "flags": {},
+      "order": 22,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh_file_path",
+          "type": "STRING",
+          "link": 32,
+          "widget": {
+            "name": "mesh_file_path"
+          }
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Preview 3DMesh"
+      },
+      "widgets_values": [
+        "",
+        null
+      ]
+    },
+    {
+      "id": 15,
+      "type": "PreviewImage",
+      "pos": [
+        2390,
+        -160
+      ],
+      "size": {
+        "0": 210,
+        "1": 246
+      },
+      "flags": {
+        "collapsed": false
+      },
+      "order": 16,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 18
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 19,
+      "type": "[Comfy3D] Deep Marching Tetrahedrons",
+      "pos": [
+        1833,
+        425
+      ],
+      "size": {
+        "0": 443.4000244140625,
+        "1": 314
+      },
+      "flags": {},
+      "order": 18,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "reference_points_cloud",
+          "type": "POINTCLOUD",
+          "link": 23
+        },
+        {
+          "name": "reference_images",
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "reference_masks",
+          "type": "MASK",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "trained_mesh",
+          "type": "MESH",
+          "links": [
+            43
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Deep Marching Tetrahedrons"
+      },
+      "widgets_values": [
+        5000,
+        1,
+        0.1,
+        1,
+        1,
+        128,
+        0.0001,
+        2,
+        128,
+        5
+      ]
     }
   ],
   "links": [
-    [
-      6,
-      4,
-      0,
-      7,
-      0,
-      "IMAGE"
-    ],
-    [
-      8,
-      2,
-      0,
-      7,
-      2,
-      "TGS_MODEL"
-    ],
-    [
-      9,
-      7,
-      0,
-      8,
-      0,
-      "GS_PLY"
-    ],
     [
       10,
       4,
@@ -227,12 +1006,220 @@
       "MASK"
     ],
     [
-      11,
+      12,
+      13,
+      0,
+      10,
+      0,
+      "GS_PLY"
+    ],
+    [
+      13,
+      10,
+      0,
+      12,
+      0,
+      "STRING"
+    ],
+    [
+      14,
+      4,
+      0,
+      14,
+      0,
+      "IMAGE"
+    ],
+    [
+      15,
       9,
       0,
-      7,
+      14,
       1,
       "MASK"
+    ],
+    [
+      16,
+      2,
+      0,
+      14,
+      2,
+      "TGS_MODEL"
+    ],
+    [
+      17,
+      14,
+      0,
+      13,
+      0,
+      "GS_PLY"
+    ],
+    [
+      18,
+      18,
+      0,
+      15,
+      0,
+      "IMAGE"
+    ],
+    [
+      19,
+      18,
+      1,
+      16,
+      0,
+      "MASK"
+    ],
+    [
+      20,
+      16,
+      0,
+      17,
+      0,
+      "IMAGE"
+    ],
+    [
+      23,
+      20,
+      0,
+      19,
+      0,
+      "POINTCLOUD"
+    ],
+    [
+      27,
+      23,
+      0,
+      18,
+      1,
+      "ORBIT_CAMPOSES"
+    ],
+    [
+      28,
+      24,
+      0,
+      14,
+      3,
+      "FLOAT"
+    ],
+    [
+      29,
+      24,
+      0,
+      23,
+      0,
+      "FLOAT"
+    ],
+    [
+      30,
+      24,
+      0,
+      23,
+      1,
+      "FLOAT"
+    ],
+    [
+      32,
+      25,
+      0,
+      26,
+      0,
+      "STRING"
+    ],
+    [
+      33,
+      23,
+      0,
+      28,
+      0,
+      "*"
+    ],
+    [
+      35,
+      27,
+      0,
+      18,
+      2,
+      "FLOAT"
+    ],
+    [
+      36,
+      27,
+      0,
+      29,
+      0,
+      "*"
+    ],
+    [
+      38,
+      13,
+      0,
+      30,
+      0,
+      "GS_PLY"
+    ],
+    [
+      39,
+      30,
+      0,
+      18,
+      0,
+      "GS_PLY"
+    ],
+    [
+      40,
+      31,
+      0,
+      25,
+      0,
+      "MESH"
+    ],
+    [
+      41,
+      18,
+      0,
+      31,
+      0,
+      "IMAGE"
+    ],
+    [
+      42,
+      18,
+      1,
+      31,
+      1,
+      "MASK"
+    ],
+    [
+      43,
+      19,
+      0,
+      31,
+      3,
+      "MESH"
+    ],
+    [
+      44,
+      29,
+      0,
+      31,
+      4,
+      "FLOAT"
+    ],
+    [
+      45,
+      28,
+      0,
+      31,
+      2,
+      "ORBIT_CAMPOSES"
+    ],
+    [
+      46,
+      30,
+      0,
+      20,
+      0,
+      "GS_PLY"
     ]
   ],
   "groups": [],

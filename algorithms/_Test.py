@@ -1,8 +1,9 @@
-import os
 import numpy as np
 import torch
 
-grid_res = 128
-p = os.path.join(os.path.dirname(__file__), f'../data/tets/{grid_res}_tets.npz')
-print(p)
+vector3_tensor = torch.tensor([[1, 2, 3], [3, 2, 1], [2, 3, 1]])  # shape (N, 3)
 
+target_axis = (2, 0, 1) # or [2, 0, 1]
+vector3_tensor[:, [0, 1, 2]] = vector3_tensor[:, target_axis]
+
+print(vector3_tensor)

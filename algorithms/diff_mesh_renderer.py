@@ -37,7 +37,7 @@ def trunc_rev_sigmoid(x, eps=1e-6):
 def make_divisible(x, m=8):
     return int(math.ceil(x / m) * m)
 
-class Renderer(nn.Module):
+class DiffRastRenderer(nn.Module):
     def __init__(self, mesh, force_cuda_rast):
         
         super().__init__()

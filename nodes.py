@@ -4,7 +4,6 @@ import re
 import math
 import copy
 from enum import Enum
-import subprocess
 import folder_paths as comfy_paths
 
 import torch
@@ -13,10 +12,17 @@ import numpy as np
 
 from plyfile import PlyData
 
-from .shared_utils.common_utils import cstr
+from .shared_utils.common_utils import cstr, parse_save_filename
 from .mesh_processer.mesh import Mesh
-from .mesh_processer.mesh_utils import ply_to_points_cloud
-from .algorithms.main_3DGS import GaussianSplatting, GSParams
+from .mesh_processer.mesh_utils import (
+    ply_to_points_cloud, 
+    get_target_axis_and_scale, 
+    switch_ply_axis_and_scale, 
+    switch_mesh_axis_and_scale, 
+    calculate_max_sh_degree_from_gs_ply,
+)
+from .algorithms.main_3DGS import GaussianSplatting, GaussianSplattingCameraController, GSParams
+from .algorithms.main_3DGS_renderer import GaussianSplattingRenderer
 from .algorithms.diff_texturing import DiffTextureBaker
 from .algorithms.dmtet import DMTetMesh
 from .algorithms.triplane_gaussian_transformers import TGS
@@ -25,11 +31,10 @@ from .tgs.data import CustomImageOrbitDataset
 from .tgs.utils.misc import todevice, get_device
 
 ROOT_PATH = os.path.join(comfy_paths.get_folder_paths("custom_nodes")[0], "ComfyUI-3D-Pack")
-sys.path.append(ROOT_PATH)
 
 MANIFEST = {
     "name": "ComfyUI-3D-Pack",
-    "version": (0,0,1),
+    "version": (0,0,2),
     "author": "Mr. For Example",
     "project": "https://github.com/MrForExample/ComfyUI-3D-Pack",
     "description": "An extensive node suite that enables ComfyUI to process 3D inputs (Mesh & UV Texture, etc) using cutting edge algorithms (3DGS, NeRF, etc.)",
@@ -49,6 +54,72 @@ ELEVATION_MIN = -90
 ELEVATION_MAX = 90.0
 AZIMUTH_MIN = -180.0
 AZIMUTH_MAX = 180.0
+
+class Preview_3DGS:
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "gs_file_path": ("STRING", {"default": '', "multiline": False}),
+            },
+        }
+    
+    OUTPUT_NODE = True
+    RETURN_TYPES = ()
+    FUNCTION = "preview_gs"
+    CATEGORY = "Comfy3D/Visualize"
+    
+    def preview_gs(self, gs_file_path):
+        
+        gs_folder_path, filename = os.path.split(gs_file_path)
+        
+        if not os.path.isabs(gs_file_path):
+            gs_file_path = os.path.join(comfy_paths.output_directory, gs_folder_path)
+        
+        if not filename.lower().endswith(SUPPORTED_3DGS_EXTENSIONS):
+            cstr(f"[{self.__class__.__name__}] File name {filename} does not end with supported 3DGS file extensions: {SUPPORTED_3DGS_EXTENSIONS}").error.print()
+            gs_file_path = ""
+        
+        previews = [
+            {
+                "filepath": gs_file_path,
+            }
+        ]
+        return {"ui": {"previews": previews}, "result": ()}
+    
+class Preview_3DMesh:
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "mesh_file_path": ("STRING", {"default": '', "multiline": False}),
+            },
+        }
+    
+    OUTPUT_NODE = True
+    RETURN_TYPES = ()
+    FUNCTION = "preview_mesh"
+    CATEGORY = "Comfy3D/Visualize"
+    
+    def preview_mesh(self, mesh_file_path):
+        
+        mesh_folder_path, filename = os.path.split(mesh_file_path)
+        
+        if not os.path.isabs(mesh_file_path):
+            mesh_file_path = os.path.join(comfy_paths.output_directory, mesh_folder_path)
+        
+        if not filename.lower().endswith(SUPPORTED_3D_EXTENSIONS):
+            cstr(f"[{self.__class__.__name__}] File name {filename} does not end with supported 3D file extensions: {SUPPORTED_3D_EXTENSIONS}").error.print()
+            mesh_file_path = ""
+        
+        previews = [
+            {
+                "filepath": mesh_file_path,
+            }
+        ]
+        return {"ui": {"previews": previews}, "result": ()}
 
 class Load_3D_Mesh:
 
@@ -71,7 +142,7 @@ class Load_3D_Mesh:
         "mesh",
     )
     FUNCTION = "load_mesh"
-    CATEGORY = "ComfyUI3D/Import|Export"
+    CATEGORY = "Comfy3D/Import|Export"
     
     def load_mesh(self, mesh_file_path, resize, renormal, retex, optimizable):
         mesh = None
@@ -96,7 +167,7 @@ class Load_3DGS:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "gs_ply_file_path": ("STRING", {"default": '', "multiline": False}),
+                "gs_file_path": ("STRING", {"default": '', "multiline": False}),
             },
         }
 
@@ -107,22 +178,22 @@ class Load_3DGS:
         "gs_ply",
     )
     FUNCTION = "load_gs"
-    CATEGORY = "ComfyUI3D/Import|Export"
+    CATEGORY = "Comfy3D/Import|Export"
     
-    def load_gs(self, gs_ply_file_path):
+    def load_gs(self, gs_file_path):
         gs_ply = None
         
-        if not os.path.isabs(gs_ply_file_path):
-            gs_ply_file_path = os.path.join(comfy_paths.input_directory, gs_ply_file_path)
+        if not os.path.isabs(gs_file_path):
+            gs_file_path = os.path.join(comfy_paths.input_directory, gs_file_path)
         
-        if os.path.exists(gs_ply_file_path):
-            folder, filename = os.path.split(gs_ply_file_path)
+        if os.path.exists(gs_file_path):
+            folder, filename = os.path.split(gs_file_path)
             if filename.lower().endswith(SUPPORTED_3DGS_EXTENSIONS):
-                gs_ply = PlyData.read(gs_ply_file_path)
+                gs_ply = PlyData.read(gs_file_path)
             else:
                 cstr(f"[{self.__class__.__name__}] File name {filename} does not end with supported 3DGS file extensions: {SUPPORTED_3DGS_EXTENSIONS}").error.print()
         else:        
-            cstr(f"[{self.__class__.__name__}] File {gs_ply_file_path} does not exist").error.print()
+            cstr(f"[{self.__class__.__name__}] File {gs_file_path} does not exist").error.print()
         return (gs_ply, )
     
 class Save_3D_Mesh:
@@ -132,32 +203,27 @@ class Save_3D_Mesh:
         return {
             "required": {
                 "mesh": ("MESH",),
-                "mesh_save_path": ("STRING", {"default": 'Mesh_[time(%Y-%m-%d)].obj', "multiline": False}),
+                "save_path": ("STRING", {"default": 'Mesh_%Y-%m-%d-%M-%S-%f.obj', "multiline": False}),
             },
         }
 
     OUTPUT_NODE = True
-    RETURN_TYPES = ()
+    RETURN_TYPES = (
+        "STRING",
+    )
+    RETURN_NAMES = (
+        "save_path",
+    )
     FUNCTION = "save_mesh"
-    CATEGORY = "ComfyUI3D/Import|Export"
+    CATEGORY = "Comfy3D/Import|Export"
     
-    def save_mesh(self, mesh, mesh_save_path):
+    def save_mesh(self, mesh, save_path):
+        save_path = parse_save_filename(save_path, comfy_paths.output_directory, SUPPORTED_3D_EXTENSIONS, self.__class__.__name__)
         
-        mesh_folder_path, filename = os.path.split(mesh_save_path)
-        
-        if not os.path.isabs(mesh_save_path):
-            mesh_folder_path = os.path.join(comfy_paths.output_directory, mesh_folder_path)
-            mesh_save_path = os.path.join(mesh_folder_path, filename)
-        
-        os.makedirs(mesh_folder_path, exist_ok=True)
-        
-        if filename.lower().endswith(SUPPORTED_3D_EXTENSIONS):
-            mesh.write(mesh_save_path)
-            cstr(f"[{self.__class__.__name__}] saved model to {mesh_save_path}").msg.print()
-        else:
-            cstr(f"File name {filename} does not end with supported 3D file extensions: {SUPPORTED_3D_EXTENSIONS}").error.print()
-        
-        return ()
+        if save_path is not None:
+            mesh.write(save_path)
+
+        return (save_path, )
     
 class Save_3DGS:
 
@@ -166,31 +232,92 @@ class Save_3DGS:
         return {
             "required": {
                 "gs_ply": ("GS_PLY",),
-                "save_path": ("STRING", {"default": '3DGS_[time(%Y-%m-%d)].ply', "multiline": False}),
+                "save_path": ("STRING", {"default": '3DGS_%Y-%m-%d-%M-%S-%f.ply', "multiline": False}),
             },
         }
 
     OUTPUT_NODE = True
-    RETURN_TYPES = ()
-    FUNCTION = "save_3DGS"
-    CATEGORY = "ComfyUI3D/Import|Export"
+    RETURN_TYPES = (
+        "STRING",
+    )
+    RETURN_NAMES = (
+        "save_path",
+    )
+    FUNCTION = "save_gs"
+    CATEGORY = "Comfy3D/Import|Export"
     
-    def save_3DGS(self, gs_ply, save_path):
+    def save_gs(self, gs_ply, save_path):
         
-        folder_path, filename = os.path.split(save_path)
+        save_path = parse_save_filename(save_path, comfy_paths.output_directory, SUPPORTED_3DGS_EXTENSIONS, self.__class__.__name__)
         
-        if filename.lower().endswith(SUPPORTED_3DGS_EXTENSIONS):
-            if not os.path.isabs(save_path):
-                folder_path = os.path.join(comfy_paths.output_directory, folder_path)
-                save_path = os.path.join(folder_path, filename)
-            
-            os.makedirs(folder_path, exist_ok=True)
-            
+        if save_path is not None:
             gs_ply.write(save_path)
-        else:
-            cstr(f"[{self.__class__.__name__}] File name {filename} does not end with supported 3DGS file extensions: {SUPPORTED_3DGS_EXTENSIONS}").error.print()
         
-        return ()
+        return (save_path, )
+    
+class Switch_3DGS_Axis:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "gs_ply": ("GS_PLY",),
+                "axis_x_to": (["+x", "-x", "+y", "-y", "+z", "-z"],),
+                "axis_y_to": (["+y", "-y", "+z", "-z", "+x", "-x"],),
+                "axis_z_to": (["+z", "-z", "+x", "-x", "+y", "-y"],),
+            },
+        }
+
+    RETURN_TYPES = (
+        "GS_PLY",
+    )
+    RETURN_NAMES = (
+        "switched_gs_ply",
+    )
+    FUNCTION = "switch_axis_and_scale"
+    CATEGORY = "Comfy3D/Preprocessor"
+    
+    def switch_axis_and_scale(self, gs_ply, axis_x_to, axis_y_to, axis_z_to):
+        switched_gs_ply = None
+        if axis_x_to[1] != axis_y_to[1] and axis_x_to[1] != axis_z_to[1] and axis_y_to[1] != axis_z_to[1]:
+            target_axis, target_scale, coordinate_invert_count = get_target_axis_and_scale([axis_x_to, axis_y_to, axis_z_to])
+            switched_gs_ply = switch_ply_axis_and_scale(gs_ply, target_axis, target_scale, coordinate_invert_count)
+        else:
+            cstr(f"[{self.__class__.__name__}] axis_x_to: {axis_x_to}, axis_y_to: {axis_y_to}, axis_z_to: {axis_z_to} have to be on separated axis").error.print()
+        
+        return (switched_gs_ply, )
+    
+class Switch_Mesh_Axis:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "mesh": ("MESH",),
+                "axis_x_to": (["+x", "-x", "+y", "-y", "+z", "-z"],),
+                "axis_y_to": (["+y", "-y", "+z", "-z", "+x", "-x"],),
+                "axis_z_to": (["+z", "-z", "+x", "-x", "+y", "-y"],),
+            },
+        }
+
+    RETURN_TYPES = (
+        "MESH",
+    )
+    RETURN_NAMES = (
+        "switched_mesh",
+    )
+    FUNCTION = "switch_axis_and_scale"
+    CATEGORY = "Comfy3D/Preprocessor"
+    
+    def switch_axis_and_scale(self, mesh, axis_x_to, axis_y_to, axis_z_to):
+        
+        switched_mesh = None
+        
+        if axis_x_to[1] != axis_y_to[1] and axis_x_to[1] != axis_z_to[1] and axis_y_to[1] != axis_z_to[1]:
+            target_axis, target_scale, coordinate_invert_count = get_target_axis_and_scale([axis_x_to, axis_y_to, axis_z_to])
+            switched_mesh = switch_mesh_axis_and_scale(mesh, target_axis, target_scale)
+        else:
+            cstr(f"[{self.__class__.__name__}] axis_x_to: {axis_x_to}, axis_y_to: {axis_y_to}, axis_z_to: {axis_z_to} have to be on separated axis").error.print()
+        
+        return (switched_mesh, )
     
 class Convert_3DGS_To_Pointcloud:
 
@@ -209,7 +336,7 @@ class Convert_3DGS_To_Pointcloud:
         "points_cloud",
     )
     FUNCTION = "convert_gs_ply"
-    CATEGORY = "ComfyUI3D/Preprocessor"
+    CATEGORY = "Comfy3D/Preprocessor"
     
     def convert_gs_ply(self, gs_ply):
         
@@ -234,7 +361,7 @@ class Convert_Mesh_To_Pointcloud:
         "points_cloud",
     )
     FUNCTION = "convert_mesh"
-    CATEGORY = "ComfyUI3D/Preprocessor"
+    CATEGORY = "Comfy3D/Preprocessor"
     
     def convert_mesh(self, mesh):
         
@@ -298,7 +425,7 @@ class Stack_Orbit_Camera_Poses:
     )
     
     FUNCTION = "get_camposes"
-    CATEGORY = "ComfyUI3D/Preprocessor"
+    CATEGORY = "Comfy3D/Preprocessor"
     
     class Pose_Config(Enum):
         STOP_LARGER_STEP_POS = 0
@@ -451,7 +578,7 @@ class Generate_Orbit_Camera_Poses:
         "orbit_camposes",
     )
     FUNCTION = "get_camposes"
-    CATEGORY = "ComfyUI3D/Preprocessor"
+    CATEGORY = "Comfy3D/Preprocessor"
     
     class Slice_Camposes:
         def __init__(self, start_reference_image_index, end_reference_image_index, camposes_start_to_end):
@@ -506,6 +633,64 @@ class Generate_Orbit_Camera_Poses:
                 cstr(f"[{self.__class__.__name__}] Last end_reference_image_index: {end_reference_image_index} plus 1 must equal to current start_reference_image_index: {start_reference_image_index}").error.print()
         
         return (orbit_camposes, )
+   
+class Gaussian_Splatting_Orbit_Renderer:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "gs_ply": ("GS_PLY",),
+                "render_image_width": ("INT", {"default": 1024, "min": 128, "max": 8192}),
+                "render_image_height": ("INT", {"default": 1024, "min": 128, "max": 8192}),
+                "render_orbit_camera_poses": ("ORBIT_CAMPOSES",),    # (orbit radius, elevation, azimuth, orbit center X,  orbit center Y,  orbit center Z)
+                "render_orbit_camera_fovy": ("FLOAT", {"default": 49.1, "min": 0.0, "max": 180.0, "step": 0.1}),
+                "render_background_color_r": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001}),
+                "render_background_color_g": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001}),
+                "render_background_color_b": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001}),
+            }
+        }
+        
+    RETURN_TYPES = (
+        "IMAGE",
+        "MASK",
+    )
+    RETURN_NAMES = (
+        "rendered_gs_images",    # [Number of Poses, H, W, 3]
+        "rendered_gs_masks",    # [Number of Poses, H, W, 1]
+    )
+    
+    FUNCTION = "render_gs"
+    CATEGORY = "Comfy3D/Preprocessor"
+    
+    def render_gs(
+        self, 
+        gs_ply, 
+        render_image_width, 
+        render_image_height, 
+        render_orbit_camera_poses, 
+        render_orbit_camera_fovy,
+        render_background_color_r, 
+        render_background_color_g, 
+        render_background_color_b,
+    ):
+        
+        sh_degree, _ = calculate_max_sh_degree_from_gs_ply(gs_ply)
+        renderer = GaussianSplattingRenderer(sh_degree=sh_degree)
+        renderer.initialize(gs_ply)
+        
+        cam_controller = GaussianSplattingCameraController(
+            renderer, 
+            render_image_width, 
+            render_image_height, 
+            render_orbit_camera_fovy, 
+            static_bg=[render_background_color_r, render_background_color_g, render_background_color_b]
+        )
+        
+        all_rendered_images, all_rendered_masks = cam_controller.render_all_pose(render_orbit_camera_poses)
+        all_rendered_images = all_rendered_images.permute(0, 2, 3, 1)   # [N, 3, H, W] -> [N, H, W, 3]
+        all_rendered_masks = all_rendered_masks.permute(0, 2, 3, 1).squeeze(3)  # [N, 1, H, W] -> [N, H, W]
+        
+        return (all_rendered_images, all_rendered_masks)
     
 class Gaussian_Splatting:
 
@@ -545,7 +730,7 @@ class Gaussian_Splatting:
             },
             
             "optional": {
-                "points_cloud": ("POINTCLOUD",),
+                "points_cloud_to_initialize_gaussian": ("POINTCLOUD",),
                 "ply_to_initialize_gaussian": ("GS_PLY",),
                 "mesh_to_initialize_gaussian": ("MESH",),
             }
@@ -557,10 +742,10 @@ class Gaussian_Splatting:
     RETURN_NAMES = (
         "gs_ply",
     )
-    FUNCTION = "run_3DGS"
-    CATEGORY = "ComfyUI3D/Algorithm"
+    FUNCTION = "run_gs"
+    CATEGORY = "Comfy3D/Algorithm"
     
-    def run_3DGS(
+    def run_gs(
         self,
         reference_images,
         reference_masks,
@@ -591,7 +776,7 @@ class Gaussian_Splatting:
         opacity_reset_interval,
         densify_grad_threshold,
         gaussian_sh_degree,
-        points_cloud=None,
+        points_cloud_to_initialize_gaussian=None,
         ply_to_initialize_gaussian=None,
         mesh_to_initialize_gaussian=None,
     ):
@@ -638,8 +823,8 @@ class Gaussian_Splatting:
                                         gaussian_sh_degree)
                     
                     
-                    if points_cloud is not None:
-                        gs_init_input = points_cloud
+                    if points_cloud_to_initialize_gaussian is not None:
+                        gs_init_input = points_cloud_to_initialize_gaussian
                     elif ply_to_initialize_gaussian is not None:
                         gs_init_input = ply_to_initialize_gaussian
                     else:
@@ -672,6 +857,8 @@ class Bake_Texture_To_Mesh:
                 "reference_orbit_camera_poses": ("ORBIT_CAMPOSES",),    # (orbit radius, elevation, azimuth, orbit center X,  orbit center Y,  orbit center Z)
                 "reference_orbit_camera_fovy": ("FLOAT", {"default": 49.1, "min": 0.0, "max": 180.0, "step": 0.1}),
                 "mesh": ("MESH",),
+                "mesh_albedo_width": ("INT", {"default": 1024, "min": 128, "max": 8192}),
+                "mesh_albedo_height": ("INT", {"default": 1024, "min": 128, "max": 8192}),
                 "training_iterations": ("INT", {"default": 1000, "min": 1, "max": 100000}),
                 "batch_size": ("INT", {"default": 3, "min": 1, "max": 0xffffffffffffffff}),
                 "texture_learning_rate": ("FLOAT", {"default": 0.1, "min": 0.00001, "step": 0.00001}),
@@ -691,10 +878,25 @@ class Bake_Texture_To_Mesh:
         "baked_texture",    # [1, H, W, 3]
     )
     FUNCTION = "bake_texture"
-    CATEGORY = "ComfyUI3D/Algorithm"
+    CATEGORY = "Comfy3D/Algorithm"
     
-    def bake_texture(self, reference_images, reference_masks, reference_orbit_camera_poses, reference_orbit_camera_fovy, mesh, 
-                     training_iterations, batch_size, texture_learning_rate, train_mesh_geometry, geometry_learning_rate, ms_ssim_loss_weight, force_cuda_rasterize):
+    def bake_texture(self, 
+    reference_images, 
+    reference_masks, 
+    reference_orbit_camera_poses, 
+    reference_orbit_camera_fovy, 
+    mesh, 
+    mesh_albedo_width,
+    mesh_albedo_height,
+    training_iterations, 
+    batch_size, 
+    texture_learning_rate, 
+    train_mesh_geometry, 
+    geometry_learning_rate, 
+    ms_ssim_loss_weight, 
+    force_cuda_rasterize):
+        
+        mesh.set_new_albedo(mesh_albedo_width, mesh_albedo_height)
         
         trained_mesh = None
         baked_texture = None
@@ -758,7 +960,7 @@ class Deep_Marching_Tetrahedrons:
         "trained_mesh",
     )
     FUNCTION = "run_dmtet"
-    CATEGORY = "ComfyUI3D/Algorithm"
+    CATEGORY = "Comfy3D/Algorithm"
     
     def run_dmtet(self, training_iterations, points_cloud_fitting_weight, mesh_smoothing_weight, chamfer_faces_sample_scale, mesh_scale, grid_resolution, geometry_learning_rate,
                   positional_encoding_multires, mlp_internal_dims, mlp_hidden_layer_num, 
@@ -805,7 +1007,7 @@ class Load_Triplane_Gaussian_Transformers:
         "tgs_model",
     )
     FUNCTION = "load_TGS"
-    CATEGORY = "ComfyUI3D/Import|Export"
+    CATEGORY = "Comfy3D/Import|Export"
     
     def load_TGS(self):
 
@@ -831,7 +1033,7 @@ class Load_Triplane_Gaussian_Transformers:
 
         return (tgs_model, )
     
-class Run_Triplane_Gaussian_Transformers:
+class Triplane_Gaussian_Transformers:
     
     @classmethod
     def INPUT_TYPES(cls):
@@ -847,14 +1049,12 @@ class Run_Triplane_Gaussian_Transformers:
     OUTPUT_NODE = True
     RETURN_TYPES = (
         "GS_PLY",
-        "FLOAT"
     )
     RETURN_NAMES = (
         "gs_ply",
-        "gaussian_sh_degree"
     )
     FUNCTION = "run_TGS"
-    CATEGORY = "ComfyUI3D/Algorithm"
+    CATEGORY = "Comfy3D/Algorithm"
     
     def run_TGS(self, reference_image, reference_mask, tgs_model, cam_dist):        
         config_path = os.path.join(ROOT_PATH, TGS_CONFIG_PATH)
@@ -889,5 +1089,5 @@ class Run_Triplane_Gaussian_Transformers:
         )
         """
         
-        return (gs_ply[0], tgs_model.renderer.cfg.sh_degree)
+        return (gs_ply[0],)
         

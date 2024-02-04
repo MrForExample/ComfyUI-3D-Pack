@@ -1,9 +1,14 @@
 import torch
 import numpy as np
+from kornia.geometry.conversions import (
+    quaternion_to_axis_angle,
+    axis_angle_to_quaternion,
+)
 import pymeshlab as pml
+from plyfile import PlyData, PlyElement
 
 from .mesh import PointCloud
-from ..shared_utils.sh_utils import SH2RGB, RGB2SH
+from shared_utils.sh_utils import SH2RGB, RGB2SH
 
 def _base_face_areas(face_vertices_0, face_vertices_1, face_vertices_2):
     """Base function to compute the face areas."""
@@ -301,6 +306,34 @@ def clean_mesh(
 
     return verts, faces
 
+def construct_list_of_gs_attributes(features_dc, features_rest, scaling, rotation):
+    l = ['x', 'y', 'z', 'nx', 'ny', 'nz']
+    for i in range(features_dc.shape[1]*features_dc.shape[2]):
+        l.append('f_dc_{}'.format(i))
+    for i in range(features_rest.shape[1]*features_rest.shape[2]):
+        l.append('f_rest_{}'.format(i))
+    l.append('opacity')
+    for i in range(scaling.shape[1]):
+        l.append('scale_{}'.format(i))
+    for i in range(rotation.shape[1]):
+        l.append('rot_{}'.format(i))
+    return l
+
+def calculate_max_sh_degree_from_gs_ply(plydata):
+    extra_f_names = [p.name for p in plydata.elements[0].properties if p.name.startswith("f_rest_")]
+    #assert len(extra_f_names)!=3*(max_sh_degree + 1) ** 2 - 3:
+    max_sh_degree = int(((len(extra_f_names) + 3) / 3) ** 0.5 - 1)
+    return max_sh_degree, extra_f_names
+
+def write_gs_ply(xyz, normals, f_dc, f_rest, opacities, scale, rotation, list_of_attributes):
+    dtype_full = [(attribute, 'f4') for attribute in list_of_attributes]
+
+    elements = np.empty(xyz.shape[0], dtype=dtype_full)
+    attributes = np.concatenate((xyz, normals, f_dc, f_rest, opacities, scale, rotation), axis=1)
+    elements[:] = list(map(tuple, attributes))
+    el = PlyElement.describe(elements, 'vertex')
+    return PlyData([el])
+
 def read_gs_ply(plydata):
     xyz = np.stack((np.asarray(plydata.elements[0]["x"]),
                     np.asarray(plydata.elements[0]["y"]),
@@ -312,9 +345,8 @@ def read_gs_ply(plydata):
     features_dc[:, 1, 0] = np.asarray(plydata.elements[0]["f_dc_1"])
     features_dc[:, 2, 0] = np.asarray(plydata.elements[0]["f_dc_2"])
 
-    extra_f_names = [p.name for p in plydata.elements[0].properties if p.name.startswith("f_rest_")]
-    #assert len(extra_f_names)!=3*(max_sh_degree + 1) ** 2 - 3:
-    max_sh_degree = int(((len(extra_f_names) + 3) / 3) ** 0.5 - 1)
+    max_sh_degree, extra_f_names = calculate_max_sh_degree_from_gs_ply(plydata)
+
     features_extra = np.zeros((xyz.shape[0], len(extra_f_names)))
     for idx, attr_name in enumerate(extra_f_names):
         features_extra[:, idx] = np.asarray(plydata.elements[0][attr_name])
@@ -335,9 +367,94 @@ def read_gs_ply(plydata):
 
 def ply_to_points_cloud(plydata):
     xyz, features_dc, features_extra, opacities, scales, rots = read_gs_ply(plydata)
+    
     features_dc = np.transpose(features_dc, (0, 2, 1))  # equivalent of torch.transpose(features_dc, 1, 2)
     features_extra = np.transpose(features_extra, (0, 2, 1))
     shs = np.concatenate((features_dc, features_extra), axis=1)
     normals = np.zeros_like(xyz)
     pcd = PointCloud(points=xyz, colors=SH2RGB(shs), normals=normals)
     return pcd
+
+
+def get_target_axis_and_scale(axis_string, scale_value=1.0):
+    """
+    Coordinate system inverts when:
+    1. Any of the axis inverts
+    2. Two of the axises switch
+    
+    If coordinate system inverts twice in a row then it will not be inverted
+    """
+    axis_names = ["x", "y", "z"]
+    
+    target_axis, target_scale, coordinate_invert_count = [], [], 0
+    axis_switch_count = 0
+    for i in range(len(axis_names)):
+        s = axis_string[i]
+        if s[0] == "-":
+            target_scale.append(-scale_value)
+            coordinate_invert_count += 1
+        else:
+            target_scale.append(scale_value)
+            
+        new_axis_i = axis_names.index(s[1])
+        if new_axis_i != i:
+            axis_switch_count += 1
+        target_axis.append(new_axis_i)
+        
+    if axis_switch_count == 2:
+        coordinate_invert_count += 1
+        
+    return target_axis, target_scale, coordinate_invert_count
+
+def switch_vector_axis(vector3_tensor, target_axis):
+    """
+    Example:
+        vector3_tensor = torch.tensor([[1, 2, 3], [3, 2, 1], [2, 3, 1]])  # shape (N, 3)
+
+        target_axis = (2, 0, 1) # or [2, 0, 1]
+        vector3_tensor[:, [0, 1, 2]] = vector3_tensor[:, target_axis]
+        
+        # Result: tensor([[3, 1, 2], [1, 3, 2], [1, 2, 3]])
+    """
+    vector3_tensor[:, [0, 1, 2]] = vector3_tensor[:, target_axis]
+    return vector3_tensor
+
+def switch_ply_axis_and_scale(plydata, target_axis, target_scale, coordinate_invert_count):
+    """
+    Args:
+        target_axis (array): shape (3)
+        target_scale (array): shape (3)
+    """
+    xyz, features_dc, features_extra, opacities, scales, rots = read_gs_ply(plydata)
+    normals = np.zeros_like(xyz)
+    features_dc_2d = features_dc.reshape(features_dc.shape[0], features_dc.shape[1]*features_dc.shape[2])
+    features_extra_2d = features_extra.reshape(features_extra.shape[0], features_extra.shape[1]*features_extra.shape[2])
+    
+    target_scale = torch.tensor(target_scale).float().cuda()
+    xyz = switch_vector_axis(torch.tensor(xyz).float().cuda() * target_scale, target_axis).detach().cpu().numpy()
+    scales = switch_vector_axis(torch.tensor(scales).float().cuda(), target_axis).detach().cpu().numpy()
+    
+    # change rotation representation from quaternion (w, x, y, z) to axis angle vector (x, y, z) to make swich axis easier
+    rots_axis_angle = quaternion_to_axis_angle(torch.tensor(rots).float().cuda())
+    rots_axis_angle = switch_vector_axis(rots_axis_angle * target_scale, target_axis)
+    """
+    Since axis–angle vector is composed of axis (unit vector/direction) and clockwise radians angle (vector magnitude),
+    so in order to invert the sign of angle when coordinate system inverts, we also need to invert the direction of axis–angle vector
+    """
+    if coordinate_invert_count % 2 != 0:
+        rots_axis_angle = -rots_axis_angle
+    rots = axis_angle_to_quaternion(rots_axis_angle).detach().cpu().numpy()
+    
+    return write_gs_ply(xyz, normals, features_dc_2d, features_extra_2d, opacities, scales, rots, construct_list_of_gs_attributes(features_dc, features_extra, scales, rots))
+    
+def switch_mesh_axis_and_scale(mesh, target_axis, target_scale):
+    """
+    Args:
+        target_axis (array): shape (3)
+        target_scale (array): shape (3)
+    """
+    target_scale = torch.tensor(target_scale).float().cuda()
+    mesh.v = switch_vector_axis(mesh.v * target_scale, target_axis)
+    mesh.vn = switch_vector_axis(mesh.vn * target_scale, target_axis)
+    return mesh
+    

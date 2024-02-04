@@ -1,0 +1,1544 @@
+{
+  "last_node_id": 46,
+  "last_link_id": 69,
+  "nodes": [
+    {
+      "id": 4,
+      "type": "[Comfy3D] Generate Orbit Camera Poses",
+      "pos": [
+        435,
+        148
+      ],
+      "size": {
+        "0": 908.027099609375,
+        "1": 153.19027709960938
+      },
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "reference_images",
+          "type": "IMAGE",
+          "link": 1
+        }
+      ],
+      "outputs": [
+        {
+          "name": "orbit_camposes",
+          "type": "ORBIT_CAMPOSES",
+          "links": [],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Generate Orbit Camera Poses"
+      },
+      "widgets_values": [
+        "#([start_reference_image_index : end_reference_image_index], orbit_radius, elevation_angle [-90, 90], start_azimuth_angle [0, 360], end_azimuth_angle [0, 360])\n([0:120], 1.75, 0, 0, 360)"
+      ]
+    },
+    {
+      "id": 9,
+      "type": "MaskToImage",
+      "pos": [
+        835,
+        -309
+      ],
+      "size": {
+        "0": 210,
+        "1": 26
+      },
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mask",
+          "type": "MASK",
+          "link": 8
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            4
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MaskToImage"
+      }
+    },
+    {
+      "id": 27,
+      "type": "[Comfy3D] Stack Orbit Camera Poses",
+      "pos": [
+        1034,
+        367
+      ],
+      "size": {
+        "0": 315,
+        "1": 586
+      },
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "orbit_camposes",
+          "type": "ORBIT_CAMPOSES",
+          "links": [
+            36,
+            40
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "orbit_radius_list",
+          "type": "FLOAT",
+          "links": null,
+          "shape": 6
+        },
+        {
+          "name": "elevation_list",
+          "type": "FLOAT",
+          "links": null,
+          "shape": 6
+        },
+        {
+          "name": "azimuth_list",
+          "type": "FLOAT",
+          "links": null,
+          "shape": 6
+        },
+        {
+          "name": "orbit_center_X_list",
+          "type": "FLOAT",
+          "links": null,
+          "shape": 6
+        },
+        {
+          "name": "orbit_center_Y_list",
+          "type": "FLOAT",
+          "links": null,
+          "shape": 6
+        },
+        {
+          "name": "orbit_center_Z_list",
+          "type": "FLOAT",
+          "links": null,
+          "shape": 6
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Stack Orbit Camera Poses"
+      },
+      "widgets_values": [
+        1.75,
+        1.75,
+        0.1,
+        0,
+        0,
+        0,
+        0,
+        -0.01,
+        3,
+        0,
+        0,
+        0.1,
+        0,
+        0,
+        0.1,
+        0,
+        0,
+        0.1
+      ]
+    },
+    {
+      "id": 10,
+      "type": "PreviewImage",
+      "pos": [
+        1114,
+        -310
+      ],
+      "size": {
+        "0": 210,
+        "1": 246
+      },
+      "flags": {
+        "collapsed": true
+      },
+      "order": 14,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 4
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 19,
+      "type": "PreviewImage",
+      "pos": [
+        448,
+        -310
+      ],
+      "size": {
+        "0": 210,
+        "1": 246
+      },
+      "flags": {
+        "collapsed": true
+      },
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 22
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 33,
+      "type": "VHS_VideoCombine",
+      "pos": [
+        3320,
+        -600
+      ],
+      "size": [
+        315,
+        559
+      ],
+      "flags": {},
+      "order": 20,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 50
+        },
+        {
+          "name": "audio",
+          "type": "VHS_AUDIO",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "Filenames",
+          "type": "VHS_FILENAMES",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VHS_VideoCombine"
+      },
+      "widgets_values": {
+        "frame_rate": 12,
+        "loop_count": 0,
+        "filename_prefix": "MeshTest\\3DGS_video",
+        "format": "video/h265-mp4",
+        "pix_fmt": "yuv420p10le",
+        "crf": 22,
+        "save_metadata": true,
+        "pingpong": false,
+        "save_output": true,
+        "videopreview": {
+          "hidden": false,
+          "paused": false,
+          "params": {
+            "filename": "3DGS_video_00005.mp4",
+            "subfolder": "MeshTest",
+            "type": "output",
+            "format": "video/h265-mp4"
+          }
+        }
+      }
+    },
+    {
+      "id": 29,
+      "type": "MaskToImage",
+      "pos": [
+        2830,
+        -240
+      ],
+      "size": {
+        "0": 210,
+        "1": 26
+      },
+      "flags": {},
+      "order": 22,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mask",
+          "type": "MASK",
+          "link": 45
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            38
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MaskToImage"
+      }
+    },
+    {
+      "id": 37,
+      "type": "[Comfy3D] Preview 3DMesh",
+      "pos": [
+        3740,
+        110
+      ],
+      "size": [
+        600,
+        500
+      ],
+      "flags": {},
+      "order": 29,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh_file_path",
+          "type": "STRING",
+          "link": 55,
+          "widget": {
+            "name": "mesh_file_path"
+          }
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Preview 3DMesh"
+      },
+      "widgets_values": [
+        "",
+        null
+      ]
+    },
+    {
+      "id": 24,
+      "type": "[Comfy3D] Switch 3DGS Axis",
+      "pos": [
+        1958,
+        855
+      ],
+      "size": {
+        "0": 315,
+        "1": 106
+      },
+      "flags": {},
+      "order": 15,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "gs_ply",
+          "type": "GS_PLY",
+          "link": 30
+        }
+      ],
+      "outputs": [
+        {
+          "name": "switched_gs_ply",
+          "type": "GS_PLY",
+          "links": [
+            29
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Switch 3DGS Axis"
+      },
+      "widgets_values": [
+        "+x",
+        "-y",
+        "-z"
+      ]
+    },
+    {
+      "id": 7,
+      "type": "VHS_LoadImages",
+      "pos": [
+        113,
+        54
+      ],
+      "size": [
+        243.60000610351562,
+        194
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            1,
+            22,
+            31,
+            58
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            2
+          ],
+          "shape": 3,
+          "slot_index": 1
+        },
+        {
+          "name": "INT",
+          "type": "INT",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VHS_LoadImages"
+      },
+      "widgets_values": {
+        "directory": "Images_enhanced",
+        "image_load_cap": 0,
+        "skip_first_images": 0,
+        "select_every_nth": 1,
+        "choose folder to upload": "image",
+        "videopreview": {
+          "hidden": false,
+          "paused": false,
+          "params": {
+            "frame_load_cap": 0,
+            "skip_first_images": 0,
+            "filename": "Images_enhanced",
+            "type": "input",
+            "format": "folder",
+            "select_every_nth": 1
+          }
+        }
+      }
+    },
+    {
+      "id": 39,
+      "type": "Reroute",
+      "pos": [
+        440,
+        -551
+      ],
+      "size": [
+        75,
+        26
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "",
+          "type": "*",
+          "link": 58
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "IMAGE",
+          "links": [
+            59
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "showOutputText": false,
+        "horizontal": false
+      }
+    },
+    {
+      "id": 8,
+      "type": "InvertMask",
+      "pos": [
+        545,
+        6
+      ],
+      "size": {
+        "0": 210,
+        "1": 26
+      },
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mask",
+          "type": "MASK",
+          "link": 2
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            8,
+            33,
+            61
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "InvertMask"
+      }
+    },
+    {
+      "id": 41,
+      "type": "Reroute",
+      "pos": [
+        835,
+        -483
+      ],
+      "size": [
+        75,
+        26
+      ],
+      "flags": {},
+      "order": 13,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "",
+          "type": "*",
+          "link": 61
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "MASK",
+          "links": [
+            62
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "showOutputText": false,
+        "horizontal": false
+      }
+    },
+    {
+      "id": 31,
+      "type": "Reroute",
+      "pos": [
+        1410,
+        -380
+      ],
+      "size": [
+        75,
+        26
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "",
+          "type": "*",
+          "link": 40
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "ORBIT_CAMPOSES",
+          "links": [
+            42,
+            64
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "showOutputText": false,
+        "horizontal": false
+      }
+    },
+    {
+      "id": 22,
+      "type": "Note",
+      "pos": [
+        1967,
+        649
+      ],
+      "size": {
+        "0": 347.9384460449219,
+        "1": 141.6276092529297
+      },
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "title": "Switch 3DGS Axis Note",
+      "properties": {
+        "text": ""
+      },
+      "widgets_values": [
+        "Triplane Gaussian Transformers to Preview:\n  axis x to: -y\n  axis y to: +z\n  axis z to: -x\n\nGaussian Splatting to Preview:\n  axis x to: +x\n  axis y to: -y\n  axis z to: -z"
+      ],
+      "color": "#432",
+      "bgcolor": "#653"
+    },
+    {
+      "id": 43,
+      "type": "Reroute",
+      "pos": [
+        2195,
+        -25
+      ],
+      "size": [
+        75,
+        26
+      ],
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "",
+          "type": "*",
+          "link": 64
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "ORBIT_CAMPOSES",
+          "links": [
+            65
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "showOutputText": false,
+        "horizontal": false
+      }
+    },
+    {
+      "id": 25,
+      "type": "[Comfy3D] Gaussian Splatting",
+      "pos": [
+        1397,
+        54
+      ],
+      "size": {
+        "0": 531.5999755859375,
+        "1": 758
+      },
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "reference_images",
+          "type": "IMAGE",
+          "link": 31
+        },
+        {
+          "name": "reference_masks",
+          "type": "MASK",
+          "link": 33
+        },
+        {
+          "name": "reference_orbit_camera_poses",
+          "type": "ORBIT_CAMPOSES",
+          "link": 36
+        },
+        {
+          "name": "points_cloud_to_initialize_gaussian",
+          "type": "POINTCLOUD",
+          "link": null
+        },
+        {
+          "name": "ply_to_initialize_gaussian",
+          "type": "GS_PLY",
+          "link": null
+        },
+        {
+          "name": "mesh_to_initialize_gaussian",
+          "type": "MESH",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "gs_ply",
+          "type": "GS_PLY",
+          "links": [
+            30,
+            49,
+            57
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Gaussian Splatting"
+      },
+      "widgets_values": [
+        49.1,
+        1000,
+        3,
+        10000,
+        0.2,
+        3,
+        0,
+        0,
+        0.5,
+        0.01,
+        0.05,
+        0.005,
+        0.005,
+        0.001,
+        0.00002,
+        0.02,
+        500,
+        5000,
+        3,
+        0.01,
+        100,
+        100000,
+        100,
+        700,
+        0.01,
+        0
+      ]
+    },
+    {
+      "id": 35,
+      "type": "[Comfy3D] Convert 3DGS To Pointcloud",
+      "pos": [
+        2029,
+        249
+      ],
+      "size": {
+        "0": 218.39999389648438,
+        "1": 26
+      },
+      "flags": {},
+      "order": 17,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "gs_ply",
+          "type": "GS_PLY",
+          "link": 57
+        }
+      ],
+      "outputs": [
+        {
+          "name": "points_cloud",
+          "type": "POINTCLOUD",
+          "links": [
+            53
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Convert 3DGS To Pointcloud"
+      }
+    },
+    {
+      "id": 30,
+      "type": "PreviewImage",
+      "pos": [
+        3080,
+        -240
+      ],
+      "size": {
+        "0": 215.39028930664062,
+        "1": 246
+      },
+      "flags": {
+        "collapsed": false
+      },
+      "order": 25,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 38
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 28,
+      "type": "PreviewImage",
+      "pos": [
+        3080,
+        -540
+      ],
+      "size": {
+        "0": 210,
+        "1": 246
+      },
+      "flags": {
+        "collapsed": false
+      },
+      "order": 21,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 51
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 23,
+      "type": "[Comfy3D] Preview 3DGS",
+      "pos": [
+        2702,
+        854
+      ],
+      "size": [
+        600,
+        500
+      ],
+      "flags": {},
+      "order": 24,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "gs_file_path",
+          "type": "STRING",
+          "link": 27,
+          "widget": {
+            "name": "gs_file_path"
+          }
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Preview 3DGS"
+      },
+      "widgets_values": [
+        "",
+        null
+      ]
+    },
+    {
+      "id": 21,
+      "type": "[Comfy3D] Save 3DGS",
+      "pos": [
+        2313,
+        854
+      ],
+      "size": {
+        "0": 348.45050048828125,
+        "1": 58
+      },
+      "flags": {},
+      "order": 19,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "gs_ply",
+          "type": "GS_PLY",
+          "link": 29
+        }
+      ],
+      "outputs": [
+        {
+          "name": "save_path",
+          "type": "STRING",
+          "links": [
+            27
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Save 3DGS"
+      },
+      "widgets_values": [
+        "MeshTest\\3DGS_%Y-%m-%d-%M-%S-%f.ply"
+      ]
+    },
+    {
+      "id": 13,
+      "type": "[Comfy3D] Load 3D Mesh",
+      "pos": [
+        1061,
+        1001
+      ],
+      "size": {
+        "0": 315,
+        "1": 154
+      },
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "links": [],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "title": "Load 3D Mesh [Optional]",
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Load 3D Mesh"
+      },
+      "widgets_values": [
+        "Meshes\\Cammy_Uniform.obj",
+        false,
+        true,
+        false,
+        false
+      ]
+    },
+    {
+      "id": 40,
+      "type": "Reroute",
+      "pos": [
+        2288,
+        -552
+      ],
+      "size": [
+        75,
+        26
+      ],
+      "flags": {},
+      "order": 10,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "",
+          "type": "*",
+          "link": 59
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "IMAGE",
+          "links": [
+            69
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "showOutputText": false,
+        "horizontal": false
+      }
+    },
+    {
+      "id": 32,
+      "type": "[Comfy3D] Gaussian Splatting Orbit Renderer",
+      "pos": [
+        1980,
+        -400
+      ],
+      "size": {
+        "0": 556.800048828125,
+        "1": 198
+      },
+      "flags": {},
+      "order": 16,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "gs_ply",
+          "type": "GS_PLY",
+          "link": 49
+        },
+        {
+          "name": "render_orbit_camera_poses",
+          "type": "ORBIT_CAMPOSES",
+          "link": 42
+        }
+      ],
+      "outputs": [
+        {
+          "name": "rendered_gs_images",
+          "type": "IMAGE",
+          "links": [
+            50,
+            51
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "rendered_gs_masks",
+          "type": "MASK",
+          "links": [
+            45
+          ],
+          "shape": 3,
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Gaussian Splatting Orbit Renderer"
+      },
+      "widgets_values": [
+        1024,
+        1024,
+        49.1,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": 42,
+      "type": "Reroute",
+      "pos": [
+        2241,
+        -484
+      ],
+      "size": [
+        75,
+        26
+      ],
+      "flags": {},
+      "order": 18,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "",
+          "type": "*",
+          "link": 62
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "MASK",
+          "links": [
+            63
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "showOutputText": false,
+        "horizontal": false
+      }
+    },
+    {
+      "id": 36,
+      "type": "[Comfy3D] Save 3D Mesh",
+      "pos": [
+        3399,
+        110
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 28,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 54
+        }
+      ],
+      "outputs": [
+        {
+          "name": "save_path",
+          "type": "STRING",
+          "links": [
+            55
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Save 3D Mesh"
+      },
+      "widgets_values": [
+        "MeshTest\\3DMesh_%Y-%m-%d-%M-%S-%f.obj"
+      ]
+    },
+    {
+      "id": 34,
+      "type": "[Comfy3D] Deep Marching Tetrahedrons",
+      "pos": [
+        2332,
+        249
+      ],
+      "size": {
+        "0": 443.4000244140625,
+        "1": 314
+      },
+      "flags": {},
+      "order": 23,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "reference_points_cloud",
+          "type": "POINTCLOUD",
+          "link": 53
+        },
+        {
+          "name": "reference_images",
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "reference_masks",
+          "type": "MASK",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "trained_mesh",
+          "type": "MESH",
+          "links": [
+            56,
+            68
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Deep Marching Tetrahedrons"
+      },
+      "widgets_values": [
+        3000,
+        1,
+        0.1,
+        1,
+        1,
+        128,
+        0.0001,
+        2,
+        128,
+        5
+      ]
+    },
+    {
+      "id": 46,
+      "type": "[Comfy3D] Save 3D Mesh",
+      "pos": [
+        2843,
+        495
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 27,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 68
+        }
+      ],
+      "outputs": [
+        {
+          "name": "save_path",
+          "type": "STRING",
+          "links": [],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Save 3D Mesh"
+      },
+      "widgets_values": [
+        "MeshTest\\3DMesh_%Y-%m-%d-%M-%S-%f.obj"
+      ]
+    },
+    {
+      "id": 38,
+      "type": "[Comfy3D] Bake Texture To Mesh",
+      "pos": [
+        2840,
+        110
+      ],
+      "size": {
+        "0": 531.5999755859375,
+        "1": 334
+      },
+      "flags": {},
+      "order": 26,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "reference_images",
+          "type": "IMAGE",
+          "link": 69
+        },
+        {
+          "name": "reference_masks",
+          "type": "MASK",
+          "link": 63
+        },
+        {
+          "name": "reference_orbit_camera_poses",
+          "type": "ORBIT_CAMPOSES",
+          "link": 65
+        },
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 56
+        }
+      ],
+      "outputs": [
+        {
+          "name": "trained_mesh",
+          "type": "MESH",
+          "links": [
+            54
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "baked_texture",
+          "type": "IMAGE",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Bake Texture To Mesh"
+      },
+      "widgets_values": [
+        49.1,
+        1024,
+        1024,
+        1000,
+        1,
+        0.1,
+        false,
+        0.01,
+        0.5,
+        false
+      ]
+    }
+  ],
+  "links": [
+    [
+      1,
+      7,
+      0,
+      4,
+      0,
+      "IMAGE"
+    ],
+    [
+      2,
+      7,
+      1,
+      8,
+      0,
+      "MASK"
+    ],
+    [
+      4,
+      9,
+      0,
+      10,
+      0,
+      "IMAGE"
+    ],
+    [
+      8,
+      8,
+      0,
+      9,
+      0,
+      "MASK"
+    ],
+    [
+      22,
+      7,
+      0,
+      19,
+      0,
+      "IMAGE"
+    ],
+    [
+      27,
+      21,
+      0,
+      23,
+      0,
+      "STRING"
+    ],
+    [
+      29,
+      24,
+      0,
+      21,
+      0,
+      "GS_PLY"
+    ],
+    [
+      30,
+      25,
+      0,
+      24,
+      0,
+      "GS_PLY"
+    ],
+    [
+      31,
+      7,
+      0,
+      25,
+      0,
+      "IMAGE"
+    ],
+    [
+      33,
+      8,
+      0,
+      25,
+      1,
+      "MASK"
+    ],
+    [
+      36,
+      27,
+      0,
+      25,
+      2,
+      "ORBIT_CAMPOSES"
+    ],
+    [
+      38,
+      29,
+      0,
+      30,
+      0,
+      "IMAGE"
+    ],
+    [
+      40,
+      27,
+      0,
+      31,
+      0,
+      "*"
+    ],
+    [
+      42,
+      31,
+      0,
+      32,
+      1,
+      "ORBIT_CAMPOSES"
+    ],
+    [
+      45,
+      32,
+      1,
+      29,
+      0,
+      "MASK"
+    ],
+    [
+      49,
+      25,
+      0,
+      32,
+      0,
+      "GS_PLY"
+    ],
+    [
+      50,
+      32,
+      0,
+      33,
+      0,
+      "IMAGE"
+    ],
+    [
+      51,
+      32,
+      0,
+      28,
+      0,
+      "IMAGE"
+    ],
+    [
+      53,
+      35,
+      0,
+      34,
+      0,
+      "POINTCLOUD"
+    ],
+    [
+      54,
+      38,
+      0,
+      36,
+      0,
+      "MESH"
+    ],
+    [
+      55,
+      36,
+      0,
+      37,
+      0,
+      "STRING"
+    ],
+    [
+      56,
+      34,
+      0,
+      38,
+      3,
+      "MESH"
+    ],
+    [
+      57,
+      25,
+      0,
+      35,
+      0,
+      "GS_PLY"
+    ],
+    [
+      58,
+      7,
+      0,
+      39,
+      0,
+      "*"
+    ],
+    [
+      59,
+      39,
+      0,
+      40,
+      0,
+      "*"
+    ],
+    [
+      61,
+      8,
+      0,
+      41,
+      0,
+      "*"
+    ],
+    [
+      62,
+      41,
+      0,
+      42,
+      0,
+      "*"
+    ],
+    [
+      63,
+      42,
+      0,
+      38,
+      1,
+      "MASK"
+    ],
+    [
+      64,
+      31,
+      0,
+      43,
+      0,
+      "*"
+    ],
+    [
+      65,
+      43,
+      0,
+      38,
+      2,
+      "ORBIT_CAMPOSES"
+    ],
+    [
+      68,
+      34,
+      0,
+      46,
+      0,
+      "MESH"
+    ],
+    [
+      69,
+      40,
+      0,
+      38,
+      0,
+      "IMAGE"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {},
+  "version": 0.4
+}

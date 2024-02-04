@@ -1,5 +1,6 @@
 import os
 import sys
+from datetime import datetime
 
 class cstr(str):
     # Modified from: WAS Node Suite
@@ -76,9 +77,9 @@ class cstr(str):
         print(self, **kwargs)
 
 #! MESSAGE TEMPLATES
-cstr.color.add_code("msg", f"{cstr.color.BLUE}[ComfyUI-3D] {cstr.color.END}")
-cstr.color.add_code("warning", f"{cstr.color.LIGHTYELLOW}[ComfyUI-3D] [WARNING] {cstr.color.END}")
-cstr.color.add_code("error", f"{cstr.color.RED}[ComfyUI-3D] [ERROR] {cstr.color.END}")
+cstr.color.add_code("msg", f"{cstr.color.BLUE}[Comfy3D] {cstr.color.END}")
+cstr.color.add_code("warning", f"{cstr.color.LIGHTYELLOW}[Comfy3D] [WARNING] {cstr.color.END}")
+cstr.color.add_code("error", f"{cstr.color.RED}[Comfy3D] [ERROR] {cstr.color.END}")
 
 def get_persistent_directory(folder_name):
     if sys.platform == "win32":
@@ -88,3 +89,28 @@ def get_persistent_directory(folder_name):
     
     os.makedirs(folder, exist_ok=True)
     return folder
+
+def parse_save_filename(save_path, output_directory, supported_extensions, class_name):
+    
+    folder_path, filename = os.path.split(save_path)
+    filename, file_extension = os.path.splitext(filename)
+    if file_extension.lower() in supported_extensions:
+        if not os.path.isabs(save_path):
+            folder_path = os.path.join(output_directory, folder_path)
+        
+        os.makedirs(folder_path, exist_ok=True)
+        
+        # replace time date format to current time
+        now = datetime.now() # current date and time
+        all_date_format = ["%Y", "%m", "%d", "%M", "%S", "%f"]
+        for date_format in all_date_format:
+            if date_format in filename:
+                filename = filename.replace(date_format, now.strftime(date_format))
+                
+        save_path = os.path.join(folder_path, filename) + file_extension
+        cstr(f"[{class_name}] Saving model to {save_path}").msg.print()
+        return save_path
+    else:
+        cstr(f"[{class_name}] File name {filename} does not end with supported file extensions: {supported_extensions}").error.print()
+    
+    return None
