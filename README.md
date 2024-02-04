@@ -17,27 +17,29 @@
 - **Preview 3DGS and 3D Mesh**: 3D Visualization inside ComfyUI:
   - Using [gsplat.js](https://github.com/huggingface/gsplat.js/tree/main) and [three.js](https://github.com/mrdoob/three.js/tree/dev) for 3DGS & 3D Mesh visualization respectively
 
+    https://github.com/MrForExample/ComfyUI-3D-Pack/assets/62230687/9f3c56b1-afb3-4bf1-8845-ab1025a87463
+
 - **Triplane Gaussian Transformers**: [VAST-AI-Research/TriplaneGaussian](https://github.com/VAST-AI-Research/TriplaneGaussian)
   - Enable single image to 3D Gaussian, then you can use Deep Marching Tetrahedrons node to convert it to mesh
  
-  <table class="center">
-      
-  <tr>
-      <td width=50% style="border: none">
-          <img src="_Example_Workflows/_Example_Inputs_Files/a_pikachu_with_smily_face-removebg.png"/>
-      </td>
-      <td width=50% style="border: none">
-          <video controls autoplay loop src="https://github.com/MrForExample/ComfyUI-3D-Pack/assets/62230687/aae7c16b-8d57-460d-b5b0-362f105a9d02" muted="false" width="256"></video>
-      </td>
-  </tr>
-  </table>
+    <table class="center">
+    <tr>
+        <td width=50% style="border: none">
+            <img src="_Example_Workflows/_Example_Inputs_Files/a_pikachu_with_smily_face-removebg.png"/>
+        </td>
+        <td width=50% style="border: none">
+            <video controls autoplay loop src="https://github.com/MrForExample/ComfyUI-3D-Pack/assets/62230687/aae7c16b-8d57-460d-b5b0-362f105a9d02" muted="false" width="256"></video>
+        </td>
+    </tr>
+    </table>
 
 - **Stack Orbit Camera Poses**: Automatically generate all range of camera pose combinations
   - You can use it to conditioning the [StableZero123 (You need to Download the checkpoint first)](https://comfyanonymous.github.io/ComfyUI_examples/3d/), with full range of camera poses in one prompt pass
   - You can use it to generate the orbit camera poses and directly input to other 3D process node (e.g. GaussianSplatting and BakeTextureToMesh)
   - Example usage:
 
-    <img src="_Example_Workflows/_Example_Outputs/Cammy_Cam_Rotate_Clockwise_Camposes.png" width="256"/> <img src="_Example_Workflows/_Example_Outputs/Cammy_Cam_Rotate_Counter_Clockwise_Camposes.png" width="256"/> 
+    <img src="_Example_Workflows/_Example_Outputs/Cammy_Cam_Rotate_Clockwise_Camposes.png" width="256"/> <img src="_Example_Workflows/_Example_Outputs/Cammy_Cam_Rotate_Counter_Clockwise_Camposes.png" width="256"/>
+    <br>
     <img src="_Example_Workflows/_Example_Outputs/Cammy_Cam_Rotate_Clockwise.gif" width="256"/> <img src="_Example_Workflows/_Example_Outputs/Cammy_Cam_Rotate_Counter_Clockwise.gif" width="256"/> 
   - Coordinate system:
     - Azimuth: In top view, from angle 0 rotate 360 degree with step -90 you get (0, -90, -180/180, 90, 0), in this case camera rotates clock-wise, vice versa.
