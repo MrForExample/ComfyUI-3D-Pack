@@ -41,27 +41,6 @@ def look_at(campos, target, opengl=True):
     R = np.stack([right_vector, up_vector, forward_vector], axis=1)
     return R
 
-
-# elevation & azimuth to pose (cam2world) matrix
-def orbit_camera(elevation, azimuth, radius=1, is_degree=True, target=None, opengl=True):
-    # radius: scalar
-    # elevation: scalar, in (-90, 90), from +y to -y is (-90, 90)
-    # azimuth: scalar, in (-180, 180), from +z to +x is (0, 90)
-    # return: [4, 4], camera pose matrix
-    if is_degree:
-        elevation = np.deg2rad(elevation)
-        azimuth = np.deg2rad(azimuth)
-    x = radius * np.cos(elevation) * np.sin(azimuth)
-    y = - radius * np.sin(elevation)
-    z = radius * np.cos(elevation) * np.cos(azimuth)
-    if target is None:
-        target = np.zeros([3], dtype=np.float32)
-    campos = np.array([x, y, z]) + target  # [3]
-    T = np.eye(4, dtype=np.float32)
-    T[:3, :3] = look_at(campos, target, opengl)
-    T[:3, 3] = campos
-    return T
-
 def get_look_at_camera_pose(target, target_to_cam_offset, look_distance=0.1, opengl=True):
     """
     Calculate the pose (cam2world) matrix from target position the camera suppose to look at and offset vector from target to camera

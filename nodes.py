@@ -4,15 +4,17 @@ import re
 import math
 import copy
 from enum import Enum
+from collections import OrderedDict
 import folder_paths as comfy_paths
 
 import torch
 from torch.utils.data import DataLoader
+import torchvision.transforms.functional as TF
 import numpy as np
+from safetensors.torch import load_file
 
 from plyfile import PlyData
 
-from .shared_utils.common_utils import cstr, parse_save_filename
 from .mesh_processer.mesh import Mesh
 from .mesh_processer.mesh_utils import (
     ply_to_points_cloud, 
@@ -26,9 +28,20 @@ from .algorithms.main_3DGS_renderer import GaussianSplattingRenderer
 from .algorithms.diff_texturing import DiffTextureBaker
 from .algorithms.dmtet import DMTetMesh
 from .algorithms.triplane_gaussian_transformers import TGS
+from .algorithms.large_multiview_gaussian_model import LGM
+from .algorithms.nerf_marching_cubes_converter import GSConverterNeRFMarchingCubes
 from .tgs.utils.config import ExperimentConfig, load_config
 from .tgs.data import CustomImageOrbitDataset
 from .tgs.utils.misc import todevice, get_device
+from .lgm.core.options import config_defaults
+from .lgm.mvdream.pipeline_mvdream import MVDreamPipeline
+
+from .shared_utils.image_utils import prepare_torch_img
+from .shared_utils.common_utils import cstr, parse_save_filename, get_list_filenames
+
+DIFFUSERS_PIPE_DICT = OrderedDict([
+    ("MVDreamPipeline", MVDreamPipeline),
+])
 
 ROOT_PATH = os.path.join(comfy_paths.get_folder_paths("custom_nodes")[0], "ComfyUI-3D-Pack")
 
@@ -688,7 +701,7 @@ class Gaussian_Splatting_Orbit_Renderer:
         
         all_rendered_images, all_rendered_masks = cam_controller.render_all_pose(render_orbit_camera_poses)
         all_rendered_images = all_rendered_images.permute(0, 2, 3, 1)   # [N, 3, H, W] -> [N, H, W, 3]
-        all_rendered_masks = all_rendered_masks.permute(0, 2, 3, 1).squeeze(3)  # [N, 1, H, W] -> [N, H, W]
+        all_rendered_masks = all_rendered_masks.squeeze(1)  # [N, 1, H, W] -> [N, H, W]
         
         return (all_rendered_images, all_rendered_masks)
     
@@ -990,14 +1003,15 @@ TGS_CONFIG_PATH = "configs/tgs_config.yaml"
 
 class Load_Triplane_Gaussian_Transformers:
     
+    checkpoints_dir = "checkpoints/tgs"
+    default_ckpt_name = "model_lvis_rel.ckpt"
+    
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
+                "model_name": (get_list_filenames(os.path.join(ROOT_PATH, cls.checkpoints_dir)), ),
             },
-
-            "optional": {
-            }
         }
     
     RETURN_TYPES = (
@@ -1009,7 +1023,7 @@ class Load_Triplane_Gaussian_Transformers:
     FUNCTION = "load_TGS"
     CATEGORY = "Comfy3D/Import|Export"
     
-    def load_TGS(self):
+    def load_TGS(self, model_name):
 
         device = get_device()
         
@@ -1017,19 +1031,20 @@ class Load_Triplane_Gaussian_Transformers:
         cfg: ExperimentConfig = load_config(config_path)
         
         # Download pre-trained model if it not exist locally
-        model_name = "model_lvis_rel.ckpt"
-        model_path = os.path.join(ROOT_PATH, f"checkpoints/{model_name}")
-        if not os.path.isfile(model_path):
+        ckpt_path = os.path.join(ROOT_PATH, self.checkpoints_dir, model_name)
+        if not os.path.isfile(ckpt_path):
             from huggingface_hub import hf_hub_download
-            hf_hub_download(repo_id="VAST-AI/TriplaneGaussian", local_dir="./checkpoints", filename=model_name, repo_type="model")
-        
-        cfg.system.weights=model_path
+            hf_hub_download(repo_id="VAST-AI/TriplaneGaussian", local_dir=self.checkpoints_dir, filename=self.default_ckpt_name, repo_type="model")
+            cstr(f"[{self.__class__.__name__}] can't find checkpoint {ckpt_path}, will download it from repo VAST-AI/TriplaneGaussian instead").warning.print()
+            ckpt_path = os.path.join(ROOT_PATH, self.checkpoints_dir, self.default_ckpt_name)
+            
+        cfg.system.weights=ckpt_path
         tgs_model = TGS(cfg=cfg.system).to(device)
         
         save_path = os.path.join(ROOT_PATH, "outputs")
         tgs_model.set_save_dir(save_path)
         
-        cstr(f"[{self.__class__.__name__}] loaded model ckpt from {model_path}").msg.print()
+        cstr(f"[{self.__class__.__name__}] loaded model ckpt from {ckpt_path}").msg.print()
 
         return (tgs_model, )
     
@@ -1046,7 +1061,6 @@ class Triplane_Gaussian_Transformers:
             },
         }
     
-    OUTPUT_NODE = True
     RETURN_TYPES = (
         "GS_PLY",
     )
@@ -1090,4 +1104,217 @@ class Triplane_Gaussian_Transformers:
         """
         
         return (gs_ply[0],)
+    
+class Load_Diffusers_Pipeline:
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "diffusers_pipeline_name": (list(DIFFUSERS_PIPE_DICT.keys()),),
+                "pretrained_model_name": ("STRING", {"default": "ashawkey/imagedream-ipmv-diffusers", "multiline": False}),
+            },
+        }
+    
+    RETURN_TYPES = (
+        "DIFFUSERS_PIPE",
+    )
+    RETURN_NAMES = (
+        "pipe",
+    )
+    FUNCTION = "load_diffusers_pipe"
+    CATEGORY = "Comfy3D/Import|Export"
+    
+    def load_diffusers_pipe(self, diffusers_pipeline_name, pretrained_model_name):
         
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        
+        diffusers_pipeline_class = DIFFUSERS_PIPE_DICT[diffusers_pipeline_name]
+        
+        # load image dream
+        pipe = diffusers_pipeline_class.from_pretrained(
+            pretrained_model_name, # remote weights
+            torch_dtype=torch.float16,
+            trust_remote_code=True,
+            # local_files_only=True,
+        ).to(device)
+        
+        return (pipe,)
+
+class MVDream_Model:
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "mvdream_pipe": ("DIFFUSERS_PIPE",),
+                "reference_image": ("IMAGE",), 
+                "reference_mask": ("MASK",),
+                "prompt": ("STRING", {
+                    "default": "",
+                    "multiline": True
+                }),
+                "prompt_neg": ("STRING", {
+                    "default": "ugly, blurry, pixelated obscure, unnatural colors, poor lighting, dull, unclear, cropped, lowres, low quality, artifacts, duplicate", 
+                    "multiline": True
+                }),
+                "mv_guidance_scale": ("FLOAT", {"default": 5.0, "min": 0.0, "step": 0.01}),
+                "num_inference_steps": ("INT", {"default": 30, "min": 1}),
+                "elevation": ("FLOAT", {"default": 0.0, "min": ELEVATION_MIN, "max": ELEVATION_MAX, 'step': 0.0001}),
+            },
+        }
+    
+    RETURN_TYPES = (
+        "IMAGE",
+    )
+    RETURN_NAMES = (
+        "multiview_images",
+    )
+    FUNCTION = "run_mvdream"
+    CATEGORY = "Comfy3D/Algorithm"
+    
+    def run_mvdream(
+        self, 
+        mvdream_pipe, 
+        reference_image, # [1, H, W, 3]
+        reference_mask,  # [1, H, W]
+        prompt, 
+        prompt_neg, 
+        mv_guidance_scale, 
+        num_inference_steps, 
+        elevation,
+    ):
+        if len(reference_image.shape) == 4:
+            reference_image = reference_image.squeeze(0)
+        if len(reference_mask.shape) == 3:
+            reference_mask = reference_mask.squeeze(0)
+            
+        reference_mask = reference_mask.unsqueeze(2)
+        # give the white background to reference_image
+        reference_image = (reference_image * reference_mask + (1 - reference_mask)).detach().cpu().numpy()
+
+        # generate multi-view images
+        mv_images = mvdream_pipe(prompt, reference_image, negative_prompt=prompt_neg, guidance_scale=mv_guidance_scale, num_inference_steps=num_inference_steps, elevation=elevation)
+        mv_images = torch.from_numpy(np.stack([mv_images[1], mv_images[2], mv_images[3], mv_images[0]], axis=0)).float() # [4, H, W, 3], float32
+        
+        return (mv_images,)
+    
+class Load_Large_Multiview_Gaussian_Model:
+    
+    checkpoints_dir = "checkpoints/lgm"
+    default_ckpt_name = "model_fp16.safetensors"
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "model_name": (get_list_filenames(os.path.join(ROOT_PATH, cls.checkpoints_dir)), ),
+                "lgb_config": (['big', 'default', 'small', 'tiny'], )
+            },
+        }
+    
+    RETURN_TYPES = (
+        "LGM_MODEL",
+    )
+    RETURN_NAMES = (
+        "lgm_model",
+    )
+    FUNCTION = "load_LGM"
+    CATEGORY = "Comfy3D/Import|Export"
+    
+    def load_LGM(self, model_name, lgb_config):
+
+        lgm_model = LGM(config_defaults[lgb_config])
+        
+        # resume pretrained checkpoint
+        ckpt_path = os.path.join(ROOT_PATH, self.checkpoints_dir, model_name)
+        if not os.path.isfile(ckpt_path):
+            from huggingface_hub import hf_hub_download
+            hf_hub_download(repo_id="ashawkey/LGM", local_dir=self.checkpoints_dir, filename=self.default_ckpt_name, repo_type="model")
+            cstr(f"[{self.__class__.__name__}] can't find checkpoint {ckpt_path}, will download it from repo ashawkey/LGM instead").warning.print()
+            ckpt_path = os.path.join(ROOT_PATH, self.checkpoints_dir, self.default_ckpt_name)
+            
+        elif ckpt_path.endswith('safetensors'):
+            ckpt = load_file(ckpt_path, device='cpu')
+        else:
+            ckpt = torch.load(ckpt_path, map_location='cpu')
+                
+        lgm_model.load_state_dict(ckpt, strict=False)
+        cstr(f"[{self.__class__.__name__}] loaded model ckpt from {ckpt_path}").msg.print()
+
+        # device
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        lgm_model = lgm_model.half().to(device)
+        lgm_model.eval()
+        
+        return (lgm_model,)
+    
+IMAGENET_DEFAULT_MEAN = (0.485, 0.456, 0.406)
+IMAGENET_DEFAULT_STD = (0.229, 0.224, 0.225)
+    
+class Large_Multiview_Gaussian_Model:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "multiview_images": ("IMAGE", ),
+                "lgm_model": ("LGM_MODEL", ),
+                "mvdream_pipe": ("DIFFUSERS_PIPE",),
+            },
+        }
+    
+    OUTPUT_NODE = True
+    RETURN_TYPES = (
+        "GS_PLY",
+    )
+    RETURN_NAMES = (
+        "gs_ply",
+    )
+    FUNCTION = "run_LGM"
+    CATEGORY = "Comfy3D/Algorithm"
+    
+    @torch.no_grad()
+    def run_LGM(self, multiview_images, lgm_model, mvdream_pipe):
+        device = "cuda"
+        ref_image_torch = prepare_torch_img(multiview_images, lgm_model.opt.input_size, lgm_model.opt.input_size, device) # [4, 3, 256, 256]
+        ref_image_torch = TF.normalize(ref_image_torch, IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD)
+        rays_embeddings = lgm_model.prepare_default_rays(device)
+        ref_image_torch = torch.cat([ref_image_torch, rays_embeddings], dim=1).unsqueeze(0) # [1, 4, 9, 256, 256]
+        
+        with torch.autocast(device_type=device, dtype=torch.float16):
+            # generate gaussians
+            gaussians = lgm_model.forward_gaussians(ref_image_torch)
+        
+        # convert gaussians to ply
+        gs_ply = lgm_model.gs.to_ply(gaussians)
+            
+        return (gs_ply, )
+    
+class Convert_3DGS_to_Mesh_with_NeRF_and_Marching_Cubes:
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "gs_ply": ("GS_PLY",),
+                "gs_config": (['big', 'default', 'small', 'tiny'], )
+            },
+        }
+
+    RETURN_TYPES = (
+        "MESH",
+    )
+    RETURN_NAMES = (
+        "mesh",
+    )
+    FUNCTION = "convert_gs_ply"
+    CATEGORY = "Comfy3D/Algorithm"
+    
+    def convert_gs_ply(self, gs_ply, gs_config): 
+        with torch.inference_mode(False):
+            converter = GSConverterNeRFMarchingCubes(config_defaults[gs_config], gs_ply).cuda()
+            converter.fit_nerf()
+            converter.fit_mesh()
+            converter.fit_mesh_uv()
+        
+        return(converter.get_mesh(), )

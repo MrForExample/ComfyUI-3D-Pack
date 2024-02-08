@@ -1,16 +1,27 @@
-#base
+# base
 cmake
 ninja
-kornia
-OmegaConf
+
+# computational libraries
 numpy
 einops
 scipy
+kornia
 opencv-python
+roma
+nerfacc>=0.5.3
+PyMCubes
+git+https://github.com/ashawkey/diff-gaussian-rasterization
+git+https://github.com/NVlabs/nvdiffrast/
+git+https://github.com/facebookresearch/pytorch3d.git@stable
+git+https://github.com/rusty1s/pytorch_scatter.git
+git+https://github.com/YixunLiang/simple-knn.git
+git+https://github.com/ashawkey/kiuikit.git
 
 # for use ML models
 diffusers
 transformers
+safetensors
 
 # for training differentiable tensors
 pytorch_msssim
@@ -26,7 +37,9 @@ pygltflib
 xatlas
 pymeshlab
 
-# extra
+# configs & extra
 torchtyping
 tqdm
 jaxtyping
+packaging
+OmegaConf

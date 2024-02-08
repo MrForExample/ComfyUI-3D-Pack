@@ -336,7 +336,7 @@ class Mesh:
             texture = np.ones((res_H, res_W, 3), dtype=np.float32) * np.array([0.5, 0.5, 0.5])
             self.albedo = torch.tensor(texture, dtype=torch.float32, device=self.device)
         else:
-            self.albedo = prepare_torch_img(self.albedo, res_H, res_W, self.device).squeeze(0).permute(1, 2, 0).contiguous() # (1, 3, H, W) -> (H, W, 3)
+            self.albedo = prepare_torch_img(self.albedo.unsqueeze(0), res_H, res_W, self.device).squeeze(0).permute(1, 2, 0).contiguous() # (1, 3, H, W) -> (H, W, 3)
 
     # aabb
     def aabb(self):

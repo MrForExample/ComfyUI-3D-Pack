@@ -4,12 +4,13 @@ import tqdm
 import torch
 import torch.nn.functional as F
 import numpy as np
+from kiui.cam import orbit_camera
 from pytorch_msssim import SSIM, MS_SSIM
 
 import comfy.utils
 
 from .main_3DGS_renderer import GaussianSplattingRenderer
-from ..shared_utils.camera_utils import orbit_camera, OrbitCamera, MiniCam, calculate_fovX, get_projection_matrix
+from ..shared_utils.camera_utils import OrbitCamera, MiniCam, calculate_fovX, get_projection_matrix
 from ..shared_utils.image_utils import prepare_torch_img
 
 class GSParams:
@@ -153,8 +154,8 @@ class GaussianSplatting:
         ref_imgs_torch_list = []
         ref_masks_torch_list = []
         for i in range(self.ref_imgs_num):
-            ref_imgs_torch_list.append(prepare_torch_img(reference_images[i], self.ref_size_H, self.ref_size_W, self.device))
-            ref_masks_torch_list.append(prepare_torch_img(reference_masks[i].unsqueeze(2), self.ref_size_H, self.ref_size_W, self.device))
+            ref_imgs_torch_list.append(prepare_torch_img(reference_images[i].unsqueeze(0), self.ref_size_H, self.ref_size_W, self.device))
+            ref_masks_torch_list.append(prepare_torch_img(reference_masks[i].unsqueeze(2).unsqueeze(0), self.ref_size_H, self.ref_size_W, self.device))
             
         self.ref_imgs_torch = torch.cat(ref_imgs_torch_list, dim=0)
         self.ref_masks_torch = torch.cat(ref_masks_torch_list, dim=0)

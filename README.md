@@ -12,26 +12,23 @@
 ### Note: this project is still a WIP and not been released into ComFyUI package database yet
 
 ## Currently support:
-- For use case please check [Example Workflows](./_Example_Workflows/). [**Last update: 04/02/2024**]
+- For use case please check [Example Workflows](./_Example_Workflows/). [**Last update: 09/02/2024**]
   - **Note:** you need to put [Example Inputs Files & Folders](_Example_Workflows/_Example_Inputs_Files/) under ComfyUI Root Directory\ComfyUI\input folder before you can run the example workflow
+
+- **Large Multiview Gaussian Model**: [3DTopia/LGM](https://github.com/3DTopia/LGM)
+  - Enable single image to 3D Gaussian in less than 30 seconds on a RTX3080 GPU, later you can also convert 3D Gaussian to mesh
+
+    <video controls autoplay loop src="https://github.com/MrForExample/ComfyUI-3D-Pack/assets/62230687/9f3c56b1-afb3-4bf1-8845-ab1025a87463"></video>
+
+- **Triplane Gaussian Transformers**: [VAST-AI-Research/TriplaneGaussian](https://github.com/VAST-AI-Research/TriplaneGaussian)
+  - Enable single image to 3D Gaussian in less than 10 seconds on a RTX3080 GPU, later you can also convert 3D Gaussian to mesh
+ 
+    <video controls autoplay loop src="https://github.com/MrForExample/ComfyUI-3D-Pack/assets/62230687/9f3c56b1-afb3-4bf1-8845-ab1025a87463"></video>
+
 - **Preview 3DGS and 3D Mesh**: 3D Visualization inside ComfyUI:
   - Using [gsplat.js](https://github.com/huggingface/gsplat.js/tree/main) and [three.js](https://github.com/mrdoob/three.js/tree/dev) for 3DGS & 3D Mesh visualization respectively
 
-    https://github.com/MrForExample/ComfyUI-3D-Pack/assets/62230687/9f3c56b1-afb3-4bf1-8845-ab1025a87463
-
-- **Triplane Gaussian Transformers**: [VAST-AI-Research/TriplaneGaussian](https://github.com/VAST-AI-Research/TriplaneGaussian)
-  - Enable single image to 3D Gaussian, then you can use Deep Marching Tetrahedrons node to convert it to mesh
- 
-    <table class="center">
-    <tr>
-        <td width=50% style="border: none">
-            <img src="_Example_Workflows/_Example_Inputs_Files/a_pikachu_with_smily_face-removebg.png"/>
-        </td>
-        <td width=50% style="border: none">
-            <video controls autoplay loop src="https://github.com/MrForExample/ComfyUI-3D-Pack/assets/62230687/aae7c16b-8d57-460d-b5b0-362f105a9d02" muted="false" width="256"></video>
-        </td>
-    </tr>
-    </table>
+    <video controls autoplay loop src="https://github.com/MrForExample/ComfyUI-3D-Pack/assets/62230687/9f3c56b1-afb3-4bf1-8845-ab1025a87463"></video>
 
 - **Stack Orbit Camera Poses**: Automatically generate all range of camera pose combinations
   - You can use it to conditioning the [StableZero123 (You need to Download the checkpoint first)](https://comfyanonymous.github.io/ComfyUI_examples/3d/), with full range of camera poses in one prompt pass
@@ -71,17 +68,20 @@
   - Since different algorithms likely use different coordinate system, so the ability to re-mapping the axis of coordinate is crucial for passing generated result between differnt nodes.
 
 ## Roadmap:
-- [x] Add DMTet algorithm to allow convertion from points cloud(Gaussian/.ply) to mesh (.obj, .ply, .glb)
+- [x] Add DMTet algorithm to allow conversion from points cloud(Gaussian/.ply) to mesh (.obj, .ply, .glb)
 
-- [x] Integrate [Triplane Meets Gaussian Splatting: Fast and Generalizable Single-View 3D Reconstruction with Transformers](https://github.com/VAST-AI-Research/TriplaneGaussian)
+- [x] Integrate [Triplane Meets Gaussian Splatting: Fast and Generalizable Single-View 3D Reconstruction with Transformers](https://zouzx.github.io/TriplaneGaussian/)
 
 - [x] Add interactive 3D UI inside ComfuUI to visulaize training and generated results for 3D representations
 
 - [x] Add a new node to generate renderer image sequence given a 3D gaussians and orbit camera poses (So we can later feed it to the differentiable renderer to bake it onto a given mesh)
 
-- [ ] Add a general SDS/VSD Optimization algorithm to allow training 3D representations with diffusion model, *The real fun begins here* ;)
+- [x] Integrate [LGM: Large Multi-View Gaussian Model for High-Resolution 3D Content Creation](https://me.kiui.moe/lgm/)
 
-- [ ] Improve 3DGS to Mesh:
+- [ ] Add a general SDS/ISM Optimization algorithm to allow training 3D representations with diffusion model, *The real fun starts here* ;)
+  - Need to do some in-depth research on Interval Score Matching (ISM), since math behind it makes perfect sense and also there are so many ways we could improve upon the result obtained from [LucidDreamer](https://github.com/EnVision-Research/LucidDreamer)
+
+- [ ] Improve 3DGS to Mesh conversion algorithms:
   -  Support to training DMTet with images(RGB, Alpha, Normal Map)
   -  Find better methods to converts 3DGS or Points Cloud to Mesh (Normal maps reconstruction maybe?)
 
