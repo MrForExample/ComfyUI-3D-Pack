@@ -137,6 +137,8 @@ install.bat
 
     pip install ./simple-knn
 
+    pip install -U xformers --index-url https://download.pytorch.org/whl/cu121
+
     git clone --recursive https://github.com/NVlabs/nvdiffrast/`
     pip install ./nvdiffrast
 
@@ -148,6 +150,9 @@ install.bat
 
     # Install pytorch3d
     pip install git+https://github.com/facebookresearch/pytorch3d.git@stable
+
+    # Install kiuikit (Computer Vision Library)
+    pip install git+https://github.com/ashawkey/kiuikit.git
     ```
 
 - ***Install with ComfyUI's embed python env on Windows:***
