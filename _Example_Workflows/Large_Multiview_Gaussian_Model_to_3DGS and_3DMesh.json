@@ -1,60 +1,7 @@
 {
-  "last_node_id": 16,
-  "last_link_id": 18,
+  "last_node_id": 17,
+  "last_link_id": 22,
   "nodes": [
-    {
-      "id": 3,
-      "type": "[Comfy3D] MVDream Model",
-      "pos": [
-        792,
-        460
-      ],
-      "size": {
-        "0": 405.5999755859375,
-        "1": 238
-      },
-      "flags": {},
-      "order": 5,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "mvdream_pipe",
-          "type": "DIFFUSERS_PIPE",
-          "link": 1
-        },
-        {
-          "name": "reference_image",
-          "type": "IMAGE",
-          "link": 2
-        },
-        {
-          "name": "reference_mask",
-          "type": "MASK",
-          "link": 5
-        }
-      ],
-      "outputs": [
-        {
-          "name": "multiview_images",
-          "type": "IMAGE",
-          "links": [
-            6
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "[Comfy3D] MVDream Model"
-      },
-      "widgets_values": [
-        "",
-        "ugly, blurry, pixelated obscure, unnatural colors, poor lighting, dull, unclear, cropped, lowres, low quality, artifacts, duplicate",
-        5,
-        30,
-        0
-      ]
-    },
     {
       "id": 4,
       "type": "LoadImage",
@@ -98,76 +45,6 @@
       ]
     },
     {
-      "id": 5,
-      "type": "InvertMask",
-      "pos": [
-        539,
-        689
-      ],
-      "size": {
-        "0": 210,
-        "1": 26
-      },
-      "flags": {},
-      "order": 3,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "mask",
-          "type": "MASK",
-          "link": 3
-        }
-      ],
-      "outputs": [
-        {
-          "name": "MASK",
-          "type": "MASK",
-          "links": [
-            5
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "InvertMask"
-      }
-    },
-    {
-      "id": 2,
-      "type": "[Comfy3D] Load Diffusers Pipeline",
-      "pos": [
-        381,
-        319
-      ],
-      "size": {
-        "0": 375.3948669433594,
-        "1": 83.33004760742188
-      },
-      "flags": {},
-      "order": 1,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "pipe",
-          "type": "DIFFUSERS_PIPE",
-          "links": [
-            1,
-            8
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "[Comfy3D] Load Diffusers Pipeline"
-      },
-      "widgets_values": [
-        "MVDreamPipeline",
-        "ashawkey/imagedream-ipmv-diffusers"
-      ]
-    },
-    {
       "id": 12,
       "type": "[Comfy3D] Switch 3DGS Axis",
       "pos": [
@@ -179,13 +56,13 @@
         "1": 106
       },
       "flags": {},
-      "order": 7,
+      "order": 6,
       "mode": 0,
       "inputs": [
         {
           "name": "gs_ply",
           "type": "GS_PLY",
-          "link": 12
+          "link": 19
         }
       ],
       "outputs": [
@@ -209,42 +86,6 @@
       ]
     },
     {
-      "id": 8,
-      "type": "Reroute",
-      "pos": [
-        1150,
-        319
-      ],
-      "size": [
-        75,
-        26
-      ],
-      "flags": {},
-      "order": 4,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "",
-          "type": "*",
-          "link": 8
-        }
-      ],
-      "outputs": [
-        {
-          "name": "",
-          "type": "DIFFUSERS_PIPE",
-          "links": [
-            9
-          ],
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "showOutputText": false,
-        "horizontal": false
-      }
-    },
-    {
       "id": 9,
       "type": "[Comfy3D] Save 3DGS",
       "pos": [
@@ -256,7 +97,7 @@
         "1": 58
       },
       "flags": {},
-      "order": 9,
+      "order": 8,
       "mode": 0,
       "inputs": [
         {
@@ -295,7 +136,7 @@
         500
       ],
       "flags": {},
-      "order": 11,
+      "order": 10,
       "mode": 0,
       "inputs": [
         {
@@ -316,86 +157,6 @@
       ]
     },
     {
-      "id": 1,
-      "type": "[Comfy3D] Load Large Multiview Gaussian Model",
-      "pos": [
-        879,
-        752
-      ],
-      "size": {
-        "0": 315,
-        "1": 82
-      },
-      "flags": {},
-      "order": 2,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "lgm_model",
-          "type": "LGM_MODEL",
-          "links": [
-            7
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "[Comfy3D] Load Large Multiview Gaussian Model"
-      },
-      "widgets_values": [
-        "model_fp16.safetensors",
-        "big"
-      ]
-    },
-    {
-      "id": 7,
-      "type": "[Comfy3D] Large Multiview Gaussian Model",
-      "pos": [
-        1270,
-        460
-      ],
-      "size": {
-        "0": 252,
-        "1": 66
-      },
-      "flags": {},
-      "order": 6,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "multiview_images",
-          "type": "IMAGE",
-          "link": 6
-        },
-        {
-          "name": "lgm_model",
-          "type": "LGM_MODEL",
-          "link": 7
-        },
-        {
-          "name": "mvdream_pipe",
-          "type": "DIFFUSERS_PIPE",
-          "link": 9
-        }
-      ],
-      "outputs": [
-        {
-          "name": "gs_ply",
-          "type": "GS_PLY",
-          "links": [
-            12,
-            18
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "[Comfy3D] Large Multiview Gaussian Model"
-      }
-    },
-    {
       "id": 15,
       "type": "[Comfy3D] Preview 3DMesh",
       "pos": [
@@ -407,7 +168,7 @@
         500
       ],
       "flags": {},
-      "order": 12,
+      "order": 11,
       "mode": 0,
       "inputs": [
         {
@@ -434,18 +195,18 @@
         1550,
         224
       ],
-      "size": [
-        411.6000061035156,
-        65.46688079833984
-      ],
+      "size": {
+        "0": 411.6000061035156,
+        "1": 65.46688079833984
+      },
       "flags": {},
-      "order": 8,
+      "order": 7,
       "mode": 0,
       "inputs": [
         {
           "name": "gs_ply",
           "type": "GS_PLY",
-          "link": 18
+          "link": 20
         }
       ],
       "outputs": [
@@ -478,7 +239,7 @@
         "1": 60.248291015625
       },
       "flags": {},
-      "order": 10,
+      "order": 9,
       "mode": 0,
       "inputs": [
         {
@@ -503,6 +264,203 @@
       },
       "widgets_values": [
         "LGMTest/FatCat.obj"
+      ]
+    },
+    {
+      "id": 17,
+      "type": "[Comfy3D] Large Multiview Gaussian Model",
+      "pos": [
+        1270,
+        461
+      ],
+      "size": [
+        252,
+        46
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "multiview_images",
+          "type": "IMAGE",
+          "link": 21
+        },
+        {
+          "name": "lgm_model",
+          "type": "LGM_MODEL",
+          "link": 22
+        }
+      ],
+      "outputs": [
+        {
+          "name": "gs_ply",
+          "type": "GS_PLY",
+          "links": [
+            19,
+            20
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Large Multiview Gaussian Model"
+      }
+    },
+    {
+      "id": 3,
+      "type": "[Comfy3D] MVDream Model",
+      "pos": [
+        792,
+        460
+      ],
+      "size": {
+        "0": 405.5999755859375,
+        "1": 238
+      },
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mvdream_pipe",
+          "type": "DIFFUSERS_PIPE",
+          "link": 1
+        },
+        {
+          "name": "reference_image",
+          "type": "IMAGE",
+          "link": 2
+        },
+        {
+          "name": "reference_mask",
+          "type": "MASK",
+          "link": 5
+        }
+      ],
+      "outputs": [
+        {
+          "name": "multiview_images",
+          "type": "IMAGE",
+          "links": [
+            21
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] MVDream Model"
+      },
+      "widgets_values": [
+        "",
+        "ugly, blurry, pixelated obscure, unnatural colors, poor lighting, dull, unclear, cropped, lowres, low quality, artifacts, duplicate",
+        5,
+        30,
+        0
+      ]
+    },
+    {
+      "id": 1,
+      "type": "[Comfy3D] Load Large Multiview Gaussian Model",
+      "pos": [
+        879,
+        752
+      ],
+      "size": {
+        "0": 315,
+        "1": 82
+      },
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "lgm_model",
+          "type": "LGM_MODEL",
+          "links": [
+            22
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Load Large Multiview Gaussian Model"
+      },
+      "widgets_values": [
+        "model_fp16.safetensors",
+        "big"
+      ]
+    },
+    {
+      "id": 5,
+      "type": "InvertMask",
+      "pos": [
+        542,
+        545
+      ],
+      "size": {
+        "0": 210,
+        "1": 26
+      },
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mask",
+          "type": "MASK",
+          "link": 3
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            5
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "InvertMask"
+      }
+    },
+    {
+      "id": 2,
+      "type": "[Comfy3D] Load Diffusers Pipeline",
+      "pos": [
+        380,
+        345
+      ],
+      "size": {
+        "0": 375.3948669433594,
+        "1": 83.33004760742188
+      },
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "pipe",
+          "type": "DIFFUSERS_PIPE",
+          "links": [
+            1
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Load Diffusers Pipeline"
+      },
+      "widgets_values": [
+        "MVDreamPipeline",
+        "ashawkey/imagedream-ipmv-diffusers"
       ]
     }
   ],
@@ -540,52 +498,12 @@
       "MASK"
     ],
     [
-      6,
-      3,
-      0,
-      7,
-      0,
-      "IMAGE"
-    ],
-    [
-      7,
-      1,
-      0,
-      7,
-      1,
-      "LGM_MODEL"
-    ],
-    [
-      8,
-      2,
-      0,
-      8,
-      0,
-      "*"
-    ],
-    [
-      9,
-      8,
-      0,
-      7,
-      2,
-      "DIFFUSERS_PIPE"
-    ],
-    [
       11,
       9,
       0,
       10,
       0,
       "STRING"
-    ],
-    [
-      12,
-      7,
-      0,
-      12,
-      0,
-      "GS_PLY"
     ],
     [
       13,
@@ -612,12 +530,36 @@
       "MESH"
     ],
     [
-      18,
-      7,
+      19,
+      17,
+      0,
+      12,
+      0,
+      "GS_PLY"
+    ],
+    [
+      20,
+      17,
       0,
       16,
       0,
       "GS_PLY"
+    ],
+    [
+      21,
+      3,
+      0,
+      17,
+      0,
+      "IMAGE"
+    ],
+    [
+      22,
+      1,
+      0,
+      17,
+      1,
+      "LGM_MODEL"
     ]
   ],
   "groups": [],

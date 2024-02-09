@@ -1259,7 +1259,6 @@ class Large_Multiview_Gaussian_Model:
             "required": {
                 "multiview_images": ("IMAGE", ),
                 "lgm_model": ("LGM_MODEL", ),
-                "mvdream_pipe": ("DIFFUSERS_PIPE",),
             },
         }
     
@@ -1274,7 +1273,7 @@ class Large_Multiview_Gaussian_Model:
     CATEGORY = "Comfy3D/Algorithm"
     
     @torch.no_grad()
-    def run_LGM(self, multiview_images, lgm_model, mvdream_pipe):
+    def run_LGM(self, multiview_images, lgm_model):
         device = "cuda"
         ref_image_torch = prepare_torch_img(multiview_images, lgm_model.opt.input_size, lgm_model.opt.input_size, device) # [4, 3, 256, 256]
         ref_image_torch = TF.normalize(ref_image_torch, IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD)

@@ -1,6 +1,6 @@
 import os
 from os import listdir
-from os.path import isfile, join
+from os.path import isfile, join, exists
 import sys
 from datetime import datetime
 
@@ -119,4 +119,7 @@ def parse_save_filename(save_path, output_directory, supported_extensions, class
 
 # Get all files in a folder, if extension_filter is provided then only reture the files with extensions in extension_filter
 def get_list_filenames(directory, extension_filter=None):
-    return [f for f in listdir(directory) if isfile(join(directory, f)) and (extension_filter is None or f.lower().endswith(extension_filter))]
+    if exists(directory):
+        return [f for f in listdir(directory) if isfile(join(directory, f)) and (extension_filter is None or f.lower().endswith(extension_filter))]
+    else:
+        return []

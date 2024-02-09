@@ -155,7 +155,7 @@ install.bat
   If you have already installed ComfyUI on Windows with embed python environment and you don't want to switch to Miniconda/Conda and reinstall all your packages <br>
   *(Which is ideal, but unfortunately so far it seems I'm not experienced enough in this matter, but I'll continue to looking for the better solutions and please give me some suggestions if ou know better, thanks :)*
 
-  According to [@doctorpangloss](https://github.com/MrForExample/ComfyUI-3D-Pack/issues/5), you can setup the c++/cuda build environments in windows by running following command:
+  According to [@doctorpangloss](https://github.com/MrForExample/ComfyUI-3D-Pack/issues/5), you can setup the c++/cuda build environments in windows by using [chocolatey](https://chocolatey.org/) with following command:
   ```bash
   # using git bash for the sake of simplicity
   # enable developer mode
