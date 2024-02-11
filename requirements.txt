@@ -13,8 +13,8 @@ nerfacc>=0.5.3
 PyMCubes
 
 # for use ML models
-diffusers
-transformers
+diffusers>=0.26.1
+transformers>=4.36.2
 safetensors
 
 # for training differentiable tensors
@@ -23,6 +23,7 @@ pytorch_msssim
 # for process images & videos
 imageio
 imageio-ffmpeg
+matplotlib
 
 # for dmtet and mesh import & export
 trimesh

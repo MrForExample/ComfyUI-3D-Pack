@@ -63,6 +63,12 @@ SUPPORTED_3DGS_EXTENSIONS = (
     '.ply',
 )
 
+SUPPORTED_CHECKPOINTS_EXTENSIONS = (
+    '.ckpt', 
+    '.bin', 
+    '.safetensors',
+)
+
 ELEVATION_MIN = -90
 ELEVATION_MAX = 90.0
 AZIMUTH_MIN = -180.0
@@ -1008,9 +1014,14 @@ class Load_Triplane_Gaussian_Transformers:
     
     @classmethod
     def INPUT_TYPES(cls):
+        cls.checkpoints_dir_abs = os.path.join(ROOT_PATH, cls.checkpoints_dir)
+        all_models_names = get_list_filenames(cls.checkpoints_dir_abs, SUPPORTED_CHECKPOINTS_EXTENSIONS)
+        if cls.default_ckpt_name not in all_models_names:
+            all_models_names += [cls.default_ckpt_name]
+        
         return {
             "required": {
-                "model_name": (get_list_filenames(os.path.join(ROOT_PATH, cls.checkpoints_dir)), ),
+                "model_name": (all_models_names, ),
             },
         }
     
@@ -1031,12 +1042,13 @@ class Load_Triplane_Gaussian_Transformers:
         cfg: ExperimentConfig = load_config(config_path)
         
         # Download pre-trained model if it not exist locally
-        ckpt_path = os.path.join(ROOT_PATH, self.checkpoints_dir, model_name)
+        ckpt_path = os.path.join(self.checkpoints_dir_abs, model_name)
         if not os.path.isfile(ckpt_path):
-            from huggingface_hub import hf_hub_download
-            hf_hub_download(repo_id="VAST-AI/TriplaneGaussian", local_dir=self.checkpoints_dir, filename=self.default_ckpt_name, repo_type="model")
             cstr(f"[{self.__class__.__name__}] can't find checkpoint {ckpt_path}, will download it from repo VAST-AI/TriplaneGaussian instead").warning.print()
-            ckpt_path = os.path.join(ROOT_PATH, self.checkpoints_dir, self.default_ckpt_name)
+            
+            from huggingface_hub import hf_hub_download
+            hf_hub_download(repo_id="VAST-AI/TriplaneGaussian", local_dir=self.checkpoints_dir_abs, filename=self.default_ckpt_name, repo_type="model")
+            ckpt_path = os.path.join(self.checkpoints_dir_abs, self.default_ckpt_name)
             
         cfg.system.weights=ckpt_path
         tgs_model = TGS(cfg=cfg.system).to(device)
@@ -1158,6 +1170,7 @@ class MVDream_Model:
                     "default": "ugly, blurry, pixelated obscure, unnatural colors, poor lighting, dull, unclear, cropped, lowres, low quality, artifacts, duplicate", 
                     "multiline": True
                 }),
+                "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
                 "mv_guidance_scale": ("FLOAT", {"default": 5.0, "min": 0.0, "step": 0.01}),
                 "num_inference_steps": ("INT", {"default": 30, "min": 1}),
                 "elevation": ("FLOAT", {"default": 0.0, "min": ELEVATION_MIN, "max": ELEVATION_MAX, 'step': 0.0001}),
@@ -1180,6 +1193,7 @@ class MVDream_Model:
         reference_mask,  # [1, H, W]
         prompt, 
         prompt_neg, 
+        seed,
         mv_guidance_scale, 
         num_inference_steps, 
         elevation,
@@ -1189,12 +1203,14 @@ class MVDream_Model:
         if len(reference_mask.shape) == 3:
             reference_mask = reference_mask.squeeze(0)
             
+        generator = torch.manual_seed(seed)
+            
         reference_mask = reference_mask.unsqueeze(2)
         # give the white background to reference_image
         reference_image = (reference_image * reference_mask + (1 - reference_mask)).detach().cpu().numpy()
 
         # generate multi-view images
-        mv_images = mvdream_pipe(prompt, reference_image, negative_prompt=prompt_neg, guidance_scale=mv_guidance_scale, num_inference_steps=num_inference_steps, elevation=elevation)
+        mv_images = mvdream_pipe(prompt, reference_image, generator=generator, negative_prompt=prompt_neg, guidance_scale=mv_guidance_scale, num_inference_steps=num_inference_steps, elevation=elevation)
         mv_images = torch.from_numpy(np.stack([mv_images[1], mv_images[2], mv_images[3], mv_images[0]], axis=0)).float() # [4, H, W, 3], float32
         
         return (mv_images,)
@@ -1206,9 +1222,14 @@ class Load_Large_Multiview_Gaussian_Model:
     
     @classmethod
     def INPUT_TYPES(cls):
+        cls.checkpoints_dir_abs = os.path.join(ROOT_PATH, cls.checkpoints_dir)
+        all_models_names = get_list_filenames(cls.checkpoints_dir_abs, SUPPORTED_CHECKPOINTS_EXTENSIONS)
+        if cls.default_ckpt_name not in all_models_names:
+            all_models_names += [cls.default_ckpt_name]
+            
         return {
             "required": {
-                "model_name": (get_list_filenames(os.path.join(ROOT_PATH, cls.checkpoints_dir)), ),
+                "model_name": (all_models_names, ),
                 "lgb_config": (['big', 'default', 'small', 'tiny'], )
             },
         }
@@ -1227,18 +1248,19 @@ class Load_Large_Multiview_Gaussian_Model:
         lgm_model = LGM(config_defaults[lgb_config])
         
         # resume pretrained checkpoint
-        ckpt_path = os.path.join(ROOT_PATH, self.checkpoints_dir, model_name)
+        ckpt_path = os.path.join(self.checkpoints_dir_abs, model_name)
         if not os.path.isfile(ckpt_path):
-            from huggingface_hub import hf_hub_download
-            hf_hub_download(repo_id="ashawkey/LGM", local_dir=self.checkpoints_dir, filename=self.default_ckpt_name, repo_type="model")
             cstr(f"[{self.__class__.__name__}] can't find checkpoint {ckpt_path}, will download it from repo ashawkey/LGM instead").warning.print()
-            ckpt_path = os.path.join(ROOT_PATH, self.checkpoints_dir, self.default_ckpt_name)
             
-        elif ckpt_path.endswith('safetensors'):
+            from huggingface_hub import hf_hub_download
+            hf_hub_download(repo_id="ashawkey/LGM", local_dir=self.checkpoints_dir_abs, filename=self.default_ckpt_name, repo_type="model")
+            ckpt_path = os.path.join(self.checkpoints_dir_abs, self.default_ckpt_name)
+            
+        if ckpt_path.endswith('safetensors'):
             ckpt = load_file(ckpt_path, device='cpu')
         else:
             ckpt = torch.load(ckpt_path, map_location='cpu')
-                
+
         lgm_model.load_state_dict(ckpt, strict=False)
         cstr(f"[{self.__class__.__name__}] loaded model ckpt from {ckpt_path}").msg.print()
 

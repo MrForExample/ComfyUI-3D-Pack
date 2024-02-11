@@ -4,7 +4,7 @@ import os
 import time
 import subprocess
 
-from shared_utils.common_utils import cstr
+from ..shared_utils.common_utils import cstr
 
 web = server.web
 

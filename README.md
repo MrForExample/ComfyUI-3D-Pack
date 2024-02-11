@@ -12,7 +12,7 @@
 ### Note: this project is still a WIP and not been released into ComFyUI package database yet
 
 ## Currently support:
-- For use case please check [Example Workflows](./_Example_Workflows/). [**Last update: 09/02/2024**]
+- For use case please check [Example Workflows](./_Example_Workflows/). [**Last update: 11/02/2024**]
   - **Note:** you need to put [Example Inputs Files & Folders](_Example_Workflows/_Example_Inputs_Files/) under ComfyUI Root Directory\ComfyUI\input folder before you can run the example workflow
 
 - **Large Multiview Gaussian Model**: [3DTopia/LGM](https://github.com/3DTopia/LGM)
@@ -92,17 +92,20 @@
 ## Install:
 
 **[IMPORTANT!!!]** <br> Currently this package is only been tested in following setups:
-- Windows 10/11
-- Miniconda/Conda Python 3.11.7 
+- Windows 10/11 (Tested on my laptop) & Ubuntu 23.10 [(Tested by @watsieboi)](https://github.com/MrForExample/ComfyUI-3D-Pack/issues/16)
+- Miniconda/Conda Python 3.11.x
   - I tried install this package with ComfyUI embed python env first, but I can't find a way to build CUDA related libraries, e.g. diff-gaussian-rasterization, nvdiffrast, simple-knn.
-- Torch version: 2.1.2+cu121/V.2.1.2+cu118
+- Torch version >= 2.1.2+cu121
 
 <br>
 
 Assume you have already downloaded [ComfyUI](https://github.com/comfyanonymous/ComfyUI)
 
+### Setup Method 0: Using Miniconda (Recommend! Should works in both Windows & Linux)
+
 First download [Miniconda](https://docs.conda.io/projects/miniconda/en/latest/) (*One of the best way to manage a clean and separated python envirments*)
-- Alternatively you can check this tutorial: [Installing ComfyUI with Miniconda On Windows and Mac](https://www.comflowy.com/preparation-for-study/install#step-two-download-comfyui)
+
+Then running following commands to setup the Miniconda environment for ComfyUI:
 
 ```bash
 # Go to your Your ComfyUI root directory, for my example:
@@ -113,75 +116,63 @@ conda create -p ./python_miniconda_env/ComfyUI python=3.11
 # conda will tell what command to use to activate the env
 conda activate C:\Users\reall\Softwares\ComfyUI_windows_portable\python_miniconda_env\ComfyUI
 
-# This package also works with cu118
+# update pip
+python -m pip install --upgrade pip
+
+# You can using following command to installing CUDA only in the miniconda environment you just created if you don't want to donwload and install it manually & globally:
+# conda install -c "nvidia/label/cuda-12.1.0" cuda-toolkit
+
+# Install the main packahes
 pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
 
 pip install -r ./ComfyUI/requirements.txt
 
 # Then go to ComfyUI-3D-Pack directory under the ComfyUI Root Directory\ComfyUI\custom_nodes for my example is:
 cd C:\Users\reall\Softwares\ComfyUI_windows_portable\ComfyUI\custom_nodes\ComfyUI-3D-Pack
-# Finally you can double click following .bat script or run it in CLI:
-install.bat
 ```
 
-- ***Install Plan B:***
+   - Alternatively you can check this tutorial: [Installing ComfyUI with Miniconda On Windows and Mac](https://www.comflowy.com/preparation-for-study/install#step-two-download-comfyui)
 
-    Just in case `install.bat` may not working in your PC, you could also run the following commands under this package's root directory:
-
-    ```bash
-    # First make sure the Conda env: python_miniconda_env\ComfyUI is activated, then go to ComfyUI Root Directory\ComfyUI\custom_nodes\ComfyUI-3D-Pack and:
-    pip install -r requirements.txt
-
-    git clone --recursive https://github.com/ashawkey/diff-gaussian-rasterization
-    pip install ./diff-gaussian-rasterization
-
-    pip install ./simple-knn
-
-    pip install -U xformers --index-url https://download.pytorch.org/whl/cu121
-
-    git clone --recursive https://github.com/NVlabs/nvdiffrast/`
-    pip install ./nvdiffrast
-
-    # Install pointnet2_ops
-    cd tgs/models/snowflake/pointnet2_ops_lib && python setup.py install && cd ../../../../
-
-    # Install pytorch_scatter
-    pip install git+https://github.com/rusty1s/pytorch_scatter.git
-
-    # Install pytorch3d
-    pip install git+https://github.com/facebookresearch/pytorch3d.git@stable
-
-    # Install kiuikit (Computer Vision Library)
-    pip install git+https://github.com/ashawkey/kiuikit.git
-    ```
-
-- ***Install with ComfyUI's embed python env on Windows:***
+### Setup Method 1: Using Chocolatey (Windows Only!)
 
   If you have already installed ComfyUI on Windows with embed python environment and you don't want to switch to Miniconda/Conda and reinstall all your packages <br>
-  *(Which is ideal, but unfortunately so far it seems I'm not experienced enough in this matter, but I'll continue to looking for the better solutions and please give me some suggestions if ou know better, thanks :)*
+  *(Which is ideal, but unfortunately so far it seems I'm not experienced enough in this matter, but I'll continue to looking for the better solutions and please give me some suggestions if you know better, thanks :)*
 
-  According to [@doctorpangloss](https://github.com/MrForExample/ComfyUI-3D-Pack/issues/5), you can setup the c++/cuda build environments in windows by using [chocolatey](https://chocolatey.org/) with following command:
-  ```bash
-  # using git bash for the sake of simplicity
-  # enable developer mode
-  # google this: allow os.symlink on windows by adding your username to the local security policy entry for it.
-  # you will have to restart your computer
-  # install chocolatey using powershell, then install the prereqs for compilation on Windows
-  choco install -y visualstudio2022buildtools
-  choco install -y visualstudio2022-workload-vctools --package-parameters "--add Microsoft.VisualStudio.Component.VC.Llvm.ClangToolset --add Microsoft.VisualStudio.Component.VC.Llvm.Clang"
-  # I couldn't find cuda version 12.1, you may need to install cudav12.1 manually
-  choco install -y cuda 
-  ```
-  Then just go to ComfyUI-3D-Pack directory under the ComfyUI Root Directory\ComfyUI\custom_nodes and running:
-  ```bash
-  pip install -r ./ComfyUI/requirements.txt
+According to [@doctorpangloss](https://github.com/MrForExample/ComfyUI-3D-Pack/issues/5), you can setup the c++/cuda build environments in windows by using [chocolatey](https://chocolatey.org/) with following command:
 
-  install.bat
-  ```
+```bash
+# using git bash for the sake of simplicity
+# enable developer mode
+# google this: allow os.symlink on windows by adding your username to the local security policy entry for it.
+# you will have to restart your computer
+# install chocolatey using powershell, then install the prereqs for compilation on Windows
+choco install -y visualstudio2022buildtools
+choco install -y visualstudio2022-workload-vctools --package-parameters "--add Microsoft.VisualStudio.Component.VC.Llvm.ClangToolset --add Microsoft.VisualStudio.Component.VC.Llvm.Clang"
+# I couldn't find cuda version 12.1 in chocolatey package database, you may need to install cudav12.1 manually
+choco install -y cuda 
+```
+
+### Install Comfy3D:
+Go to the Comfy3D root directory: *ComfyUI Root Directory\ComfyUI\custom_nodes\ComfyUI-3D-Pack* and run:
+
+```bash
+install_miniconda.bat
+```
+Just in case `install_miniconda.bat` may not working in your OS, you could also run the following commands under the same directory: (Works with Linux & macOS)
+
+```bash
+pip install -r requirements.txt
+
+pip install -r requirements_post.txt
+```
+<br>
+
+**Plus:**<br>
+For those who want to run it inside Google Colab, you can check the [install instruction from @lovisdotio](https://github.com/MrForExample/ComfyUI-3D-Pack/issues/13)
 
 ## Run:
 Copy the files inside folder [__New_ComfyUI_Bats](./_New_ComfyUI_Bats/) to your ComfyUI root directory, and double click run_nvidia_gpu_miniconda.bat to start ComfyUI!
-- Alternatively you can just activate the Conda env: python_miniconda_env\ComfyUI, and go to your ComfyUI root directory then run command `python ./ComfyUI/main.py`
+- Alternatively you can just activate the Conda env: `python_miniconda_env\ComfyUI`, and go to your ComfyUI root directory then run command `python ./ComfyUI/main.py`
 
 ## Tips
 * The world & camera coordinate system is the same as OpenGL:
@@ -202,3 +193,4 @@ azimuth: in (-180, 180), from +z to +x is (0, 90)
 ```
 
 * If you encounter OpenGL errors (e.g., `[F glutil.cpp:338] eglInitialize() failed`), then set `force_cuda_rasterize` to true on corresponding node
+* If after the installation, your ComfyUI get stucked at starting or running, you could following the instruction in following link to solve the problem: [Code Hangs Indefinitely When Evaluating Neuron Models on GPU](https://github.com/lava-nc/lava-dl/discussions/211)
