@@ -1318,7 +1318,8 @@ class Convert_3DGS_to_Mesh_with_NeRF_and_Marching_Cubes:
         return {
             "required": {
                 "gs_ply": ("GS_PLY",),
-                "gs_config": (['big', 'default', 'small', 'tiny'], )
+                "gs_config": (['big', 'default', 'small', 'tiny'], ),
+                "force_cuda_rast": ("BOOLEAN", {"default": False}),
             },
         }
 
@@ -1331,8 +1332,10 @@ class Convert_3DGS_to_Mesh_with_NeRF_and_Marching_Cubes:
     FUNCTION = "convert_gs_ply"
     CATEGORY = "Comfy3D/Algorithm"
     
-    def convert_gs_ply(self, gs_ply, gs_config): 
+    def convert_gs_ply(self, gs_ply, gs_config, force_cuda_rast):
         with torch.inference_mode(False):
+            chosen_config = config_defaults[gs_config]
+            chosen_config.force_cuda_rast = force_cuda_rast
             converter = GSConverterNeRFMarchingCubes(config_defaults[gs_config], gs_ply).cuda()
             converter.fit_nerf()
             converter.fit_mesh()
