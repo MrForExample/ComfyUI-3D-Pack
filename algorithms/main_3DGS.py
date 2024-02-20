@@ -15,36 +15,34 @@ from ..shared_utils.image_utils import prepare_torch_img
 
 class GSParams:
     def __init__(self,
-                 training_iterations=3000, 
+                 training_iterations=30_000, 
                  batch_size=1,
-                 loss_scale=10000,
                  lambda_ssim=0.2,
                  lambda_alpha=3,
                  lambda_offset=0,
                  lambda_offset_opacity=0,
                  invert_bg_prob = 0.5,
-                 feature_lr=0.01, 
+                 feature_lr=0.0025, 
                  opacity_lr=0.05, 
                  scaling_lr=0.005, 
-                 rotation_lr=0.005, 
-                 position_lr_init=0.001, 
-                 position_lr_final=0.00002,
-                 position_lr_delay_mult=0.02,
-                 position_lr_max_steps=500,
-                 num_pts=5000,
+                 rotation_lr=0.001, 
+                 position_lr_init=0.00016, 
+                 position_lr_final=0.0000016,
+                 position_lr_delay_mult=0.01,
+                 position_lr_max_steps=30_000,
+                 num_pts=10_000,
                  K=3,
                  percent_dense=0.01,
-                 density_start_iter=100,
-                 density_end_iter=100000,
+                 density_start_iter=500,
+                 density_end_iter=15_000,
                  densification_interval=100,
-                 opacity_reset_interval=700,
-                 densify_grad_threshold=0.01,
-                 sh_degree=0):
+                 opacity_reset_interval=3000,
+                 densify_grad_threshold=0.0002,
+                 sh_degree=3):
         
         # training params
         self.training_iterations = training_iterations
         self.batch_size = batch_size
-        self.loss_scale = loss_scale
         self.lambda_ssim = lambda_ssim
         self.lambda_alpha = lambda_alpha
         self.lambda_offset = lambda_offset
@@ -212,25 +210,27 @@ class GaussianSplatting:
             masks_batch_torch = torch.cat(masks_batch, dim=0)
             ref_masks_batch_torch = torch.cat(ref_masks_batch, dim=0)
                 
+            #loss_scaler = self.gs_params.loss_scale * step_ratio
+                
             # rgb loss            
-            loss += (1 - self.gs_params.lambda_ssim) * self.gs_params.loss_scale * step_ratio * F.mse_loss(masked_rendered_img_batch_torch, masked_ref_img_batch_torch)
+            loss += (1 - self.gs_params.lambda_ssim) * F.l1_loss(masked_rendered_img_batch_torch, masked_ref_img_batch_torch)
 
             # alpha loss
-            loss += self.gs_params.lambda_alpha * self.gs_params.loss_scale * step_ratio * F.mse_loss(masks_batch_torch, ref_masks_batch_torch)
+            loss += self.gs_params.lambda_alpha * F.mse_loss(masks_batch_torch, ref_masks_batch_torch)
             
             # D-SSIM loss
             # [1, 3, H, W] in [0, 1]
             #loss += self.lambda_ssim * (1 - self.ssim_loss(X, Y))
-            loss += self.gs_params.lambda_ssim * self.gs_params.loss_scale * step_ratio * (1 - self.ms_ssim_loss(masked_ref_img_batch_torch, masked_rendered_img_batch_torch))
+            loss += self.gs_params.lambda_ssim * (1 - self.ms_ssim_loss(masked_ref_img_batch_torch, masked_rendered_img_batch_torch))
 
             if self.gs_params.lambda_offset > 0:
                 # Reference offset loss
                 offset_norm = self.renderer.gaussians.get_xyz_offset.norm(dim=-1, keepdim=True)
-                loss += self.gs_params.lambda_offset * self.gs_params.loss_scale * step_ratio * torch.mean(offset_norm)
+                loss += self.gs_params.lambda_offset * torch.mean(offset_norm)
             
             if self.gs_params.lambda_offset_opacity > 0:
                 # Alpha penalty loss
-                loss += self.gs_params.lambda_offset_opacity * self.gs_params.loss_scale * step_ratio * torch.mean(offset_norm.detach() * self.renderer.gaussians.get_opacity)
+                loss += self.gs_params.lambda_offset_opacity * torch.mean(offset_norm.detach() * self.renderer.gaussians.get_opacity)
 
 
             # optimize step
@@ -245,12 +245,12 @@ class GaussianSplatting:
                 self.renderer.gaussians.add_densification_stats(viewspace_point_tensor, visibility_filter)
 
                 if step % self.gs_params.densification_interval == 0:
-                    #self.renderer.gaussians.densify_and_prune(self.gs_params.densify_grad_threshold, min_opacity=0.01, extent=4, max_screen_size=1)
+                    self.renderer.gaussians.densify_and_prune(self.gs_params.densify_grad_threshold, min_opacity=0.005, extent=4, max_screen_size=1)
                     #self.renderer.gaussians.densify_and_prune_by_compatness(self.gs_params.K, min_opacity=0.01, extent=4, max_screen_size=1)
                     
                     #self.renderer.gaussians.densify_by_clone_and_split(self.gs_params.densify_grad_threshold, extent=4)
-                    self.renderer.gaussians.densify_by_compatness(self.gs_params.K)
-                    self.renderer.gaussians.prune(min_opacity=0.01, extent=4, max_screen_size=1, max_offset=0.1)
+                    #self.renderer.gaussians.densify_by_compatness(self.gs_params.K)
+                    #self.renderer.gaussians.prune(min_opacity=0.01, extent=4, max_screen_size=1, max_offset=0.1)
                 
                 if step % self.gs_params.opacity_reset_interval == 0:
                     self.renderer.gaussians.reset_opacity()

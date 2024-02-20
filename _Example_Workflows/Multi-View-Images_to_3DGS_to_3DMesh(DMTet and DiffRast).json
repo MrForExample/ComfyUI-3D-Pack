@@ -1,44 +1,7 @@
 {
-  "last_node_id": 46,
-  "last_link_id": 69,
+  "last_node_id": 47,
+  "last_link_id": 75,
   "nodes": [
-    {
-      "id": 4,
-      "type": "[Comfy3D] Generate Orbit Camera Poses",
-      "pos": [
-        435,
-        148
-      ],
-      "size": {
-        "0": 908.027099609375,
-        "1": 153.19027709960938
-      },
-      "flags": {},
-      "order": 5,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "reference_images",
-          "type": "IMAGE",
-          "link": 1
-        }
-      ],
-      "outputs": [
-        {
-          "name": "orbit_camposes",
-          "type": "ORBIT_CAMPOSES",
-          "links": [],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "[Comfy3D] Generate Orbit Camera Poses"
-      },
-      "widgets_values": [
-        "#([start_reference_image_index : end_reference_image_index], orbit_radius, elevation_angle [-90, 90], start_azimuth_angle [0, 360], end_azimuth_angle [0, 360])\n([0:120], 1.75, 0, 0, 360)"
-      ]
-    },
     {
       "id": 9,
       "type": "MaskToImage",
@@ -51,7 +14,7 @@
         "1": 26
       },
       "flags": {},
-      "order": 11,
+      "order": 13,
       "mode": 0,
       "inputs": [
         {
@@ -76,92 +39,6 @@
       }
     },
     {
-      "id": 27,
-      "type": "[Comfy3D] Stack Orbit Camera Poses",
-      "pos": [
-        1034,
-        367
-      ],
-      "size": {
-        "0": 315,
-        "1": 586
-      },
-      "flags": {},
-      "order": 0,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "orbit_camposes",
-          "type": "ORBIT_CAMPOSES",
-          "links": [
-            36,
-            40
-          ],
-          "shape": 3,
-          "slot_index": 0
-        },
-        {
-          "name": "orbit_radius_list",
-          "type": "FLOAT",
-          "links": null,
-          "shape": 6
-        },
-        {
-          "name": "elevation_list",
-          "type": "FLOAT",
-          "links": null,
-          "shape": 6
-        },
-        {
-          "name": "azimuth_list",
-          "type": "FLOAT",
-          "links": null,
-          "shape": 6
-        },
-        {
-          "name": "orbit_center_X_list",
-          "type": "FLOAT",
-          "links": null,
-          "shape": 6
-        },
-        {
-          "name": "orbit_center_Y_list",
-          "type": "FLOAT",
-          "links": null,
-          "shape": 6
-        },
-        {
-          "name": "orbit_center_Z_list",
-          "type": "FLOAT",
-          "links": null,
-          "shape": 6
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "[Comfy3D] Stack Orbit Camera Poses"
-      },
-      "widgets_values": [
-        1.75,
-        1.75,
-        0.1,
-        0,
-        0,
-        0,
-        0,
-        -0.01,
-        3,
-        0,
-        0,
-        0.1,
-        0,
-        0,
-        0.1,
-        0,
-        0,
-        0.1
-      ]
-    },
-    {
       "id": 10,
       "type": "PreviewImage",
       "pos": [
@@ -175,7 +52,7 @@
       "flags": {
         "collapsed": true
       },
-      "order": 14,
+      "order": 17,
       "mode": 0,
       "inputs": [
         {
@@ -202,7 +79,7 @@
       "flags": {
         "collapsed": true
       },
-      "order": 6,
+      "order": 7,
       "mode": 0,
       "inputs": [
         {
@@ -224,10 +101,10 @@
       ],
       "size": [
         315,
-        559
+        270
       ],
       "flags": {},
-      "order": 20,
+      "order": 22,
       "mode": 0,
       "inputs": [
         {
@@ -286,7 +163,7 @@
         "1": 26
       },
       "flags": {},
-      "order": 22,
+      "order": 24,
       "mode": 0,
       "inputs": [
         {
@@ -354,13 +231,13 @@
         "1": 106
       },
       "flags": {},
-      "order": 15,
+      "order": 0,
       "mode": 0,
       "inputs": [
         {
           "name": "gs_ply",
           "type": "GS_PLY",
-          "link": 30
+          "link": null
         }
       ],
       "outputs": [
@@ -384,72 +261,6 @@
       ]
     },
     {
-      "id": 7,
-      "type": "VHS_LoadImages",
-      "pos": [
-        113,
-        54
-      ],
-      "size": [
-        243.60000610351562,
-        194
-      ],
-      "flags": {},
-      "order": 1,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "IMAGE",
-          "type": "IMAGE",
-          "links": [
-            1,
-            22,
-            31,
-            58
-          ],
-          "shape": 3,
-          "slot_index": 0
-        },
-        {
-          "name": "MASK",
-          "type": "MASK",
-          "links": [
-            2
-          ],
-          "shape": 3,
-          "slot_index": 1
-        },
-        {
-          "name": "INT",
-          "type": "INT",
-          "links": null,
-          "shape": 3
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "VHS_LoadImages"
-      },
-      "widgets_values": {
-        "directory": "Images_enhanced",
-        "image_load_cap": 0,
-        "skip_first_images": 0,
-        "select_every_nth": 1,
-        "choose folder to upload": "image",
-        "videopreview": {
-          "hidden": false,
-          "paused": false,
-          "params": {
-            "frame_load_cap": 0,
-            "skip_first_images": 0,
-            "filename": "Images_enhanced",
-            "type": "input",
-            "format": "folder",
-            "select_every_nth": 1
-          }
-        }
-      }
-    },
-    {
       "id": 39,
       "type": "Reroute",
       "pos": [
@@ -461,7 +272,7 @@
         26
       ],
       "flags": {},
-      "order": 7,
+      "order": 8,
       "mode": 0,
       "inputs": [
         {
@@ -486,44 +297,6 @@
       }
     },
     {
-      "id": 8,
-      "type": "InvertMask",
-      "pos": [
-        545,
-        6
-      ],
-      "size": {
-        "0": 210,
-        "1": 26
-      },
-      "flags": {},
-      "order": 8,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "mask",
-          "type": "MASK",
-          "link": 2
-        }
-      ],
-      "outputs": [
-        {
-          "name": "MASK",
-          "type": "MASK",
-          "links": [
-            8,
-            33,
-            61
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "InvertMask"
-      }
-    },
-    {
       "id": 41,
       "type": "Reroute",
       "pos": [
@@ -535,7 +308,7 @@
         26
       ],
       "flags": {},
-      "order": 13,
+      "order": 14,
       "mode": 0,
       "inputs": [
         {
@@ -571,7 +344,7 @@
         26
       ],
       "flags": {},
-      "order": 4,
+      "order": 10,
       "mode": 0,
       "inputs": [
         {
@@ -597,30 +370,6 @@
       }
     },
     {
-      "id": 22,
-      "type": "Note",
-      "pos": [
-        1967,
-        649
-      ],
-      "size": {
-        "0": 347.9384460449219,
-        "1": 141.6276092529297
-      },
-      "flags": {},
-      "order": 2,
-      "mode": 0,
-      "title": "Switch 3DGS Axis Note",
-      "properties": {
-        "text": ""
-      },
-      "widgets_values": [
-        "Triplane Gaussian Transformers to Preview:\n  axis x to: -y\n  axis y to: +z\n  axis z to: -x\n\nGaussian Splatting to Preview:\n  axis x to: +x\n  axis y to: -y\n  axis z to: -z"
-      ],
-      "color": "#432",
-      "bgcolor": "#653"
-    },
-    {
       "id": 43,
       "type": "Reroute",
       "pos": [
@@ -632,7 +381,7 @@
         26
       ],
       "flags": {},
-      "order": 9,
+      "order": 16,
       "mode": 0,
       "inputs": [
         {
@@ -657,97 +406,6 @@
       }
     },
     {
-      "id": 25,
-      "type": "[Comfy3D] Gaussian Splatting",
-      "pos": [
-        1397,
-        54
-      ],
-      "size": {
-        "0": 531.5999755859375,
-        "1": 758
-      },
-      "flags": {},
-      "order": 12,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "reference_images",
-          "type": "IMAGE",
-          "link": 31
-        },
-        {
-          "name": "reference_masks",
-          "type": "MASK",
-          "link": 33
-        },
-        {
-          "name": "reference_orbit_camera_poses",
-          "type": "ORBIT_CAMPOSES",
-          "link": 36
-        },
-        {
-          "name": "points_cloud_to_initialize_gaussian",
-          "type": "POINTCLOUD",
-          "link": null
-        },
-        {
-          "name": "ply_to_initialize_gaussian",
-          "type": "GS_PLY",
-          "link": null
-        },
-        {
-          "name": "mesh_to_initialize_gaussian",
-          "type": "MESH",
-          "link": null
-        }
-      ],
-      "outputs": [
-        {
-          "name": "gs_ply",
-          "type": "GS_PLY",
-          "links": [
-            30,
-            49,
-            57
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "[Comfy3D] Gaussian Splatting"
-      },
-      "widgets_values": [
-        49.1,
-        1000,
-        3,
-        10000,
-        0.2,
-        3,
-        0,
-        0,
-        0.5,
-        0.01,
-        0.05,
-        0.005,
-        0.005,
-        0.001,
-        0.00002,
-        0.02,
-        500,
-        5000,
-        3,
-        0.01,
-        100,
-        100000,
-        100,
-        700,
-        0.01,
-        0
-      ]
-    },
-    {
       "id": 35,
       "type": "[Comfy3D] Convert 3DGS To Pointcloud",
       "pos": [
@@ -759,13 +417,13 @@
         "1": 26
       },
       "flags": {},
-      "order": 17,
+      "order": 19,
       "mode": 0,
       "inputs": [
         {
           "name": "gs_ply",
           "type": "GS_PLY",
-          "link": 57
+          "link": 74
         }
       ],
       "outputs": [
@@ -797,7 +455,7 @@
       "flags": {
         "collapsed": false
       },
-      "order": 25,
+      "order": 27,
       "mode": 0,
       "inputs": [
         {
@@ -824,7 +482,7 @@
       "flags": {
         "collapsed": false
       },
-      "order": 21,
+      "order": 23,
       "mode": 0,
       "inputs": [
         {
@@ -849,7 +507,7 @@
         500
       ],
       "flags": {},
-      "order": 24,
+      "order": 11,
       "mode": 0,
       "inputs": [
         {
@@ -881,7 +539,7 @@
         "1": 58
       },
       "flags": {},
-      "order": 19,
+      "order": 5,
       "mode": 0,
       "inputs": [
         {
@@ -920,7 +578,7 @@
         "1": 154
       },
       "flags": {},
-      "order": 3,
+      "order": 1,
       "mode": 0,
       "outputs": [
         {
@@ -955,7 +613,7 @@
         26
       ],
       "flags": {},
-      "order": 10,
+      "order": 12,
       "mode": 0,
       "inputs": [
         {
@@ -991,13 +649,13 @@
         "1": 198
       },
       "flags": {},
-      "order": 16,
+      "order": 20,
       "mode": 0,
       "inputs": [
         {
           "name": "gs_ply",
           "type": "GS_PLY",
-          "link": 49
+          "link": 75
         },
         {
           "name": "render_orbit_camera_poses",
@@ -1125,7 +783,7 @@
         "1": 314
       },
       "flags": {},
-      "order": 23,
+      "order": 21,
       "mode": 0,
       "inputs": [
         {
@@ -1184,7 +842,7 @@
         "1": 58
       },
       "flags": {},
-      "order": 27,
+      "order": 26,
       "mode": 0,
       "inputs": [
         {
@@ -1221,7 +879,7 @@
         "1": 334
       },
       "flags": {},
-      "order": 26,
+      "order": 25,
       "mode": 0,
       "inputs": [
         {
@@ -1277,6 +935,346 @@
         0.5,
         false
       ]
+    },
+    {
+      "id": 7,
+      "type": "VHS_LoadImages",
+      "pos": [
+        113,
+        54
+      ],
+      "size": [
+        243.60000610351562,
+        194
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            1,
+            22,
+            58,
+            70
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            2
+          ],
+          "shape": 3,
+          "slot_index": 1
+        },
+        {
+          "name": "INT",
+          "type": "INT",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VHS_LoadImages"
+      },
+      "widgets_values": {
+        "directory": "Images_enhanced",
+        "image_load_cap": 0,
+        "skip_first_images": 0,
+        "select_every_nth": 1,
+        "choose folder to upload": "image",
+        "videopreview": {
+          "hidden": false,
+          "paused": false,
+          "params": {
+            "frame_load_cap": 0,
+            "skip_first_images": 0,
+            "filename": "Images_enhanced",
+            "type": "input",
+            "format": "folder",
+            "select_every_nth": 1
+          }
+        }
+      }
+    },
+    {
+      "id": 4,
+      "type": "[Comfy3D] Generate Orbit Camera Poses",
+      "pos": [
+        435,
+        148
+      ],
+      "size": {
+        "0": 908.027099609375,
+        "1": 153.19027709960938
+      },
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "reference_images",
+          "type": "IMAGE",
+          "link": 1
+        }
+      ],
+      "outputs": [
+        {
+          "name": "orbit_camposes",
+          "type": "ORBIT_CAMPOSES",
+          "links": [],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Generate Orbit Camera Poses"
+      },
+      "widgets_values": [
+        "#([start_reference_image_index : end_reference_image_index], orbit_radius, elevation_angle [-90, 90], start_azimuth_angle [0, 360], end_azimuth_angle [0, 360])\n([0:120], 1.75, 0, 0, 360)"
+      ]
+    },
+    {
+      "id": 27,
+      "type": "[Comfy3D] Stack Orbit Camera Poses",
+      "pos": [
+        1034,
+        367
+      ],
+      "size": {
+        "0": 315,
+        "1": 586
+      },
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "orbit_camposes",
+          "type": "ORBIT_CAMPOSES",
+          "links": [
+            40,
+            72
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "orbit_radius_list",
+          "type": "FLOAT",
+          "links": null,
+          "shape": 6
+        },
+        {
+          "name": "elevation_list",
+          "type": "FLOAT",
+          "links": null,
+          "shape": 6
+        },
+        {
+          "name": "azimuth_list",
+          "type": "FLOAT",
+          "links": null,
+          "shape": 6
+        },
+        {
+          "name": "orbit_center_X_list",
+          "type": "FLOAT",
+          "links": null,
+          "shape": 6
+        },
+        {
+          "name": "orbit_center_Y_list",
+          "type": "FLOAT",
+          "links": null,
+          "shape": 6
+        },
+        {
+          "name": "orbit_center_Z_list",
+          "type": "FLOAT",
+          "links": null,
+          "shape": 6
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Stack Orbit Camera Poses"
+      },
+      "widgets_values": [
+        1.75,
+        1.75,
+        0.1,
+        0,
+        0,
+        0,
+        0,
+        -0.01,
+        3,
+        0,
+        0,
+        0.1,
+        0,
+        0,
+        0.1,
+        0,
+        0,
+        0.1
+      ]
+    },
+    {
+      "id": 8,
+      "type": "InvertMask",
+      "pos": [
+        545,
+        6
+      ],
+      "size": {
+        "0": 210,
+        "1": 26
+      },
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mask",
+          "type": "MASK",
+          "link": 2
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            8,
+            61,
+            73
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "InvertMask"
+      }
+    },
+    {
+      "id": 47,
+      "type": "[Comfy3D] Gaussian Splatting",
+      "pos": [
+        1415,
+        52
+      ],
+      "size": {
+        "0": 531.5999755859375,
+        "1": 734
+      },
+      "flags": {},
+      "order": 15,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "reference_images",
+          "type": "IMAGE",
+          "link": 70
+        },
+        {
+          "name": "reference_masks",
+          "type": "MASK",
+          "link": 73
+        },
+        {
+          "name": "reference_orbit_camera_poses",
+          "type": "ORBIT_CAMPOSES",
+          "link": 72
+        },
+        {
+          "name": "points_cloud_to_initialize_gaussian",
+          "type": "POINTCLOUD",
+          "link": null
+        },
+        {
+          "name": "ply_to_initialize_gaussian",
+          "type": "GS_PLY",
+          "link": null
+        },
+        {
+          "name": "mesh_to_initialize_gaussian",
+          "type": "MESH",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "gs_ply",
+          "type": "GS_PLY",
+          "links": [
+            74,
+            75
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Gaussian Splatting"
+      },
+      "widgets_values": [
+        49.1,
+        30000,
+        1,
+        0.2,
+        3,
+        0,
+        0,
+        0.5,
+        0.0025,
+        0.05,
+        0.005,
+        0.001,
+        0.00016,
+        0.0000016,
+        0.01,
+        30000,
+        10000,
+        3,
+        0.01,
+        500,
+        15000,
+        100,
+        3000,
+        0.0002,
+        3
+      ]
+    },
+    {
+      "id": 22,
+      "type": "Note",
+      "pos": [
+        1964,
+        668
+      ],
+      "size": {
+        "0": 347.9384460449219,
+        "1": 141.6276092529297
+      },
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "title": "Switch 3DGS Axis Note",
+      "properties": {
+        "text": ""
+      },
+      "widgets_values": [
+        "Triplane Gaussian Transformers to Preview:\n  axis x to: -y\n  axis y to: +z\n  axis z to: -x\n\nGaussian Splatting to Preview:\n  axis x to: +x\n  axis y to: -y\n  axis z to: -z"
+      ],
+      "color": "#432",
+      "bgcolor": "#653"
     }
   ],
   "links": [
@@ -1337,38 +1335,6 @@
       "GS_PLY"
     ],
     [
-      30,
-      25,
-      0,
-      24,
-      0,
-      "GS_PLY"
-    ],
-    [
-      31,
-      7,
-      0,
-      25,
-      0,
-      "IMAGE"
-    ],
-    [
-      33,
-      8,
-      0,
-      25,
-      1,
-      "MASK"
-    ],
-    [
-      36,
-      27,
-      0,
-      25,
-      2,
-      "ORBIT_CAMPOSES"
-    ],
-    [
       38,
       29,
       0,
@@ -1399,14 +1365,6 @@
       29,
       0,
       "MASK"
-    ],
-    [
-      49,
-      25,
-      0,
-      32,
-      0,
-      "GS_PLY"
     ],
     [
       50,
@@ -1455,14 +1413,6 @@
       38,
       3,
       "MESH"
-    ],
-    [
-      57,
-      25,
-      0,
-      35,
-      0,
-      "GS_PLY"
     ],
     [
       58,
@@ -1535,9 +1485,62 @@
       38,
       0,
       "IMAGE"
+    ],
+    [
+      70,
+      7,
+      0,
+      47,
+      0,
+      "IMAGE"
+    ],
+    [
+      72,
+      27,
+      0,
+      47,
+      2,
+      "ORBIT_CAMPOSES"
+    ],
+    [
+      73,
+      8,
+      0,
+      47,
+      1,
+      "MASK"
+    ],
+    [
+      74,
+      47,
+      0,
+      35,
+      0,
+      "GS_PLY"
+    ],
+    [
+      75,
+      47,
+      0,
+      32,
+      0,
+      "GS_PLY"
     ]
   ],
-  "groups": [],
+  "groups": [
+    {
+      "title": "3DGS to Mesh using DMTet and DiffRast",
+      "bounding": [
+        1970,
+        -674,
+        2380,
+        1294
+      ],
+      "color": "#3f789e",
+      "font_size": 24,
+      "locked": false
+    }
+  ],
   "config": {},
   "extra": {},
   "version": 0.4
