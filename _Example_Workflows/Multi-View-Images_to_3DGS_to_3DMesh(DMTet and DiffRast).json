@@ -1,6 +1,6 @@
 {
   "last_node_id": 47,
-  "last_link_id": 75,
+  "last_link_id": 76,
   "nodes": [
     {
       "id": 9,
@@ -14,7 +14,7 @@
         "1": 26
       },
       "flags": {},
-      "order": 13,
+      "order": 10,
       "mode": 0,
       "inputs": [
         {
@@ -52,7 +52,7 @@
       "flags": {
         "collapsed": true
       },
-      "order": 17,
+      "order": 14,
       "mode": 0,
       "inputs": [
         {
@@ -79,7 +79,7 @@
       "flags": {
         "collapsed": true
       },
-      "order": 7,
+      "order": 5,
       "mode": 0,
       "inputs": [
         {
@@ -104,7 +104,7 @@
         270
       ],
       "flags": {},
-      "order": 22,
+      "order": 20,
       "mode": 0,
       "inputs": [
         {
@@ -163,7 +163,7 @@
         "1": 26
       },
       "flags": {},
-      "order": 24,
+      "order": 22,
       "mode": 0,
       "inputs": [
         {
@@ -220,47 +220,6 @@
       ]
     },
     {
-      "id": 24,
-      "type": "[Comfy3D] Switch 3DGS Axis",
-      "pos": [
-        1958,
-        855
-      ],
-      "size": {
-        "0": 315,
-        "1": 106
-      },
-      "flags": {},
-      "order": 0,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "gs_ply",
-          "type": "GS_PLY",
-          "link": null
-        }
-      ],
-      "outputs": [
-        {
-          "name": "switched_gs_ply",
-          "type": "GS_PLY",
-          "links": [
-            29
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "[Comfy3D] Switch 3DGS Axis"
-      },
-      "widgets_values": [
-        "+x",
-        "-y",
-        "-z"
-      ]
-    },
-    {
       "id": 39,
       "type": "Reroute",
       "pos": [
@@ -272,7 +231,7 @@
         26
       ],
       "flags": {},
-      "order": 8,
+      "order": 6,
       "mode": 0,
       "inputs": [
         {
@@ -308,7 +267,7 @@
         26
       ],
       "flags": {},
-      "order": 14,
+      "order": 11,
       "mode": 0,
       "inputs": [
         {
@@ -344,7 +303,7 @@
         26
       ],
       "flags": {},
-      "order": 10,
+      "order": 8,
       "mode": 0,
       "inputs": [
         {
@@ -381,7 +340,7 @@
         26
       ],
       "flags": {},
-      "order": 16,
+      "order": 13,
       "mode": 0,
       "inputs": [
         {
@@ -417,7 +376,7 @@
         "1": 26
       },
       "flags": {},
-      "order": 19,
+      "order": 16,
       "mode": 0,
       "inputs": [
         {
@@ -455,7 +414,7 @@
       "flags": {
         "collapsed": false
       },
-      "order": 27,
+      "order": 26,
       "mode": 0,
       "inputs": [
         {
@@ -482,7 +441,7 @@
       "flags": {
         "collapsed": false
       },
-      "order": 23,
+      "order": 21,
       "mode": 0,
       "inputs": [
         {
@@ -507,7 +466,7 @@
         500
       ],
       "flags": {},
-      "order": 11,
+      "order": 27,
       "mode": 0,
       "inputs": [
         {
@@ -539,7 +498,7 @@
         "1": 58
       },
       "flags": {},
-      "order": 5,
+      "order": 23,
       "mode": 0,
       "inputs": [
         {
@@ -578,7 +537,7 @@
         "1": 154
       },
       "flags": {},
-      "order": 1,
+      "order": 0,
       "mode": 0,
       "outputs": [
         {
@@ -613,7 +572,7 @@
         26
       ],
       "flags": {},
-      "order": 12,
+      "order": 9,
       "mode": 0,
       "inputs": [
         {
@@ -649,7 +608,7 @@
         "1": 198
       },
       "flags": {},
-      "order": 20,
+      "order": 17,
       "mode": 0,
       "inputs": [
         {
@@ -708,7 +667,7 @@
         26
       ],
       "flags": {},
-      "order": 18,
+      "order": 15,
       "mode": 0,
       "inputs": [
         {
@@ -783,7 +742,7 @@
         "1": 314
       },
       "flags": {},
-      "order": 21,
+      "order": 19,
       "mode": 0,
       "inputs": [
         {
@@ -842,7 +801,7 @@
         "1": 58
       },
       "flags": {},
-      "order": 26,
+      "order": 25,
       "mode": 0,
       "inputs": [
         {
@@ -879,7 +838,7 @@
         "1": 334
       },
       "flags": {},
-      "order": 25,
+      "order": 24,
       "mode": 0,
       "inputs": [
         {
@@ -948,7 +907,7 @@
         194
       ],
       "flags": {},
-      "order": 2,
+      "order": 1,
       "mode": 0,
       "outputs": [
         {
@@ -1014,7 +973,7 @@
         "1": 153.19027709960938
       },
       "flags": {},
-      "order": 6,
+      "order": 4,
       "mode": 0,
       "inputs": [
         {
@@ -1051,7 +1010,7 @@
         "1": 586
       },
       "flags": {},
-      "order": 3,
+      "order": 2,
       "mode": 0,
       "outputs": [
         {
@@ -1137,7 +1096,7 @@
         "1": 26
       },
       "flags": {},
-      "order": 9,
+      "order": 7,
       "mode": 0,
       "inputs": [
         {
@@ -1175,7 +1134,7 @@
         "1": 734
       },
       "flags": {},
-      "order": 15,
+      "order": 12,
       "mode": 0,
       "inputs": [
         {
@@ -1215,7 +1174,8 @@
           "type": "GS_PLY",
           "links": [
             74,
-            75
+            75,
+            76
           ],
           "shape": 3,
           "slot_index": 0
@@ -1253,18 +1213,59 @@
       ]
     },
     {
+      "id": 24,
+      "type": "[Comfy3D] Switch 3DGS Axis",
+      "pos": [
+        1970,
+        855
+      ],
+      "size": {
+        "0": 315,
+        "1": 106
+      },
+      "flags": {},
+      "order": 18,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "gs_ply",
+          "type": "GS_PLY",
+          "link": 76
+        }
+      ],
+      "outputs": [
+        {
+          "name": "switched_gs_ply",
+          "type": "GS_PLY",
+          "links": [
+            29
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Switch 3DGS Axis"
+      },
+      "widgets_values": [
+        "+x",
+        "-y",
+        "-z"
+      ]
+    },
+    {
       "id": 22,
       "type": "Note",
       "pos": [
-        1964,
-        668
+        1976,
+        670
       ],
       "size": {
         "0": 347.9384460449219,
         "1": 141.6276092529297
       },
       "flags": {},
-      "order": 4,
+      "order": 3,
       "mode": 0,
       "title": "Switch 3DGS Axis Note",
       "properties": {
@@ -1523,6 +1524,14 @@
       47,
       0,
       32,
+      0,
+      "GS_PLY"
+    ],
+    [
+      76,
+      47,
+      0,
+      24,
       0,
       "GS_PLY"
     ]

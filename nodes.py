@@ -771,7 +771,6 @@ class Gaussian_Splatting:
         reference_orbit_camera_fovy,
         training_iterations,
         batch_size,
-        loss_value_scale,
         ms_ssim_loss_weight,
         alpha_loss_weight,
         offset_loss_weight,
@@ -816,7 +815,6 @@ class Gaussian_Splatting:
                 
                     gs_params = GSParams(training_iterations,
                                         batch_size,
-                                        loss_value_scale,
                                         ms_ssim_loss_weight,
                                         alpha_loss_weight,
                                         offset_loss_weight,
