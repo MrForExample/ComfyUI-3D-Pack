@@ -11,6 +11,8 @@ if exist "%python_miniconda_exec%" (
 
     "%python_miniconda_exec%" -s -m pip install -r "%requirements_txt%"
     "%python_miniconda_exec%" -s -m pip install -r "%requirements_post_txt%"
+
+    "%python_miniconda_exec%" -s -m pip install --force-reinstall xformers --index-url https://download.pytorch.org/whl/cu121
     
 ) else (
     echo ERROR: Cannot find Miniconda Environment "%python_miniconda_exec%"

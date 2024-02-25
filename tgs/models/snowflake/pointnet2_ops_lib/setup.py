@@ -13,7 +13,7 @@ _ext_sources = glob.glob(osp.join(_ext_src_root, "src", "*.cpp")) + glob.glob(
 )
 _ext_headers = glob.glob(osp.join(_ext_src_root, "include", "*"))
 
-requirements = ["torch>=1.4"]
+requirements = []
 
 exec(open(osp.join("pointnet2_ops", "_version.py")).read())
 
