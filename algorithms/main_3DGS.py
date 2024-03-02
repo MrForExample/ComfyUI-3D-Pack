@@ -14,31 +14,33 @@ from ..shared_utils.camera_utils import OrbitCamera, MiniCam, calculate_fovX, ge
 from ..shared_utils.image_utils import prepare_torch_img
 
 class GSParams:
-    def __init__(self,
-                 training_iterations=30_000, 
-                 batch_size=1,
-                 lambda_ssim=0.2,
-                 lambda_alpha=3,
-                 lambda_offset=0,
-                 lambda_offset_opacity=0,
-                 invert_bg_prob = 0.5,
-                 feature_lr=0.0025, 
-                 opacity_lr=0.05, 
-                 scaling_lr=0.005, 
-                 rotation_lr=0.001, 
-                 position_lr_init=0.00016, 
-                 position_lr_final=0.0000016,
-                 position_lr_delay_mult=0.01,
-                 position_lr_max_steps=30_000,
-                 num_pts=10_000,
-                 K=3,
-                 percent_dense=0.01,
-                 density_start_iter=500,
-                 density_end_iter=15_000,
-                 densification_interval=100,
-                 opacity_reset_interval=3000,
-                 densify_grad_threshold=0.0002,
-                 sh_degree=3):
+    def __init__(
+        self,
+        training_iterations=30_000, 
+        batch_size=1,
+        lambda_ssim=0.2,
+        lambda_alpha=3,
+        lambda_offset=0,
+        lambda_offset_opacity=0,
+        invert_bg_prob = 0.5,
+        feature_lr=0.0025, 
+        opacity_lr=0.05, 
+        scaling_lr=0.005, 
+        rotation_lr=0.001, 
+        position_lr_init=0.00016, 
+        position_lr_final=0.0000016,
+        position_lr_delay_mult=0.01,
+        position_lr_max_steps=30_000,
+        num_pts=10_000,
+        K=3,
+        percent_dense=0.01,
+        density_start_iter=500,
+        density_end_iter=15_000,
+        densification_interval=100,
+        opacity_reset_interval=3000,
+        densify_grad_threshold=0.0002,
+        sh_degree=3
+    ):
         
         # training params
         self.training_iterations = training_iterations

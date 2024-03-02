@@ -6,9 +6,7 @@ from omegaconf import OmegaConf
 from .typing import *
 
 # ============ Register OmegaConf Recolvers ============= #
-OmegaConf.register_new_resolver(
-    "calc_exp_lr_decay_rate", lambda factor, n: factor ** (1.0 / n), replace=True
-)
+OmegaConf.register_new_resolver("calc_exp_lr_decay_rate", lambda factor, n: factor ** (1.0 / n), replace=True)
 OmegaConf.register_new_resolver("add", lambda a, b: a + b, replace=True)
 OmegaConf.register_new_resolver("sub", lambda a, b: a - b, replace=True)
 OmegaConf.register_new_resolver("mul", lambda a, b: a * b, replace=True)

@@ -447,7 +447,7 @@ def switch_ply_axis_and_scale(plydata, target_axis, target_scale, coordinate_inv
     
     return write_gs_ply(xyz, normals, features_dc_2d, features_extra_2d, opacities, scales, rots, construct_list_of_gs_attributes(features_dc, features_extra, scales, rots))
     
-def switch_mesh_axis_and_scale(mesh, target_axis, target_scale):
+def switch_mesh_axis_and_scale(mesh, target_axis, target_scale, flip_normal=False):
     """
     Args:
         target_axis (array): shape (3)
@@ -456,5 +456,7 @@ def switch_mesh_axis_and_scale(mesh, target_axis, target_scale):
     target_scale = torch.tensor(target_scale).float().cuda()
     mesh.v = switch_vector_axis(mesh.v * target_scale, target_axis)
     mesh.vn = switch_vector_axis(mesh.vn * target_scale, target_axis)
+    if flip_normal:
+        mesh.vn *= -1
     return mesh
     

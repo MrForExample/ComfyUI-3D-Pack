@@ -107,6 +107,11 @@ async function main(filepath="") {
             loader.load( url, function ( obj ) {
                 obj.scale.setScalar( 5 );
                 scene.add( obj );
+                obj.traverse(node => {
+                    if (node.material && node.material.map == null) {
+                        node.material.vertexColors = true;
+                    }
+                  });
                 
             }, onProgress, onError );
 
@@ -121,7 +126,7 @@ async function main(filepath="") {
                 const model = gltf.scene;
                 //model.position.set( 1, 1, 0 );
                 //model.scale.set( 0.01, 0.01, 0.01 );
-                model.scale.set( 3, 3, 3 );
+                model.scale.set( 5, 5, 5 );
 
                 scene.add( model );
             

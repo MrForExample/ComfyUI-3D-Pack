@@ -8,9 +8,11 @@ einops
 scipy
 kornia
 opencv-python
+pillow
 roma
 nerfacc>=0.5.3
 PyMCubes
+scikit-learn
 
 # for use ML models
 diffusers>=0.26.1
@@ -38,3 +40,4 @@ tqdm
 jaxtyping
 packaging
 OmegaConf
+pyhocon

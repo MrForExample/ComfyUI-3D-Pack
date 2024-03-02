@@ -1,0 +1,33 @@
+{
+  "_class_name": "MVDreamPipeline",
+  "_diffusers_version": "0.25.0",
+  "feature_extractor": [
+    "transformers",
+    "CLIPImageProcessor"
+  ],
+  "image_encoder": [
+    "transformers",
+    "CLIPVisionModel"
+  ],
+  "requires_safety_checker": false,
+  "scheduler": [
+    "diffusers",
+    "DDIMScheduler"
+  ],
+  "text_encoder": [
+    "transformers",
+    "CLIPTextModel"
+  ],
+  "tokenizer": [
+    "transformers",
+    "CLIPTokenizer"
+  ],
+  "unet": [
+    "mv_unet",
+    "MultiViewUNetModel"
+  ],
+  "vae": [
+    "diffusers",
+    "AutoencoderKL"
+  ]
+}

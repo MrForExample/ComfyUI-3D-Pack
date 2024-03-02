@@ -1,0 +1,25 @@
+{
+  "_class_name": "MultiViewUNetModel",
+  "_diffusers_version": "0.25.0",
+  "attention_resolutions": [
+    4,
+    2,
+    1
+  ],
+  "camera_dim": 16,
+  "channel_mult": [
+    1,
+    2,
+    4,
+    4
+  ],
+  "context_dim": 1024,
+  "image_size": 32,
+  "in_channels": 4,
+  "ip_dim": 16,
+  "model_channels": 320,
+  "num_head_channels": 64,
+  "num_res_blocks": 2,
+  "out_channels": 4,
+  "transformer_depth": 1
+}

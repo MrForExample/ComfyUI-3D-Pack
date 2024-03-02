@@ -1,0 +1,644 @@
+{
+  "last_node_id": 47,
+  "last_link_id": 68,
+  "nodes": [
+    {
+      "id": 21,
+      "type": "PreviewImage",
+      "pos": [
+        1265,
+        880
+      ],
+      "size": {
+        "0": 199.94778442382812,
+        "1": 274.4532775878906
+      },
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 32
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 28,
+      "type": "Image Rembg (Remove Background)",
+      "pos": [
+        1487,
+        475
+      ],
+      "size": {
+        "0": 315,
+        "1": 250
+      },
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 37
+        }
+      ],
+      "outputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "links": [
+            38,
+            39
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "Image Rembg (Remove Background)"
+      },
+      "widgets_values": [
+        false,
+        "u2net",
+        false,
+        true,
+        true,
+        240,
+        10,
+        10,
+        "none"
+      ]
+    },
+    {
+      "id": 30,
+      "type": "ImageToMask",
+      "pos": [
+        1859,
+        475
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 39
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            46
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ImageToMask"
+      },
+      "widgets_values": [
+        "red"
+      ]
+    },
+    {
+      "id": 32,
+      "type": "[Comfy3D] Preview 3DMesh",
+      "pos": [
+        3339,
+        369
+      ],
+      "size": [
+        600,
+        500
+      ],
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh_file_path",
+          "type": "STRING",
+          "link": 44,
+          "widget": {
+            "name": "mesh_file_path"
+          }
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Preview 3DMesh"
+      },
+      "widgets_values": [
+        "",
+        null
+      ]
+    },
+    {
+      "id": 29,
+      "type": "PreviewImage",
+      "pos": [
+        1857,
+        609
+      ],
+      "size": {
+        "0": 210,
+        "1": 246
+      },
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 38
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 33,
+      "type": "[Comfy3D] Save 3D Mesh",
+      "pos": [
+        2980,
+        370
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 65
+        }
+      ],
+      "outputs": [
+        {
+          "name": "save_path",
+          "type": "STRING",
+          "links": [
+            44
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Save 3D Mesh"
+      },
+      "widgets_values": [
+        "NeuS/Cat.obj"
+      ]
+    },
+    {
+      "id": 22,
+      "type": "InvertMask",
+      "pos": [
+        562,
+        468
+      ],
+      "size": {
+        "0": 210,
+        "1": 26
+      },
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mask",
+          "type": "MASK",
+          "link": 33
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            34
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "InvertMask"
+      }
+    },
+    {
+      "id": 19,
+      "type": "PreviewImage",
+      "pos": [
+        1293,
+        538
+      ],
+      "size": {
+        "0": 172.59315490722656,
+        "1": 299.3858947753906
+      },
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 31
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 4,
+      "type": "LoadImage",
+      "pos": [
+        186,
+        391
+      ],
+      "size": {
+        "0": 318.80224609375,
+        "1": 348.95855712890625
+      },
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            30
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            33
+          ],
+          "shape": 3,
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "round_cat.png",
+        "image"
+      ]
+    },
+    {
+      "id": 2,
+      "type": "[Comfy3D] Load Diffusers Pipeline",
+      "pos": [
+        307,
+        216
+      ],
+      "size": {
+        "0": 392.1646728515625,
+        "1": 86.24864196777344
+      },
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "pipe",
+          "type": "DIFFUSERS_PIPE",
+          "links": [
+            29
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Load Diffusers Pipeline"
+      },
+      "widgets_values": [
+        "Wonder3DMVDiffusionPipeline",
+        "flamehaze1115/wonder3d-v1.0"
+      ]
+    },
+    {
+      "id": 20,
+      "type": "[Comfy3D] Wonder3D MVDiffusion Model",
+      "pos": [
+        806,
+        370
+      ],
+      "size": {
+        "0": 430.8000183105469,
+        "1": 170
+      },
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mvdiffusion_pipe",
+          "type": "DIFFUSERS_PIPE",
+          "link": 29
+        },
+        {
+          "name": "reference_image",
+          "type": "IMAGE",
+          "link": 30
+        },
+        {
+          "name": "reference_mask",
+          "type": "MASK",
+          "link": 34
+        }
+      ],
+      "outputs": [
+        {
+          "name": "multiview_images",
+          "type": "IMAGE",
+          "links": [
+            31,
+            37,
+            47
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "multiview_normals",
+          "type": "IMAGE",
+          "links": [
+            32,
+            48
+          ],
+          "shape": 3,
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Wonder3D MVDiffusion Model"
+      },
+      "widgets_values": [
+        999,
+        "fixed",
+        1,
+        30
+      ]
+    },
+    {
+      "id": 34,
+      "type": "[Comfy3D] NeuS",
+      "pos": [
+        2270,
+        370
+      ],
+      "size": {
+        "0": 315,
+        "1": 410
+      },
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "reference_image",
+          "type": "IMAGE",
+          "link": 47
+        },
+        {
+          "name": "reference_mask",
+          "type": "MASK",
+          "link": 46
+        },
+        {
+          "name": "reference_normals",
+          "type": "IMAGE",
+          "link": 48
+        }
+      ],
+      "outputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "links": [
+            64
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] NeuS"
+      },
+      "widgets_values": [
+        1500,
+        512,
+        0.0005,
+        0.0005,
+        1,
+        0.1,
+        1,
+        1,
+        0.1,
+        500,
+        0,
+        true,
+        512,
+        0
+      ]
+    },
+    {
+      "id": 44,
+      "type": "[Comfy3D] Switch Mesh Axis",
+      "pos": [
+        2630,
+        370
+      ],
+      "size": {
+        "0": 315,
+        "1": 130
+      },
+      "flags": {},
+      "order": 10,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 64
+        }
+      ],
+      "outputs": [
+        {
+          "name": "switched_mesh",
+          "type": "MESH",
+          "links": [
+            65
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Switch Mesh Axis"
+      },
+      "widgets_values": [
+        "-x",
+        "-z",
+        "+y",
+        false
+      ]
+    }
+  ],
+  "links": [
+    [
+      29,
+      2,
+      0,
+      20,
+      0,
+      "DIFFUSERS_PIPE"
+    ],
+    [
+      30,
+      4,
+      0,
+      20,
+      1,
+      "IMAGE"
+    ],
+    [
+      31,
+      20,
+      0,
+      19,
+      0,
+      "IMAGE"
+    ],
+    [
+      32,
+      20,
+      1,
+      21,
+      0,
+      "IMAGE"
+    ],
+    [
+      33,
+      4,
+      1,
+      22,
+      0,
+      "MASK"
+    ],
+    [
+      34,
+      22,
+      0,
+      20,
+      2,
+      "MASK"
+    ],
+    [
+      37,
+      20,
+      0,
+      28,
+      0,
+      "IMAGE"
+    ],
+    [
+      38,
+      28,
+      0,
+      29,
+      0,
+      "IMAGE"
+    ],
+    [
+      39,
+      28,
+      0,
+      30,
+      0,
+      "IMAGE"
+    ],
+    [
+      44,
+      33,
+      0,
+      32,
+      0,
+      "STRING"
+    ],
+    [
+      46,
+      30,
+      0,
+      34,
+      1,
+      "MASK"
+    ],
+    [
+      47,
+      20,
+      0,
+      34,
+      0,
+      "IMAGE"
+    ],
+    [
+      48,
+      20,
+      1,
+      34,
+      2,
+      "IMAGE"
+    ],
+    [
+      64,
+      34,
+      0,
+      44,
+      0,
+      "MESH"
+    ],
+    [
+      65,
+      44,
+      0,
+      33,
+      0,
+      "MESH"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {},
+  "version": 0.4
+}

@@ -12,8 +12,10 @@ from torch.utils.data import DataLoader
 import torchvision.transforms.functional as TF
 import numpy as np
 from safetensors.torch import load_file
+from einops import rearrange
 
 from plyfile import PlyData
+from PIL import Image
 
 from .mesh_processer.mesh import Mesh
 from .mesh_processer.mesh_utils import (
@@ -30,17 +32,22 @@ from .algorithms.dmtet import DMTetMesh
 from .algorithms.triplane_gaussian_transformers import TGS
 from .algorithms.large_multiview_gaussian_model import LGM
 from .algorithms.nerf_marching_cubes_converter import GSConverterNeRFMarchingCubes
-from .tgs.utils.config import ExperimentConfig, load_config
+from .algorithms.NeuS_runner import NeuSParams, NeuSRunner
+from .tgs.utils.config import ExperimentConfig, load_config as load_config_tgs
 from .tgs.data import CustomImageOrbitDataset
 from .tgs.utils.misc import todevice, get_device
 from .lgm.core.options import config_defaults
 from .lgm.mvdream.pipeline_mvdream import MVDreamPipeline
+from .mvdiffusion.pipelines.pipeline_mvdiffusion_image import MVDiffusionImagePipeline
+from .mvdiffusion.data.single_image_dataset import SingleImageDataset
+from .mvdiffusion.utils.misc import load_config as load_config_wonder3d
 
 from .shared_utils.image_utils import prepare_torch_img
 from .shared_utils.common_utils import cstr, parse_save_filename, get_list_filenames
 
 DIFFUSERS_PIPE_DICT = OrderedDict([
     ("MVDreamPipeline", MVDreamPipeline),
+    ("Wonder3DMVDiffusionPipeline", MVDiffusionImagePipeline),
 ])
 
 ROOT_PATH = os.path.join(comfy_paths.get_folder_paths("custom_nodes")[0], "ComfyUI-3D-Pack")
@@ -73,6 +80,8 @@ ELEVATION_MIN = -90
 ELEVATION_MAX = 90.0
 AZIMUTH_MIN = -180.0
 AZIMUTH_MAX = 180.0
+
+WEIGHT_DTYPE = torch.float16
 
 class Preview_3DGS:
 
@@ -314,6 +323,7 @@ class Switch_Mesh_Axis:
                 "axis_x_to": (["+x", "-x", "+y", "-y", "+z", "-z"],),
                 "axis_y_to": (["+y", "-y", "+z", "-z", "+x", "-x"],),
                 "axis_z_to": (["+z", "-z", "+x", "-x", "+y", "-y"],),
+                "flip_normal": ("BOOLEAN", {"default": False},),
             },
         }
 
@@ -326,13 +336,13 @@ class Switch_Mesh_Axis:
     FUNCTION = "switch_axis_and_scale"
     CATEGORY = "Comfy3D/Preprocessor"
     
-    def switch_axis_and_scale(self, mesh, axis_x_to, axis_y_to, axis_z_to):
+    def switch_axis_and_scale(self, mesh, axis_x_to, axis_y_to, axis_z_to, flip_normal):
         
         switched_mesh = None
         
         if axis_x_to[1] != axis_y_to[1] and axis_x_to[1] != axis_z_to[1] and axis_y_to[1] != axis_z_to[1]:
             target_axis, target_scale, coordinate_invert_count = get_target_axis_and_scale([axis_x_to, axis_y_to, axis_z_to])
-            switched_mesh = switch_mesh_axis_and_scale(mesh, target_axis, target_scale)
+            switched_mesh = switch_mesh_axis_and_scale(mesh, target_axis, target_scale, flip_normal)
         else:
             cstr(f"[{self.__class__.__name__}] axis_x_to: {axis_x_to}, axis_y_to: {axis_y_to}, axis_z_to: {axis_z_to} have to be on separated axis").error.print()
         
@@ -813,30 +823,32 @@ class Gaussian_Splatting:
                 
                 with torch.inference_mode(False):
                 
-                    gs_params = GSParams(training_iterations,
-                                        batch_size,
-                                        ms_ssim_loss_weight,
-                                        alpha_loss_weight,
-                                        offset_loss_weight,
-                                        offset_opacity_loss_weight,
-                                        invert_background_probability,
-                                        feature_learning_rate,
-                                        opacity_learning_rate,
-                                        scaling_learning_rate,
-                                        rotation_learning_rate,
-                                        position_learning_rate_init,
-                                        position_learning_rate_final,
-                                        position_learning_rate_delay_mult,
-                                        position_learning_rate_max_steps,
-                                        initial_gaussians_num,
-                                        K_nearest_neighbors,
-                                        percent_dense,
-                                        density_start_iterations,
-                                        density_end_iterations,
-                                        densification_interval,
-                                        opacity_reset_interval,
-                                        densify_grad_threshold,
-                                        gaussian_sh_degree)
+                    gs_params = GSParams(
+                        training_iterations,
+                        batch_size,
+                        ms_ssim_loss_weight,
+                        alpha_loss_weight,
+                        offset_loss_weight,
+                        offset_opacity_loss_weight,
+                        invert_background_probability,
+                        feature_learning_rate,
+                        opacity_learning_rate,
+                        scaling_learning_rate,
+                        rotation_learning_rate,
+                        position_learning_rate_init,
+                        position_learning_rate_final,
+                        position_learning_rate_delay_mult,
+                        position_learning_rate_max_steps,
+                        initial_gaussians_num,
+                        K_nearest_neighbors,
+                        percent_dense,
+                        density_start_iterations,
+                        density_end_iterations,
+                        densification_interval,
+                        opacity_reset_interval,
+                        densify_grad_threshold,
+                        gaussian_sh_degree
+                    )
                     
                     
                     if points_cloud_to_initialize_gaussian is not None:
@@ -896,21 +908,23 @@ class Bake_Texture_To_Mesh:
     FUNCTION = "bake_texture"
     CATEGORY = "Comfy3D/Algorithm"
     
-    def bake_texture(self, 
-    reference_images, 
-    reference_masks, 
-    reference_orbit_camera_poses, 
-    reference_orbit_camera_fovy, 
-    mesh, 
-    mesh_albedo_width,
-    mesh_albedo_height,
-    training_iterations, 
-    batch_size, 
-    texture_learning_rate, 
-    train_mesh_geometry, 
-    geometry_learning_rate, 
-    ms_ssim_loss_weight, 
-    force_cuda_rasterize):
+    def bake_texture(
+        self, 
+        reference_images, 
+        reference_masks, 
+        reference_orbit_camera_poses, 
+        reference_orbit_camera_fovy, 
+        mesh, 
+        mesh_albedo_width,
+        mesh_albedo_height,
+        training_iterations, 
+        batch_size, 
+        texture_learning_rate, 
+        train_mesh_geometry, 
+        geometry_learning_rate, 
+        ms_ssim_loss_weight, 
+        force_cuda_rasterize
+    ):
         
         mesh.set_new_albedo(mesh_albedo_width, mesh_albedo_height)
         
@@ -983,16 +997,18 @@ class Deep_Marching_Tetrahedrons:
                   reference_points_cloud=None, reference_images=None, reference_masks=None):
         
         with torch.inference_mode(False):
-            dmtet_mesh = DMTetMesh(training_iterations, 
-                                points_cloud_fitting_weight, 
-                                mesh_smoothing_weight, 
-                                chamfer_faces_sample_scale, 
-                                mesh_scale, 
-                                grid_resolution, 
-                                geometry_learning_rate, 
-                                positional_encoding_multires, 
-                                mlp_internal_dims, 
-                                mlp_hidden_layer_num)
+            dmtet_mesh = DMTetMesh(
+                training_iterations, 
+                points_cloud_fitting_weight, 
+                mesh_smoothing_weight, 
+                chamfer_faces_sample_scale, 
+                mesh_scale, 
+                grid_resolution, 
+                geometry_learning_rate, 
+                positional_encoding_multires, 
+                mlp_internal_dims, 
+                mlp_hidden_layer_num
+            )
             
             if reference_points_cloud is None and reference_images is None:
                 cstr(f"[{self.__class__.__name__}] reference_points_cloud and reference_images cannot both be None, you need at least provide one of them!").error.print()
@@ -1001,13 +1017,13 @@ class Deep_Marching_Tetrahedrons:
             dmtet_mesh.training(reference_points_cloud, reference_images, reference_masks)
             mesh = dmtet_mesh.get_mesh()
             return (mesh, )
-        
-TGS_CONFIG_PATH = "configs/tgs_config.yaml"
 
 class Load_Triplane_Gaussian_Transformers:
     
     checkpoints_dir = "checkpoints/tgs"
     default_ckpt_name = "model_lvis_rel.ckpt"
+    default_repo_id = "VAST-AI/TriplaneGaussian"
+    tgs_config_path = "configs/tgs_config.yaml"
     
     @classmethod
     def INPUT_TYPES(cls):
@@ -1035,16 +1051,16 @@ class Load_Triplane_Gaussian_Transformers:
 
         device = get_device()
         
-        config_path = os.path.join(ROOT_PATH, TGS_CONFIG_PATH)
-        cfg: ExperimentConfig = load_config(config_path)
+        config_path = os.path.join(ROOT_PATH, self.tgs_config_path)
+        cfg: ExperimentConfig = load_config_tgs(config_path)
         
         # Download pre-trained model if it not exist locally
         ckpt_path = os.path.join(self.checkpoints_dir_abs, model_name)
         if not os.path.isfile(ckpt_path):
-            cstr(f"[{self.__class__.__name__}] can't find checkpoint {ckpt_path}, will download it from repo VAST-AI/TriplaneGaussian instead").warning.print()
+            cstr(f"[{self.__class__.__name__}] can't find checkpoint {ckpt_path}, will download it from repo {self.default_repo_id} instead").warning.print()
             
             from huggingface_hub import hf_hub_download
-            hf_hub_download(repo_id="VAST-AI/TriplaneGaussian", local_dir=self.checkpoints_dir_abs, filename=self.default_ckpt_name, repo_type="model")
+            hf_hub_download(repo_id=self.default_repo_id, local_dir=self.checkpoints_dir_abs, filename=self.default_ckpt_name, repo_type="model")
             ckpt_path = os.path.join(self.checkpoints_dir_abs, self.default_ckpt_name)
             
         cfg.system.weights=ckpt_path
@@ -1058,6 +1074,8 @@ class Load_Triplane_Gaussian_Transformers:
         return (tgs_model, )
     
 class Triplane_Gaussian_Transformers:
+    
+    tgs_config_path = "configs/tgs_config.yaml"
     
     @classmethod
     def INPUT_TYPES(cls):
@@ -1080,8 +1098,8 @@ class Triplane_Gaussian_Transformers:
     CATEGORY = "Comfy3D/Algorithm"
     
     def run_TGS(self, reference_image, reference_mask, tgs_model, cam_dist):        
-        config_path = os.path.join(ROOT_PATH, TGS_CONFIG_PATH)
-        cfg: ExperimentConfig = load_config(config_path)
+        config_path = os.path.join(ROOT_PATH, self.tgs_config_path)
+        cfg: ExperimentConfig = load_config_tgs(config_path)
         
         #save_path = os.path.join(ROOT_PATH, "outputs")
         #tgs_model.set_save_dir(save_path)
@@ -1089,11 +1107,12 @@ class Triplane_Gaussian_Transformers:
         cfg.data.cond_camera_distance = cam_dist
         cfg.data.eval_camera_distance = cam_dist
         dataset = CustomImageOrbitDataset(reference_image, reference_mask, cfg.data)
-        dataloader = DataLoader(dataset,
-                            batch_size=cfg.data.eval_batch_size, 
-                            shuffle=False,
-                            collate_fn=dataset.collate
-                        )
+        dataloader = DataLoader(
+            dataset,
+            batch_size=cfg.data.eval_batch_size, 
+            shuffle=False,
+            collate_fn=dataset.collate
+        )
 
 
         gs_ply = []
@@ -1112,7 +1131,7 @@ class Triplane_Gaussian_Transformers:
         )
         """
         
-        return (gs_ply[0],)
+        return (gs_ply[0], )
     
 class Load_Diffusers_Pipeline:
     
@@ -1121,7 +1140,7 @@ class Load_Diffusers_Pipeline:
         return {
             "required": {
                 "diffusers_pipeline_name": (list(DIFFUSERS_PIPE_DICT.keys()),),
-                "pretrained_model_name": ("STRING", {"default": "ashawkey/imagedream-ipmv-diffusers", "multiline": False}),
+                "model_name": ("STRING", {"default": "ashawkey/imagedream-ipmv-diffusers", "multiline": False}),
             },
         }
     
@@ -1134,21 +1153,118 @@ class Load_Diffusers_Pipeline:
     FUNCTION = "load_diffusers_pipe"
     CATEGORY = "Comfy3D/Import|Export"
     
-    def load_diffusers_pipe(self, diffusers_pipeline_name, pretrained_model_name):
+    def load_diffusers_pipe(self, diffusers_pipeline_name, model_name):
+        
+        # resume pretrained checkpoint
+        ckpt_path = os.path.join(ROOT_PATH, "checkpoints", model_name)
+        if not os.path.exists(ckpt_path):
+            cstr(f"[{self.__class__.__name__}] can't find checkpoint {ckpt_path}, will download it from repo {model_name}").warning.print()
+            
+            from huggingface_hub import snapshot_download
+            snapshot_download(repo_id=model_name, local_dir=ckpt_path, repo_type="model")
         
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         
         diffusers_pipeline_class = DIFFUSERS_PIPE_DICT[diffusers_pipeline_name]
         
         # load image dream
+        
         pipe = diffusers_pipeline_class.from_pretrained(
-            pretrained_model_name, # remote weights
-            torch_dtype=torch.float16,
+            ckpt_path,
+            torch_dtype=WEIGHT_DTYPE,
             trust_remote_code=True,
-            # local_files_only=True,
         ).to(device)
         
-        return (pipe,)
+        pipe.enable_xformers_memory_efficient_attention()
+        
+        return (pipe, )
+    
+class Wonder3D_MVDiffusion_Model:
+    
+    wonder3d_config_path = "configs/wonder3d_config.yaml"
+    fix_cam_pose_dir = "mvdiffusion/data/fixed_poses/nine_views"
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "mvdiffusion_pipe": ("DIFFUSERS_PIPE",),
+                "reference_image": ("IMAGE",),
+                "reference_mask": ("MASK",),
+                "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
+                "mv_guidance_scale": ("FLOAT", {"default": 1.0, "min": 0.0, "step": 0.01}),
+                "num_inference_steps": ("INT", {"default": 50, "min": 1}),
+            },
+        }
+        
+    RETURN_TYPES = (
+        "IMAGE",
+        "IMAGE", 
+    )
+    RETURN_NAMES = (
+        "multiview_images",
+        "multiview_normals",
+    )
+    FUNCTION = "run_mvdiffusion"
+    CATEGORY = "Comfy3D/Algorithm"
+    
+    def run_mvdiffusion(
+        self, 
+        mvdiffusion_pipe, 
+        reference_image, # [1, H, W, 3]
+        reference_mask,  # [1, H, W]
+        seed,
+        mv_guidance_scale, 
+        num_inference_steps, 
+    ):
+
+        config_path = os.path.join(ROOT_PATH, self.wonder3d_config_path)
+        cfg = load_config_wonder3d(config_path)
+
+        batch = self.prepare_data(reference_image[0], reference_mask[0].unsqueeze(2))
+
+        mvdiffusion_pipe.set_progress_bar_config(disable=True)
+        seed = int(seed)
+        generator = torch.Generator(device=mvdiffusion_pipe.unet.device).manual_seed(seed)
+
+        # repeat  (2B, Nv, 3, H, W)
+        imgs_in = torch.cat([batch['imgs_in']] * 2, dim=0).to(WEIGHT_DTYPE)
+
+        # (2B, Nv, Nce)
+        camera_embeddings = torch.cat([batch['camera_embeddings']] * 2, dim=0).to(WEIGHT_DTYPE)
+
+        task_embeddings = torch.cat([batch['normal_task_embeddings'], batch['color_task_embeddings']], dim=0).to(WEIGHT_DTYPE)
+
+        camera_embeddings = torch.cat([camera_embeddings, task_embeddings], dim=-1).to(WEIGHT_DTYPE)
+
+        # (B*Nv, 3, H, W)
+        imgs_in = rearrange(imgs_in, "Nv C H W -> (Nv) C H W")
+        # (B*Nv, Nce)
+        # camera_embeddings = rearrange(camera_embeddings, "B Nv Nce -> (B Nv) Nce")
+
+        out = mvdiffusion_pipe(
+            imgs_in,
+            # camera_embeddings,
+            generator=generator,
+            guidance_scale=mv_guidance_scale,
+            num_inference_steps=num_inference_steps,
+            output_type='pt',
+            num_images_per_prompt=1,
+            **cfg.pipe_validation_kwargs,
+        ).images
+
+        num_views = out.shape[0] // 2
+        mv_images = out[num_views:].permute(0, 2, 3, 1)   # [N, 3, H, W] -> [N, H, W, 3]
+        mv_normals = out[:num_views].permute(0, 2, 3, 1)   # [N, 3, H, W] -> [N, H, W, 3]
+    
+        return (mv_images, mv_normals, )
+    
+    def prepare_data(self, ref_image, ref_mask):
+        single_image = torch.cat((ref_image, ref_mask), dim=2).detach().cpu().numpy()
+        single_image = Image.fromarray((single_image * 255).astype(np.uint8), mode="RGBA")
+        abs_fix_cam_pose_dir = os.path.join(ROOT_PATH, self.fix_cam_pose_dir)
+        dataset = SingleImageDataset(fix_cam_pose_dir=abs_fix_cam_pose_dir, num_views=6, img_wh=[256, 256], bg_color='white', single_image=single_image)
+        return dataset[0]
 
 class MVDream_Model:
     
@@ -1210,12 +1326,13 @@ class MVDream_Model:
         mv_images = mvdream_pipe(prompt, reference_image, generator=generator, negative_prompt=prompt_neg, guidance_scale=mv_guidance_scale, num_inference_steps=num_inference_steps, elevation=elevation)
         mv_images = torch.from_numpy(np.stack([mv_images[1], mv_images[2], mv_images[3], mv_images[0]], axis=0)).float() # [4, H, W, 3], float32
         
-        return (mv_images,)
+        return (mv_images, )
     
 class Load_Large_Multiview_Gaussian_Model:
     
     checkpoints_dir = "checkpoints/lgm"
     default_ckpt_name = "model_fp16.safetensors"
+    default_repo_id = "ashawkey/LGM"
     
     @classmethod
     def INPUT_TYPES(cls):
@@ -1247,10 +1364,10 @@ class Load_Large_Multiview_Gaussian_Model:
         # resume pretrained checkpoint
         ckpt_path = os.path.join(self.checkpoints_dir_abs, model_name)
         if not os.path.isfile(ckpt_path):
-            cstr(f"[{self.__class__.__name__}] can't find checkpoint {ckpt_path}, will download it from repo ashawkey/LGM instead").warning.print()
+            cstr(f"[{self.__class__.__name__}] can't find checkpoint {ckpt_path}, will download it from repo {self.default_repo_id} instead").warning.print()
             
             from huggingface_hub import hf_hub_download
-            hf_hub_download(repo_id="ashawkey/LGM", local_dir=self.checkpoints_dir_abs, filename=self.default_ckpt_name, repo_type="model")
+            hf_hub_download(repo_id=self.default_repo_id, local_dir=self.checkpoints_dir_abs, filename=self.default_ckpt_name, repo_type="model")
             ckpt_path = os.path.join(self.checkpoints_dir_abs, self.default_ckpt_name)
             
         if ckpt_path.endswith('safetensors'):
@@ -1266,7 +1383,7 @@ class Load_Large_Multiview_Gaussian_Model:
         lgm_model = lgm_model.half().to(device)
         lgm_model.eval()
         
-        return (lgm_model,)
+        return (lgm_model, )
     
 IMAGENET_DEFAULT_MEAN = (0.485, 0.456, 0.406)
 IMAGENET_DEFAULT_STD = (0.229, 0.224, 0.225)
@@ -1299,7 +1416,7 @@ class Large_Multiview_Gaussian_Model:
         rays_embeddings = lgm_model.prepare_default_rays(device)
         ref_image_torch = torch.cat([ref_image_torch, rays_embeddings], dim=1).unsqueeze(0) # [1, 4, 9, 256, 256]
         
-        with torch.autocast(device_type=device, dtype=torch.float16):
+        with torch.autocast(device_type=device, dtype=WEIGHT_DTYPE):
             # generate gaussians
             gaussians = lgm_model.forward_gaussians(ref_image_torch)
         
@@ -1338,4 +1455,104 @@ class Convert_3DGS_to_Mesh_with_NeRF_and_Marching_Cubes:
             converter.fit_mesh()
             converter.fit_mesh_uv()
         
-        return(converter.get_mesh(), )
+            return(converter.get_mesh(), )
+    
+class NeuS:
+    NeuS_config_path = "configs/NeuS.conf"
+    fix_cam_pose_dir = "NeuS/models/fixed_poses"
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "reference_image": ("IMAGE",),
+                "reference_mask": ("MASK",),
+                "reference_normals": ("IMAGE",),
+                "training_iterations": ("INT", {"default": 1000, "min": 1, "max": 100000}), # longer time, better result. 1w will be ok for most cases
+                "batch_size": ("INT", {"default": 512, "min": 1, "max": 0xffffffffffffffff}),
+                "learning_rate": ("FLOAT", {"default": 5e-4, "min": 0.00001, "step": 0.00001}),
+                "learning_rate_alpha": ("FLOAT", {"default": 5e-4, "min": 0.00001, "step": 0.00001}),
+                "color_loss_weight": ("FLOAT", {"default": 1.0, "min": 0.0, "step": 0.01}),
+                "mesh_smoothing_weight": ("FLOAT", {"default": 0.1, "min": 0.0, "step": 0.01}),
+                "mask_loss_weight": ("FLOAT", {"default": 1.0, "min": 0.0, "step": 0.01}),
+                "normal_loss_weight": ("FLOAT", {"default": 1.0, "min": 0.0, "step": 0.01}),
+                "sparse_loss_weight": ("FLOAT", {"default": 0.1, "min": 0.0, "step": 0.01}),
+                "warm_up_end": ("INT", {"default": 500, "min": 0, "max": 0xffffffffffffffff}),
+                "anneal_end": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
+                "use_white_background":  ("BOOLEAN", {"default": True},),
+                "geometry_extract_resolution": ("INT", {"default": 512, "min": 1, "max": 0xffffffffffffffff}),
+                "marching_cude_threshold": ("FLOAT", {"default": 0.0, "min": 0.0, "step": 0.01}),
+            },
+        }
+
+    RETURN_TYPES = (
+        "MESH",
+    )
+    RETURN_NAMES = (
+        "mesh",
+    )
+    FUNCTION = "run_NeuS"
+    CATEGORY = "Comfy3D/Algorithm"
+    
+    def run_NeuS(
+        self, 
+        reference_image,    # [num_views, H, W, 3]
+        reference_mask,     # [num_views, H, W]
+        reference_normals,  # [num_views, H, W, 3]
+        training_iterations,
+        batch_size,
+        learning_rate,
+        learning_rate_alpha,
+        color_loss_weight,
+        mesh_smoothing_weight,
+        mask_loss_weight,
+        normal_loss_weight,
+        sparse_loss_weight,
+        warm_up_end,
+        anneal_end,
+        use_white_background,
+        geometry_extract_resolution,
+        marching_cude_threshold
+    ):
+        mesh = None
+        num_views = reference_image.shape[0]
+        
+        if num_views in [6, 5, 4]:
+            config_path = os.path.join(ROOT_PATH, self.NeuS_config_path)
+            abs_fix_cam_pose_dir = os.path.join(ROOT_PATH, self.fix_cam_pose_dir)
+            
+            with torch.inference_mode(False):
+                NeuS_params = NeuSParams(
+                    training_iterations,
+                    batch_size,
+                    learning_rate,
+                    learning_rate_alpha,
+                    color_loss_weight,
+                    mesh_smoothing_weight,
+                    mask_loss_weight,
+                    normal_loss_weight,
+                    sparse_loss_weight,
+                    warm_up_end,
+                    anneal_end,
+                    use_white_background
+                )
+                
+                runner = NeuSRunner(
+                    reference_image,
+                    reference_mask,
+                    reference_normals,
+                    config_path,
+                    abs_fix_cam_pose_dir,
+                    num_views,
+                    NeuS_params
+                )
+                
+                cstr(f"[{self.__class__.__name__}] Training NeuS...").msg.print()
+                runner.train()
+                
+                cstr(f"[{self.__class__.__name__}] Extracting Mesh...").msg.print()
+                mesh = runner.extract_mesh(resolution=geometry_extract_resolution, threshold=marching_cude_threshold)
+        else:
+            cstr(f"[{self.__class__.__name__}] Number of views must be one of the following: 6, 5, 4. But got {num_views}").error.print()
+            
+        return(mesh, )

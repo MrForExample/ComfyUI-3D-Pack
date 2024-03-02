@@ -12,8 +12,12 @@
 ### Note: this project is still a WIP
 
 ## Currently support:
-- For use case please check [Example Workflows](./_Example_Workflows/). [**Last update: 11/02/2024**]
+- For use case please check [Example Workflows](./_Example_Workflows/). [**Last update: 02/03/2024**]
   - **Note:** you need to put [Example Inputs Files & Folders](_Example_Workflows/_Example_Inputs_Files/) under ComfyUI Root Directory\ComfyUI\input folder before you can run the example workflow
+
+- **Wonder3D**: [xxlong0/Wonder3D](https://github.com/xxlong0/Wonder3D)
+  - Generate spatial consistent 6 views images & normal maps from a single image
+  ![Wonder3D_FatCat_MVs](_Example_Workflows/_Example_Outputs/Wonder3D_FatCat_MVs.jpg)
 
 - **Large Multiview Gaussian Model**: [3DTopia/LGM](https://github.com/3DTopia/LGM)
   - Enable single image to 3D Gaussian in less than 30 seconds on a RTX3080 GPU, later you can also convert 3D Gaussian to mesh
@@ -55,6 +59,9 @@
   
 - Bake Multi-View images into UVTexture of given 3D mesh using [Nvdiffrast](https://github.com/NVlabs/nvdiffrast), supports:
   - Export to .obj, .ply, .glb
+
+- **NeuS**
+  - Fit a coarse mesh from sparse multi-view images & normal maps, as little as 4 to 6 views, pretty good at reconstruct the shape from reference images but texture lacking details.
 
 - **Deep Marching Tetrahedrons**
   - Allow convert 3DGS .ply file to 3D mesh <br>
@@ -180,7 +187,7 @@ Copy the files inside folder [__New_ComfyUI_Bats](./_New_ComfyUI_Bats/) to your 
 - Alternatively you can just activate the Conda env: `python_miniconda_env\ComfyUI`, and go to your ComfyUI root directory then run command `python ./ComfyUI/main.py`
 
 ## Tips
-* The world & camera coordinate system is the same as OpenGL:
+* OpenGL world & camera coordinate system:
 ```
     World            Camera        
   
@@ -196,6 +203,14 @@ Copy the files inside folder [__New_ComfyUI_Bats](./_New_ComfyUI_Bats/) to your 
 elevation: in (-90, 90), from +y to -y is (-90, 90)
 azimuth: in (-180, 180), from +z to +x is (0, 90)
 ```
+
+* Wonder3D world & camera coordinate system:
+
+![wonder3d_coordinate](_Example_Workflows/_Example_Outputs/wonder3d_coordinate.png)
+
+* Three.js coordinate system: (z-axis is pointing towards you and is coming out of the screen)
+
+![right_hand_coordinate_system](_Example_Workflows/_Example_Outputs/right_hand_coordinate_system.png)
 
 * If you encounter OpenGL errors (e.g., `[F glutil.cpp:338] eglInitialize() failed`), then set `force_cuda_rasterize` to true on corresponding node
 * If after the installation, your ComfyUI get stucked at starting or running, you could following the instruction in following link to solve the problem: [Code Hangs Indefinitely When Evaluating Neuron Models on GPU](https://github.com/lava-nc/lava-dl/discussions/211)
