@@ -288,10 +288,10 @@ class GSConverterNeRFMarchingCubes(nn.Module):
             image_pred, alpha_pred = self.render_mesh(pose)
 
             loss_mse = F.mse_loss(image_pred, image_gt) + 0.1 * F.mse_loss(alpha_pred, alpha_gt)
-            # loss_lap = laplacian_smooth_loss(self.v + self.deform, self.f)
+            loss_lap = laplacian_smooth_loss(self.v + self.deform, self.f)
             loss_normal = normal_consistency(self.v + self.deform, self.f)
             loss_offsets = (self.deform ** 2).sum(-1).mean()
-            loss = loss_mse + 0.001 * loss_normal + 0.1 * loss_offsets
+            loss = loss_mse + 0.001 * loss_normal + 0.1 * loss_offsets * loss_lap * 0.01
 
             loss.backward()
 
