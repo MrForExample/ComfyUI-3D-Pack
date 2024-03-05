@@ -1,0 +1,342 @@
+{
+  "last_node_id": 25,
+  "last_link_id": 35,
+  "nodes": [
+    {
+      "id": 15,
+      "type": "[Comfy3D] Preview 3DMesh",
+      "pos": [
+        2554,
+        464
+      ],
+      "size": [
+        600,
+        500
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh_file_path",
+          "type": "STRING",
+          "link": 16,
+          "widget": {
+            "name": "mesh_file_path"
+          }
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Preview 3DMesh"
+      },
+      "widgets_values": [
+        "",
+        null
+      ]
+    },
+    {
+      "id": 25,
+      "type": "[Comfy3D] Switch Mesh Axis",
+      "pos": [
+        1858,
+        464
+      ],
+      "size": {
+        "0": 315,
+        "1": 130
+      },
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 34
+        }
+      ],
+      "outputs": [
+        {
+          "name": "switched_mesh",
+          "type": "MESH",
+          "links": [
+            35
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Switch Mesh Axis"
+      },
+      "widgets_values": [
+        "+y",
+        "+z",
+        "+x",
+        false
+      ]
+    },
+    {
+      "id": 22,
+      "type": "InvertMask",
+      "pos": [
+        1301,
+        546
+      ],
+      "size": {
+        "0": 210,
+        "1": 26
+      },
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mask",
+          "type": "MASK",
+          "link": 32
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            33
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "InvertMask"
+      }
+    },
+    {
+      "id": 21,
+      "type": "[Comfy3D] Load TripoSR Model",
+      "pos": [
+        1206,
+        344
+      ],
+      "size": {
+        "0": 315,
+        "1": 82
+      },
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "tsr_model",
+          "type": "TSR_MODEL",
+          "links": [
+            29
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Load TripoSR Model"
+      },
+      "widgets_values": [
+        "model.ckpt",
+        8192
+      ]
+    },
+    {
+      "id": 20,
+      "type": "[Comfy3D] TripoSR",
+      "pos": [
+        1559,
+        465
+      ],
+      "size": {
+        "0": 267.0216979980469,
+        "1": 122
+      },
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "tsr_model",
+          "type": "TSR_MODEL",
+          "link": 29
+        },
+        {
+          "name": "reference_image",
+          "type": "IMAGE",
+          "link": 30
+        },
+        {
+          "name": "reference_mask",
+          "type": "MASK",
+          "link": 33
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MESH",
+          "type": "MESH",
+          "links": [
+            34
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] TripoSR"
+      },
+      "widgets_values": [
+        256,
+        25
+      ]
+    },
+    {
+      "id": 14,
+      "type": "[Comfy3D] Save 3D Mesh",
+      "pos": [
+        2218,
+        464
+      ],
+      "size": {
+        "0": 307.8253173828125,
+        "1": 60.248291015625
+      },
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 35
+        }
+      ],
+      "outputs": [
+        {
+          "name": "save_path",
+          "type": "STRING",
+          "links": [
+            16
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Save 3D Mesh"
+      },
+      "widgets_values": [
+        "TripoSR_Test/KungFuCat.obj"
+      ]
+    },
+    {
+      "id": 4,
+      "type": "LoadImage",
+      "pos": [
+        939,
+        485
+      ],
+      "size": {
+        "0": 315,
+        "1": 314
+      },
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            30
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            32
+          ],
+          "shape": 3,
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "KungFuCat.png",
+        "image"
+      ]
+    }
+  ],
+  "links": [
+    [
+      16,
+      14,
+      0,
+      15,
+      0,
+      "STRING"
+    ],
+    [
+      29,
+      21,
+      0,
+      20,
+      0,
+      "TSR_MODEL"
+    ],
+    [
+      30,
+      4,
+      0,
+      20,
+      1,
+      "IMAGE"
+    ],
+    [
+      32,
+      4,
+      1,
+      22,
+      0,
+      "MASK"
+    ],
+    [
+      33,
+      22,
+      0,
+      20,
+      2,
+      "MASK"
+    ],
+    [
+      34,
+      20,
+      0,
+      25,
+      0,
+      "MESH"
+    ],
+    [
+      35,
+      25,
+      0,
+      14,
+      0,
+      "MESH"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {},
+  "version": 0.4
+}

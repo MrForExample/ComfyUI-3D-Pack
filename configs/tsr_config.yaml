@@ -1,0 +1,38 @@
+cond_image_size: 512
+
+image_tokenizer_cls: tsr.models.tokenizers.image.DINOSingleImageTokenizer
+image_tokenizer:
+  pretrained_model_name_or_path: "facebook/dino-vitb16"
+
+tokenizer_cls: tsr.models.tokenizers.triplane.Triplane1DTokenizer
+tokenizer:
+  plane_size: 32
+  num_channels: 1024
+
+backbone_cls: tsr.models.transformer.transformer_1d.Transformer1D
+backbone:
+  in_channels: ${tokenizer.num_channels}
+  num_attention_heads: 16
+  attention_head_dim: 64
+  num_layers: 16
+  cross_attention_dim: 768
+
+post_processor_cls: tsr.models.network_utils.TriplaneUpsampleNetwork
+post_processor:
+  in_channels: 1024
+  out_channels: 40
+
+decoder_cls: tsr.models.network_utils.NeRFMLP
+decoder:
+  in_channels: 120 # 3 * 40
+  n_neurons: 64
+  n_hidden_layers: 9
+  activation: silu
+
+renderer_cls: tsr.models.nerf_renderer.TriplaneNeRFRenderer
+renderer:
+  radius: 0.87 # slightly larger than 0.5 * sqrt(3)
+  feature_reduction: concat
+  density_activation: exp
+  density_bias: -1.0
+  num_samples_per_ray: 128

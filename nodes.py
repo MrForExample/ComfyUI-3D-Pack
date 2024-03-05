@@ -41,6 +41,7 @@ from .lgm.mvdream.pipeline_mvdream import MVDreamPipeline
 from .mvdiffusion.pipelines.pipeline_mvdiffusion_image import MVDiffusionImagePipeline
 from .mvdiffusion.data.single_image_dataset import SingleImageDataset
 from .mvdiffusion.utils.misc import load_config as load_config_wonder3d
+from tsr.system import TSR
 
 from .shared_utils.image_utils import prepare_torch_img
 from .shared_utils.common_utils import cstr, parse_save_filename, get_list_filenames
@@ -1410,7 +1411,7 @@ class Large_Multiview_Gaussian_Model:
     
     @torch.no_grad()
     def run_LGM(self, multiview_images, lgm_model):
-        device = "cuda"
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         ref_image_torch = prepare_torch_img(multiview_images, lgm_model.opt.input_size, lgm_model.opt.input_size, device) # [4, 3, 256, 256]
         ref_image_torch = TF.normalize(ref_image_torch, IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD)
         rays_embeddings = lgm_model.prepare_default_rays(device)
@@ -1556,3 +1557,108 @@ class NeuS:
             cstr(f"[{self.__class__.__name__}] Number of views must be one of the following: 6, 5, 4. But got {num_views}").error.print()
             
         return(mesh, )
+    
+class Load_TripoSR_Model:
+    checkpoints_dir = "checkpoints/tsr"
+    default_ckpt_name = "model.ckpt"
+    default_repo_id = "stabilityai/TripoSR"
+    tsr_config_path = "configs/tsr_config.yaml"
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        cls.checkpoints_dir_abs = os.path.join(ROOT_PATH, cls.checkpoints_dir)
+        all_models_names = get_list_filenames(cls.checkpoints_dir_abs, SUPPORTED_CHECKPOINTS_EXTENSIONS)
+        if cls.default_ckpt_name not in all_models_names:
+            all_models_names += [cls.default_ckpt_name]
+            
+        return {
+            "required": {
+                "model_name": (all_models_names, ),
+                "chunk_size": ("INT", {"default": 8192, "min": 1, "max": 10000})
+            },
+        }
+    
+    RETURN_TYPES = (
+        "TSR_MODEL",
+    )
+    RETURN_NAMES = (
+        "tsr_model",
+    )
+    FUNCTION = "load_TSR"
+    CATEGORY = "Comfy3D/Import|Export"
+    
+    def load_TSR(self, model_name, chunk_size):
+        
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        
+        # resume pretrained checkpoint
+        ckpt_path = os.path.join(self.checkpoints_dir_abs, model_name)
+        if not os.path.isfile(ckpt_path):
+            cstr(f"[{self.__class__.__name__}] can't find checkpoint {ckpt_path}, will download it from repo {self.default_repo_id} instead").warning.print()
+            
+            from huggingface_hub import hf_hub_download
+            hf_hub_download(repo_id=self.default_repo_id, local_dir=self.checkpoints_dir_abs, filename=self.default_ckpt_name, repo_type="model")
+            ckpt_path = os.path.join(self.checkpoints_dir_abs, self.default_ckpt_name)
+            
+        tsr_model = TSR.from_pretrained_custom(
+            weight_path = ckpt_path,
+            config_path = os.path.join(ROOT_PATH, self.tsr_config_path)
+        )
+        
+        cstr(f"[{self.__class__.__name__}] loaded model ckpt from {ckpt_path}").msg.print()
+        tsr_model.renderer.set_chunk_size(chunk_size)
+        tsr_model.to(device)
+        
+        return (tsr_model, )
+    
+class TripoSR:
+
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "tsr_model": ("TSR_MODEL", ),
+                "reference_image": ("IMAGE",),
+                "reference_mask": ("MASK",),
+                "geometry_extract_resolution": ("INT", {"default": 256, "min": 1, "max": 0xffffffffffffffff}),
+                "marching_cude_threshold": ("FLOAT", {"default": 25.0, "min": 0.0, "step": 0.01}),
+            }
+        }
+
+    RETURN_TYPES = (
+        "MESH",
+    )
+    RETURN_NAMES = (
+        "mesh",
+    )
+    
+    FUNCTION = "run_TSR"
+    CATEGORY = "Comfy3D/Algorithm"
+
+    @torch.no_grad()
+    def run_TSR(self, tsr_model, reference_image, reference_mask, geometry_extract_resolution, marching_cude_threshold):
+        cstr(f"[{self.__class__.__name__}] Running TripoSR...").msg.print()
+        
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        
+        mesh = None
+        
+        image = reference_image[0]
+        mask = reference_mask[0].unsqueeze(2)
+        image = torch.cat((image, mask), dim=2).detach().cpu().numpy()
+        
+        image = Image.fromarray(np.clip(255. * image, 0, 255).astype(np.uint8))
+        image = self.fill_background(image)
+        image = image.convert('RGB')
+        scene_codes = tsr_model([image], device)
+        meshes = tsr_model.extract_mesh(scene_codes, resolution=geometry_extract_resolution, threshold=marching_cude_threshold)
+        mesh = Mesh.load_trimesh(given_mesh=meshes[0])
+
+        return (mesh,)
+    
+    # Default model are trained on images with this background 
+    def fill_background(self, image):
+        image = np.array(image).astype(np.float32) / 255.0
+        image = image[:, :, :3] * image[:, :, 3:4] + (1 - image[:, :, 3:4]) * 0.5
+        image = Image.fromarray((image * 255.0).astype(np.uint8))
+        return image

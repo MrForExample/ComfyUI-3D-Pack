@@ -12,8 +12,11 @@
 ### Note: this project is still a WIP
 
 ## Currently support:
-- For use case please check [Example Workflows](./_Example_Workflows/). [**Last update: 02/03/2024**]
+- For use case please check [Example Workflows](./_Example_Workflows/). [**Last update: 05/03/2024**]
   - **Note:** you need to put [Example Inputs Files & Folders](_Example_Workflows/_Example_Inputs_Files/) under ComfyUI Root Directory\ComfyUI\input folder before you can run the example workflow
+
+- **TripoSR**: [VAST-AI-Research/TripoSR](https://github.com/VAST-AI-Research/TripoSR) | [ComfyUI-Flowty-TripoSR](https://github.com/flowtyone/ComfyUI-Flowty-TripoSR)
+  - Generate NeRF representation and using marching cube to turn it into 3D mesh
 
 - **Wonder3D**: [xxlong0/Wonder3D](https://github.com/xxlong0/Wonder3D)
   - Generate spatial consistent 6 views images & normal maps from a single image

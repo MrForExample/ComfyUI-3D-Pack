@@ -254,7 +254,7 @@ class NeuSRunner:
             if self.iter_step % self.save_freq == 0:
                 self.save_checkpoint()
                 
-            comfy_pbar.update_absolute(self.iter_step + 1)           
+            comfy_pbar.update_absolute(self.iter_step)           
 
     def get_cos_anneal_ratio(self):
         if self.anneal_end == 0.0:
