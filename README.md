@@ -17,6 +17,8 @@
 
 - **TripoSR**: [VAST-AI-Research/TripoSR](https://github.com/VAST-AI-Research/TripoSR) | [ComfyUI-Flowty-TripoSR](https://github.com/flowtyone/ComfyUI-Flowty-TripoSR)
   - Generate NeRF representation and using marching cube to turn it into 3D mesh
+ 
+    <video controls autoplay loop src="https://github.com/MrForExample/ComfyUI-3D-Pack/assets/62230687/ec4f8df5-5907-4bbf-ba19-c0565fe95a97"></video>
 
 - **Wonder3D**: [xxlong0/Wonder3D](https://github.com/xxlong0/Wonder3D)
   - Generate spatial consistent 6 views images & normal maps from a single image
