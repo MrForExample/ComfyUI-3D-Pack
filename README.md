@@ -6,7 +6,8 @@
 <a href=#roadmap>Roadmap</a> &mdash;
 <a href=#install>Install</a> &mdash;
 <a href=#run>Run</a> &mdash;
-<a href=#tips>Tips</a>
+<a href=#tips>Tips</a> &mdash;
+<a href=#supporters>Supporters</a>
 </span>
 
 ### Note: this project is still a WIP
@@ -220,3 +221,7 @@ azimuth: in (-180, 180), from +z to +x is (0, 90)
 
 * If you encounter OpenGL errors (e.g., `[F glutil.cpp:338] eglInitialize() failed`), then set `force_cuda_rasterize` to true on corresponding node
 * If after the installation, your ComfyUI get stucked at starting or running, you could following the instruction in following link to solve the problem: [Code Hangs Indefinitely When Evaluating Neuron Models on GPU](https://github.com/lava-nc/lava-dl/discussions/211)
+
+
+## Supporters
+- [MrNeF](https://twitter.com/janusch_patas)
