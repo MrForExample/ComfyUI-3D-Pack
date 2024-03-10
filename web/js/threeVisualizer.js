@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { api } from '/scripts/api.js'
+import { api } from '/scripts/api.js';
+import {getRGBValue} from '/extensions/ComfyUI-3D-Pack/js/sharedFunctions.js';
 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
@@ -13,6 +14,7 @@ const visualizer = document.getElementById("visualizer");
 const container = document.getElementById( 'container' );
 const progressDialog = document.getElementById("progress-dialog");
 const progressIndicator = document.getElementById("progress-indicator");
+const colorPicker = document.getElementById("color-picker");
 
 const renderer = new THREE.WebGLRenderer( { antialias: true } );
 renderer.setPixelRatio( window.devicePixelRatio );
@@ -50,13 +52,14 @@ window.onresize = function () {
 };
 
 
-var lastFilepath = "";
+var lastTimestamp = "";
 var needUpdate = false;
 
 function frameUpdate() {
     
     var filepath = visualizer.getAttribute("filepath");
-    if (filepath == lastFilepath){
+    var timestamp = visualizer.getAttribute("timestamp");
+    if (timestamp == lastTimestamp){
         if (needUpdate){
             controls.update();
             renderer.render( scene, camera );
@@ -66,8 +69,14 @@ function frameUpdate() {
         needUpdate = false;
         scene.clear();
         progressDialog.open = true;
-        lastFilepath = filepath;
-        main(lastFilepath);
+        lastTimestamp = timestamp;
+        main(filepath);
+    }
+
+    var color = getRGBValue(colorPicker.value, true);
+    if (color[0] != scene.background.r || color[1] != scene.background.g || color[2] != scene.background.b){
+        scene.background.setStyle(colorPicker.value);
+        renderer.render( scene, camera ); // Force update background color in preview scene
     }
 }
 

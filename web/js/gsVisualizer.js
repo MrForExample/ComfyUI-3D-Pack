@@ -1,10 +1,12 @@
 import * as SPLAT from 'gsplat';
 import { api } from '/scripts/api.js'
+import {getRGBValue} from '/extensions/ComfyUI-3D-Pack/js/sharedFunctions.js';
 
 const visualizer = document.getElementById("visualizer");
 const canvas = document.getElementById("canvas");
 const progressDialog = document.getElementById("progress-dialog");
 const progressIndicator = document.getElementById("progress-indicator");
+const colorPicker = document.getElementById("color-picker");
 
 const renderer = new SPLAT.WebGLRenderer(canvas);
 const scene = new SPLAT.Scene();
@@ -19,14 +21,14 @@ const handleResize = () => {
 handleResize();
 window.addEventListener("resize", handleResize);
 
-
-var lastFilepath = "";
+var lastTimestamp = "";
 var needUpdate = false;
 
 function frameUpdate() {
 
     var filepath = visualizer.getAttribute("filepath");
-    if (filepath == lastFilepath){
+    var timestamp = visualizer.getAttribute("timestamp");
+    if (timestamp == lastTimestamp){
         if (needUpdate){
             controls.update();
             renderer.render( scene, camera );
@@ -36,8 +38,13 @@ function frameUpdate() {
         needUpdate = false;
         scene.reset();
         progressDialog.open = true;
-        lastFilepath = filepath;
-        main(lastFilepath);
+        lastTimestamp = timestamp;
+        main(filepath);
+    }
+
+    var color = getRGBValue(colorPicker.value);
+    if (color[0] != renderer.backgroundColor.r || color[1] != renderer.backgroundColor.g || color[2] != renderer.backgroundColor.b){
+        renderer.backgroundColor = new SPLAT.Color32(color[0], color[1], color[2], 255);  // It will automatically update background color in preview scene
     }
 };
 

@@ -4,19 +4,20 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="/extensions/ComfyUI-3D-Pack/style/gsStyle.css">
-  <link type="text/css" rel="stylesheet" href="/extensions/ComfyUI-3D-Pack/style/progressStyle.css">
+  <link type="text/css" rel="stylesheet" href="/extensions/ComfyUI-3D-Pack/style/libs/coloris.min.css">
+  <link type="text/css" rel="stylesheet" href="/extensions/ComfyUI-3D-Pack/style/sharedStyle.css">
 </head>
 <body>
-  <div id="root">
-    <div id="progress-container">
-        <dialog open id="progress-dialog">
-            <p>
-                <label for="progress-indicator">Loading scene...</label>
-            </p>
-            <progress max="100" id="progress-indicator"></progress>
-        </dialog>
-    </div>
+  <div id="progress-container">
+    <dialog open id="progress-dialog">
+        <p>
+            <label for="progress-indicator">Loading scene...</label>
+        </p>
+        <progress max="100" id="progress-indicator"></progress>
+    </dialog>
+  </div>
 
+  <div id="container">
     <canvas id="canvas"></canvas>
 		<script type="importmap">
 			{
@@ -25,7 +26,35 @@
 			  }
 			}
 		</script>
-    <script id="visualizer" type="module" filepath="" crossorigin src="/extensions/ComfyUI-3D-Pack/js/gsVisualizer.js"></script>
+    <script id="visualizer" type="module" filepath="" timestamp="" crossorigin src="/extensions/ComfyUI-3D-Pack/js/gsVisualizer.js"></script>
   </div>
+
+  <script src="/extensions/ComfyUI-3D-Pack/js/libs/coloris.min.js"></script>
+  <script>
+    Coloris({
+      el: '.coloris',
+      theme: 'polaroid',
+      themeMode: 'dark',
+      format: 'rgb',
+      alpha: false,
+      swatches: [
+        'rgb(0, 0, 0)',
+        'rgb(128, 128, 128)',
+        'rgb(255, 255, 255)',
+        'rgb(132, 188, 218)',
+        'rgb(128, 227, 119)',
+        'rgb(213, 96, 98)'
+      ]
+    });
+
+    const canvas = document.getElementById("canvas");
+    const handleClick = () => {
+      Coloris.close();
+      document.activeElement.blur();
+    };
+    canvas.addEventListener('click', handleClick);
+    
+  </script>
+  <input type="text" id="color-picker" class="coloris" value="rgb(0, 0, 0)"></input>
 </body>
 </html>

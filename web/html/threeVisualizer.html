@@ -4,10 +4,11 @@
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 		<link type="text/css" rel="stylesheet" href="/extensions/ComfyUI-3D-Pack/style/threeStyle.css">
-		<link type="text/css" rel="stylesheet" href="/extensions/ComfyUI-3D-Pack/style/progressStyle.css">
+		<link type="text/css" rel="stylesheet" href="/extensions/ComfyUI-3D-Pack/style/libs/coloris.min.css">
+		<link type="text/css" rel="stylesheet" href="/extensions/ComfyUI-3D-Pack/style/sharedStyle.css">
 	</head>
 
-	<body>
+	<body>		
 		<div id="progress-container">
 			<dialog open id="progress-dialog">
 				<p>
@@ -17,16 +18,37 @@
 			</dialog>
 		</div>
 
-		<div id="container"></div>
-		<script type="importmap">
-			{
-			  "imports": {
-				"three": "https://unpkg.com/three@latest/build/three.module.js",
-				"three/addons/": "https://unpkg.com/three@latest/examples/jsm/"
-			  }
-			}
+		<div id="container">
+			<script type="importmap">
+				{
+				  "imports": {
+					"three": "https://unpkg.com/three@latest/build/three.module.js",
+					"three/addons/": "https://unpkg.com/three@latest/examples/jsm/"
+				  }
+				}
+			</script>
+			<script id="visualizer" type="module" filepath="" timestamp="" crossorigin src="/extensions/ComfyUI-3D-Pack/js/threeVisualizer.js"></script>
+		</div>
+
+		<script src="/extensions/ComfyUI-3D-Pack/js/libs/coloris.min.js"></script>
+		<script>
+			Coloris({
+				el: '.coloris',
+				theme: 'polaroid',
+				themeMode: 'dark',
+				format: 'rgb',
+				alpha: false,
+				swatches: [
+					'rgb(0, 0, 0)',
+					'rgb(128, 128, 128)',
+					'rgb(255, 255, 255)',
+					'rgb(132, 188, 218)',
+					'rgb(128, 227, 119)',
+					'rgb(213, 96, 98)'
+				]
+			});
 		</script>
-		<script id="visualizer" type="module" filepath="" crossorigin src="/extensions/ComfyUI-3D-Pack/js/threeVisualizer.js"></script>
+		<input type="text" id="color-picker" class="coloris" value="rgb(0, 0, 0)"></input>
 	</body>
 
 </html>

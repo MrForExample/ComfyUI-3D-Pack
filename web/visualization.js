@@ -17,6 +17,9 @@ class Visualizer {
         const iframeDocument = this.iframe.contentWindow.document
         const previewScript = iframeDocument.getElementById('visualizer')
         previewScript.setAttribute("filepath", filepath)
+
+        const timestamp = Date.now().toString()
+        previewScript.setAttribute("timestamp", timestamp)
     }
 
     remove() {
@@ -132,7 +135,7 @@ function registerVisualizer(nodeType, nodeData, nodeClassName, typeName){
             let Preview3DNode = app.graph._nodes.filter(
                 (wi) => wi.type == nodeClassName
             )
-            let nodeName = `Preview3DNode_${Preview3DNode.length}`
+            let nodeName = `Preview3DNode_${nodeClassName}`
 
             console.log(`[Comfy3D] Create: ${nodeName}`)
 
