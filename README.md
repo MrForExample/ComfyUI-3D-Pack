@@ -13,9 +13,17 @@
 ### Note: this project is still a WIP
 
 ## Currently support:
-- For use case please check [Example Workflows](./_Example_Workflows/). [**Last update: 05/03/2024**]
+- For use case please check [Example Workflows](./_Example_Workflows/). [**Last update: 12/03/2024**]
   - **Note:** you need to put [Example Inputs Files & Folders](_Example_Workflows/_Example_Inputs_Files/) under ComfyUI Root Directory\ComfyUI\input folder before you can run the example workflow
   - [tripoSR-layered-diffusion workflow](https://github.com/C0nsumption/Consume-ComfyUI-Workflows/tree/main/assets/tripo_sr/00) by [@Consumption](https://twitter.com/c0nsumption_)
+
+- **CRM**: [thu-ml/CRM](https://github.com/thu-ml/CRM)
+  - Three stages pipeline: 
+    1. Image to 6 multi-view images (Front, Back, Left, Right, Top & Down)
+    2. Image & 6 multi-view images to 6 same views CCMs (Canonical Coordinate Maps)
+    3. 6 multi-view images & CCMs to 3D mesh
+  - *Note: For low vram pc, if you can't fit all three models for each stages into your GPU memory, then you can divide those three stages into different comfy workflow and run them separately*
+
 
 - **TripoSR**: [VAST-AI-Research/TripoSR](https://github.com/VAST-AI-Research/TripoSR) | [ComfyUI-Flowty-TripoSR](https://github.com/flowtyone/ComfyUI-Flowty-TripoSR)
   - Generate NeRF representation and using marching cube to turn it into 3D mesh

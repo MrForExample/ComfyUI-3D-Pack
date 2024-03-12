@@ -15,6 +15,8 @@ from diffusers.configuration_utils import FrozenDict
 from diffusers.schedulers import DDIMScheduler
 from diffusers.utils.torch_utils import randn_tensor
 
+import comfy.utils
+
 from lgm.mvdream.mv_unet import MultiViewUNetModel, get_camera
 
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
@@ -500,7 +502,10 @@ class MVDreamPipeline(DiffusionPipeline):
         extra_step_kwargs = self.prepare_extra_step_kwargs(generator, eta)
 
         # Denoising loop
-        num_warmup_steps = len(timesteps) - num_inference_steps * self.scheduler.order
+        timesteps_len = len(timesteps)
+        comfy_pbar = comfy.utils.ProgressBar(timesteps_len)
+        
+        num_warmup_steps = timesteps_len - num_inference_steps * self.scheduler.order
         with self.progress_bar(total=num_inference_steps) as progress_bar:
             for i, t in enumerate(timesteps):
                 # expand the latents if we are doing classifier free guidance
@@ -542,6 +547,8 @@ class MVDreamPipeline(DiffusionPipeline):
                     progress_bar.update()
                     if callback is not None and i % callback_steps == 0:
                         callback(i, t, latents)  # type: ignore
+                            
+                comfy_pbar.update_absolute(i + 1)
 
         # Post-processing
         if output_type == "latent":

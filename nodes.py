@@ -6,6 +6,8 @@ import copy
 from enum import Enum
 from collections import OrderedDict
 import folder_paths as comfy_paths
+from omegaconf import OmegaConf
+import json
 
 import torch
 from torch.utils.data import DataLoader
@@ -33,6 +35,7 @@ from .algorithms.triplane_gaussian_transformers import TGS
 from .algorithms.large_multiview_gaussian_model import LGM
 from .algorithms.nerf_marching_cubes_converter import GSConverterNeRFMarchingCubes
 from .algorithms.NeuS_runner import NeuSParams, NeuSRunner
+from .algorithms.convolutional_reconstruction_model import CRMSampler
 from .tgs.utils.config import ExperimentConfig, load_config as load_config_tgs
 from .tgs.data import CustomImageOrbitDataset
 from .tgs.utils.misc import todevice, get_device
@@ -41,9 +44,10 @@ from .lgm.mvdream.pipeline_mvdream import MVDreamPipeline
 from .mvdiffusion.pipelines.pipeline_mvdiffusion_image import MVDiffusionImagePipeline
 from .mvdiffusion.data.single_image_dataset import SingleImageDataset
 from .mvdiffusion.utils.misc import load_config as load_config_wonder3d
-from tsr.system import TSR
+from .tsr.system import TSR
+from .crm.model.crm.model import CRM
 
-from .shared_utils.image_utils import prepare_torch_img
+from .shared_utils.image_utils import prepare_torch_img, torch_img_to_pil_rgba
 from .shared_utils.common_utils import cstr, parse_save_filename, get_list_filenames
 
 DIFFUSERS_PIPE_DICT = OrderedDict([
@@ -1061,8 +1065,8 @@ class Load_Triplane_Gaussian_Transformers:
             cstr(f"[{self.__class__.__name__}] can't find checkpoint {ckpt_path}, will download it from repo {self.default_repo_id} instead").warning.print()
             
             from huggingface_hub import hf_hub_download
-            hf_hub_download(repo_id=self.default_repo_id, local_dir=self.checkpoints_dir_abs, filename=self.default_ckpt_name, repo_type="model")
-            ckpt_path = os.path.join(self.checkpoints_dir_abs, self.default_ckpt_name)
+            hf_hub_download(repo_id=self.default_repo_id, local_dir=self.checkpoints_dir_abs, filename=model_name, repo_type="model")
+            ckpt_path = os.path.join(self.checkpoints_dir_abs, model_name)
             
         cfg.system.weights=ckpt_path
         tgs_model = TGS(cfg=cfg.system).to(device)
@@ -1222,7 +1226,7 @@ class Wonder3D_MVDiffusion_Model:
         config_path = os.path.join(ROOT_PATH, self.wonder3d_config_path)
         cfg = load_config_wonder3d(config_path)
 
-        batch = self.prepare_data(reference_image[0], reference_mask[0].unsqueeze(2))
+        batch = self.prepare_data(reference_image, reference_mask)
 
         mvdiffusion_pipe.set_progress_bar_config(disable=True)
         seed = int(seed)
@@ -1261,8 +1265,7 @@ class Wonder3D_MVDiffusion_Model:
         return (mv_images, mv_normals, )
     
     def prepare_data(self, ref_image, ref_mask):
-        single_image = torch.cat((ref_image, ref_mask), dim=2).detach().cpu().numpy()
-        single_image = Image.fromarray((single_image * 255).astype(np.uint8), mode="RGBA")
+        single_image = torch_img_to_pil_rgba(ref_image, ref_mask)
         abs_fix_cam_pose_dir = os.path.join(ROOT_PATH, self.fix_cam_pose_dir)
         dataset = SingleImageDataset(fix_cam_pose_dir=abs_fix_cam_pose_dir, num_views=6, img_wh=[256, 256], bg_color='white', single_image=single_image)
         return dataset[0]
@@ -1368,8 +1371,8 @@ class Load_Large_Multiview_Gaussian_Model:
             cstr(f"[{self.__class__.__name__}] can't find checkpoint {ckpt_path}, will download it from repo {self.default_repo_id} instead").warning.print()
             
             from huggingface_hub import hf_hub_download
-            hf_hub_download(repo_id=self.default_repo_id, local_dir=self.checkpoints_dir_abs, filename=self.default_ckpt_name, repo_type="model")
-            ckpt_path = os.path.join(self.checkpoints_dir_abs, self.default_ckpt_name)
+            hf_hub_download(repo_id=self.default_repo_id, local_dir=self.checkpoints_dir_abs, filename=model_name, repo_type="model")
+            ckpt_path = os.path.join(self.checkpoints_dir_abs, model_name)
             
         if ckpt_path.endswith('safetensors'):
             ckpt = load_file(ckpt_path, device='cpu')
@@ -1377,12 +1380,13 @@ class Load_Large_Multiview_Gaussian_Model:
             ckpt = torch.load(ckpt_path, map_location='cpu')
 
         lgm_model.load_state_dict(ckpt, strict=False)
-        cstr(f"[{self.__class__.__name__}] loaded model ckpt from {ckpt_path}").msg.print()
 
         # device
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         lgm_model = lgm_model.half().to(device)
         lgm_model.eval()
+        
+        cstr(f"[{self.__class__.__name__}] loaded model ckpt from {ckpt_path}").msg.print()
         
         return (lgm_model, )
     
@@ -1597,17 +1601,18 @@ class Load_TripoSR_Model:
             cstr(f"[{self.__class__.__name__}] can't find checkpoint {ckpt_path}, will download it from repo {self.default_repo_id} instead").warning.print()
             
             from huggingface_hub import hf_hub_download
-            hf_hub_download(repo_id=self.default_repo_id, local_dir=self.checkpoints_dir_abs, filename=self.default_ckpt_name, repo_type="model")
-            ckpt_path = os.path.join(self.checkpoints_dir_abs, self.default_ckpt_name)
+            hf_hub_download(repo_id=self.default_repo_id, local_dir=self.checkpoints_dir_abs, filename=model_name, repo_type="model")
+            ckpt_path = os.path.join(self.checkpoints_dir_abs, model_name)
             
-        tsr_model = TSR.from_pretrained_custom(
+        tsr_model = TSR.from_pretrained(
             weight_path = ckpt_path,
             config_path = os.path.join(ROOT_PATH, self.tsr_config_path)
         )
         
-        cstr(f"[{self.__class__.__name__}] loaded model ckpt from {ckpt_path}").msg.print()
         tsr_model.renderer.set_chunk_size(chunk_size)
         tsr_model.to(device)
+        
+        cstr(f"[{self.__class__.__name__}] loaded model ckpt from {ckpt_path}").msg.print()
         
         return (tsr_model, )
     
@@ -1662,3 +1667,270 @@ class TripoSR:
         image = image[:, :, :3] * image[:, :, 3:4] + (1 - image[:, :, 3:4]) * 0.5
         image = Image.fromarray((image * 255.0).astype(np.uint8))
         return image
+    
+class Load_CRM_MVDiffusion_Model:
+    checkpoints_dir = "checkpoints/crm"
+    default_ckpt_name = ["pixel-diffusion.pth", "ccm-diffusion.pth"]
+    default_conf_name = ["configs/crm_configs/sd_v2_base_ipmv_zero_SNR.yaml", "configs/crm_configs/sd_v2_base_ipmv_chin8_zero_snr.yaml"]
+    default_repo_id = "Zhengyi/CRM"
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        cls.checkpoints_dir_abs = os.path.join(ROOT_PATH, cls.checkpoints_dir)
+        all_models_names = get_list_filenames(cls.checkpoints_dir_abs, SUPPORTED_CHECKPOINTS_EXTENSIONS)
+        for ckpt_name in cls.default_ckpt_name:
+            if ckpt_name not in all_models_names:
+                all_models_names += [ckpt_name]
+            
+        return {
+            "required": {
+                "model_name": (all_models_names, ),
+                "crm_config_path": (cls.default_conf_name, ),
+            },
+        }
+    
+    RETURN_TYPES = (
+        "CRM_MVDIFFUSION_SAMPLER",
+    )
+    RETURN_NAMES = (
+        "crm_mvdiffusion_sampler",
+    )
+    FUNCTION = "load_CRM"
+    CATEGORY = "Comfy3D/Import|Export"
+    
+    def load_CRM(self, model_name, crm_config_path):
+        
+        from .crm.imagedream.ldm.util import (
+            instantiate_from_config,
+            get_obj_from_str,
+        )
+        
+        if not os.path.isabs(crm_config_path):
+            crm_config_path = os.path.join(ROOT_PATH, crm_config_path)
+        
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        
+        # resume pretrained checkpoint
+        ckpt_path = os.path.join(self.checkpoints_dir_abs, model_name)
+        if not os.path.isfile(ckpt_path):
+            cstr(f"[{self.__class__.__name__}] can't find checkpoint {ckpt_path}, will download it from repo {self.default_repo_id} instead").warning.print()
+            
+            from huggingface_hub import hf_hub_download
+            hf_hub_download(repo_id=self.default_repo_id, local_dir=self.checkpoints_dir_abs, filename=model_name, repo_type="model")
+            ckpt_path = os.path.join(self.checkpoints_dir_abs, model_name)
+            
+        crm_config = OmegaConf.load(crm_config_path)
+
+        crm_mvdiffusion_model = instantiate_from_config(crm_config.model)
+        crm_mvdiffusion_model.load_state_dict(torch.load(ckpt_path, map_location="cpu"), strict=False)
+        crm_mvdiffusion_model = crm_mvdiffusion_model.to(device).to(WEIGHT_DTYPE)
+        crm_mvdiffusion_model.device = device
+        
+        crm_mvdiffusion_sampler = get_obj_from_str(crm_config.sampler.target)(
+            crm_mvdiffusion_model, device=device, dtype=WEIGHT_DTYPE, **crm_config.sampler.params
+        )
+        
+        cstr(f"[{self.__class__.__name__}] loaded model ckpt from {ckpt_path}").msg.print()
+        
+        return (crm_mvdiffusion_sampler, )
+    
+class CRM_Images_MVDiffusion_Model:
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "crm_mvdiffusion_sampler": ("CRM_MVDIFFUSION_SAMPLER",),
+                "reference_image": ("IMAGE",),
+                "reference_mask": ("MASK",),
+                "prompt": ("STRING", {
+                    "default": "3D assets",
+                    "multiline": True
+                }),
+                "prompt_neg": ("STRING", {
+                    "default": "uniform low no texture ugly, boring, bad anatomy, blurry, pixelated,  obscure, unnatural colors, poor lighting, dull, and unclear.", 
+                    "multiline": True
+                }),
+                "seed": ("INT", {"default": 1234, "min": 0, "max": 0xffffffffffffffff}),
+                "mv_guidance_scale": ("FLOAT", {"default": 5.5, "min": 0.0, "step": 0.01}),
+                "num_inference_steps": ("INT", {"default": 50, "min": 1}),
+            },
+        }
+    
+    RETURN_TYPES = (
+        "IMAGE",
+    )
+    RETURN_NAMES = (
+        "multiview_images",
+    )
+    FUNCTION = "run_model"
+    CATEGORY = "Comfy3D/Algorithm"
+    
+    def run_model(
+        self, 
+        crm_mvdiffusion_sampler, 
+        reference_image, # [1, H, W, 3]
+        reference_mask,  # [1, H, W]
+        prompt, 
+        prompt_neg, 
+        seed,
+        mv_guidance_scale, 
+        num_inference_steps, 
+    ):
+        pixel_img = torch_img_to_pil_rgba(reference_image, reference_mask)
+        pixel_img = CRMSampler.process_pixel_img(pixel_img)
+        
+        multiview_images = CRMSampler.stage1_sample(
+            crm_mvdiffusion_sampler,
+            pixel_img,
+            prompt,
+            prompt_neg,
+            seed,
+            mv_guidance_scale, 
+            num_inference_steps
+        )
+        
+        return (multiview_images, )
+    
+class CRM_CCMs_MVDiffusion_Model:
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "crm_mvdiffusion_sampler": ("CRM_MVDIFFUSION_SAMPLER",),
+                "reference_image": ("IMAGE",),
+                "reference_mask": ("MASK",),
+                "multiview_images": ("IMAGE",),
+                "prompt": ("STRING", {
+                    "default": "3D assets",
+                    "multiline": True
+                }),
+                "prompt_neg": ("STRING", {
+                    "default": "uniform low no texture ugly, boring, bad anatomy, blurry, pixelated,  obscure, unnatural colors, poor lighting, dull, and unclear.", 
+                    "multiline": True
+                }),
+                "seed": ("INT", {"default": 1234, "min": 0, "max": 0xffffffffffffffff}),
+                "mv_guidance_scale": ("FLOAT", {"default": 5.5, "min": 0.0, "step": 0.01}),
+                "num_inference_steps": ("INT", {"default": 50, "min": 1}),
+            },
+        }
+    
+    RETURN_TYPES = (
+        "IMAGE",
+    )
+    RETURN_NAMES = (
+        "multiview_CCMs",
+    )
+    FUNCTION = "run_model"
+    CATEGORY = "Comfy3D/Algorithm"
+    
+    def run_model(
+        self, 
+        crm_mvdiffusion_sampler, 
+        reference_image, # [1, H, W, 3]
+        reference_mask,  # [1, H, W]
+        multiview_images, # [6, H, W, 3]
+        prompt, 
+        prompt_neg, 
+        seed,
+        mv_guidance_scale, 
+        num_inference_steps, 
+    ):
+        pixel_img = torch_img_to_pil_rgba(reference_image, reference_mask)
+        pixel_img = CRMSampler.process_pixel_img(pixel_img)
+        
+        multiview_CCMs = CRMSampler.stage2_sample(
+            crm_mvdiffusion_sampler,
+            pixel_img,
+            multiview_images,
+            prompt,
+            prompt_neg,
+            seed,
+            mv_guidance_scale, 
+            num_inference_steps
+        )
+        
+        return(multiview_CCMs, )
+    
+class Load_Convolutional_Reconstruction_Model:
+    checkpoints_dir = "checkpoints/crm"
+    default_ckpt_name = "CRM.pth"
+    default_repo_id = "Zhengyi/CRM"
+    crm_config_path = "configs/crm_configs/specs_objaverse_total.json"
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        cls.checkpoints_dir_abs = os.path.join(ROOT_PATH, cls.checkpoints_dir)
+        all_models_names = get_list_filenames(cls.checkpoints_dir_abs, SUPPORTED_CHECKPOINTS_EXTENSIONS)
+        if cls.default_ckpt_name not in all_models_names:
+            all_models_names += [cls.default_ckpt_name]
+            
+        return {
+            "required": {
+                "model_name": (all_models_names, ),
+            },
+        }
+    
+    RETURN_TYPES = (
+        "CRM_MODEL",
+    )
+    RETURN_NAMES = (
+        "crm_model",
+    )
+    FUNCTION = "load_CRM"
+    CATEGORY = "Comfy3D/Import|Export"
+    
+    def load_CRM(self, model_name):
+        
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        
+        # resume pretrained checkpoint
+        ckpt_path = os.path.join(self.checkpoints_dir_abs, model_name)
+        if not os.path.isfile(ckpt_path):
+            cstr(f"[{self.__class__.__name__}] can't find checkpoint {ckpt_path}, will download it from repo {self.default_repo_id} instead").warning.print()
+            
+            from huggingface_hub import hf_hub_download
+            hf_hub_download(repo_id=self.default_repo_id, local_dir=self.checkpoints_dir_abs, filename=model_name, repo_type="model")
+            ckpt_path = os.path.join(self.checkpoints_dir_abs, model_name)
+        
+        crm_conf = json.load(open(os.path.join(ROOT_PATH, self.crm_config_path)))
+        crm_model = CRM(crm_conf).to(device)
+        crm_model.load_state_dict(torch.load(ckpt_path, map_location="cpu"), strict=False)
+        
+        cstr(f"[{self.__class__.__name__}] loaded model ckpt from {ckpt_path}").msg.print()
+        
+        return (crm_model, )
+    
+class Convolutional_Reconstruction_Model:
+    
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "crm_model": ("CRM_MODEL", ),
+                "multiview_images": ("IMAGE",),
+                "multiview_CCMs": ("IMAGE",),
+            }
+        }
+
+    RETURN_TYPES = (
+        "MESH",
+    )
+    RETURN_NAMES = (
+        "mesh",
+    )
+    
+    FUNCTION = "run_CRM"
+    CATEGORY = "Comfy3D/Algorithm"
+    
+    @torch.no_grad()
+    def run_CRM(self, crm_model, multiview_images, multiview_CCMs):
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        
+        np_imgs = np.concatenate(multiview_images.cpu().numpy(), 1) # (256, 256*6==1536, 3)
+        np_xyzs = np.concatenate(multiview_CCMs.cpu().numpy(), 1) # (256, 1536, 3)
+        
+        mesh = CRMSampler.generate3d(crm_model, np_imgs, np_xyzs, device)
+        
+        return (mesh,)

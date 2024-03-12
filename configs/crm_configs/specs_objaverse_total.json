@@ -1,0 +1,57 @@
+{
+  "Input": {
+    "img_num": 16,
+    "class": "all",
+    "camera_angle_num": 8,
+    "tet_grid_size": 80,
+    "validate_num": 16,
+    "scale": 0.95,
+    "radius": 3,
+    "resolution": [256, 256]
+  },
+
+  "Pretrain": {
+    "mode": null,
+    "sdf_threshold": 0.1,
+    "sdf_scale": 10,
+    "batch_infer": false,
+    "lr": 1e-4,
+    "radius": 0.5
+  },
+
+  "Train": {
+    "mode": "rnd",
+    "num_epochs": 500,
+    "grad_acc": 1,
+    "warm_up": 0,
+    "decay": 0.000,
+    "learning_rate": {
+      "init": 1e-4,
+      "sdf_decay": 1,
+      "rgb_decay": 1
+    },
+    "batch_size": 4,
+    "eva_iter": 80,
+    "eva_all_epoch": 10,
+    "tex_sup_mode": "blender",
+    "exp_uv_mesh": false,
+    "doub": false,
+    "random_bg": false,
+    "shift": 0,
+    "aug_shift": 0,
+    "geo_type": "flex"
+  },
+
+  "ArchSpecs": {
+    "unet_type": "diffusers",
+    "use_3D_aware": false,
+    "fea_concat": false,
+    "mlp_bias": true
+  },
+
+  "DecoderSpecs": {
+    "c_dim": 32,
+    "plane_resolution": 256
+  }
+}
+

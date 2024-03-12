@@ -1,0 +1,933 @@
+{
+  "last_node_id": 21,
+  "last_link_id": 30,
+  "nodes": [
+    {
+      "id": 11,
+      "type": "Reroute",
+      "pos": [
+        1190,
+        230
+      ],
+      "size": [
+        75,
+        26
+      ],
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "",
+          "type": "*",
+          "link": 15
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "MASK",
+          "links": [
+            16
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "showOutputText": false,
+        "horizontal": false
+      }
+    },
+    {
+      "id": 10,
+      "type": "Reroute",
+      "pos": [
+        1210,
+        190
+      ],
+      "size": [
+        75,
+        26
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "",
+          "type": "*",
+          "link": 13
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "IMAGE",
+          "links": [
+            14
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "showOutputText": false,
+        "horizontal": false
+      }
+    },
+    {
+      "id": 6,
+      "type": "Reroute",
+      "pos": [
+        630,
+        190
+      ],
+      "size": [
+        75,
+        26
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "",
+          "type": "*",
+          "link": 6
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "IMAGE",
+          "links": [
+            13
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "showOutputText": false,
+        "horizontal": false
+      }
+    },
+    {
+      "id": 12,
+      "type": "[Comfy3D] Load Convolutional Reconstruction Model",
+      "pos": [
+        1730,
+        70
+      ],
+      "size": {
+        "0": 327.6000061035156,
+        "1": 58
+      },
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "crm_model",
+          "type": "CRM_MODEL",
+          "links": [
+            17
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Load Convolutional Reconstruction Model"
+      },
+      "widgets_values": [
+        "CRM.pth"
+      ]
+    },
+    {
+      "id": 13,
+      "type": "[Comfy3D] Preview 3DMesh",
+      "pos": [
+        3100,
+        200
+      ],
+      "size": [
+        600,
+        500
+      ],
+      "flags": {},
+      "order": 19,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh_file_path",
+          "type": "STRING",
+          "link": 19,
+          "widget": {
+            "name": "mesh_file_path"
+          }
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Preview 3DMesh"
+      },
+      "widgets_values": [
+        "",
+        null
+      ]
+    },
+    {
+      "id": 9,
+      "type": "Reroute",
+      "pos": [
+        1679,
+        161
+      ],
+      "size": [
+        75,
+        26
+      ],
+      "flags": {},
+      "order": 10,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "",
+          "type": "*",
+          "link": 11
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "IMAGE",
+          "links": [
+            12
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "showOutputText": false,
+        "horizontal": false
+      }
+    },
+    {
+      "id": 16,
+      "type": "PreviewImage",
+      "pos": [
+        1960,
+        377
+      ],
+      "size": {
+        "0": 210,
+        "1": 26
+      },
+      "flags": {},
+      "order": 15,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 21
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 15,
+      "type": "PreviewImage",
+      "pos": [
+        1160,
+        405
+      ],
+      "size": {
+        "0": 210,
+        "1": 246
+      },
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 20
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 5,
+      "type": "[Comfy3D] Load CRM MVDiffusion Model",
+      "pos": [
+        820,
+        60
+      ],
+      "size": {
+        "0": 515.006103515625,
+        "1": 88.70651245117188
+      },
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "crm_mvdiffusion_sampler",
+          "type": "CRM_MVDIFFUSION_SAMPLER",
+          "links": [
+            4
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Load CRM MVDiffusion Model"
+      },
+      "widgets_values": [
+        "ccm-diffusion.pth",
+        "configs/crm_configs/sd_v2_base_ipmv_chin8_zero_snr.yaml"
+      ]
+    },
+    {
+      "id": 3,
+      "type": "[Comfy3D] CRM Images MVDiffusion Model",
+      "pos": [
+        600,
+        300
+      ],
+      "size": {
+        "0": 506.4000244140625,
+        "1": 262
+      },
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "crm_mvdiffusion_sampler",
+          "type": "CRM_MVDIFFUSION_SAMPLER",
+          "link": 1
+        },
+        {
+          "name": "reference_image",
+          "type": "IMAGE",
+          "link": 2
+        },
+        {
+          "name": "reference_mask",
+          "type": "MASK",
+          "link": 28
+        }
+      ],
+      "outputs": [
+        {
+          "name": "multiview_images",
+          "type": "IMAGE",
+          "links": [
+            5,
+            11,
+            20,
+            24
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] CRM Images MVDiffusion Model"
+      },
+      "widgets_values": [
+        "3D assets",
+        "uniform low no texture ugly, boring, bad anatomy, blurry, pixelated,  obscure, unnatural colors, poor lighting, dull, and unclear.",
+        1234,
+        "fixed",
+        5.5,
+        50
+      ]
+    },
+    {
+      "id": 4,
+      "type": "[Comfy3D] CRM CCMs MVDiffusion Model",
+      "pos": [
+        1420,
+        240
+      ],
+      "size": {
+        "0": 481.1999816894531,
+        "1": 282
+      },
+      "flags": {},
+      "order": 13,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "crm_mvdiffusion_sampler",
+          "type": "CRM_MVDIFFUSION_SAMPLER",
+          "link": 4
+        },
+        {
+          "name": "reference_image",
+          "type": "IMAGE",
+          "link": 14
+        },
+        {
+          "name": "reference_mask",
+          "type": "MASK",
+          "link": 16
+        },
+        {
+          "name": "multiview_images",
+          "type": "IMAGE",
+          "link": 5
+        }
+      ],
+      "outputs": [
+        {
+          "name": "multiview_CCMs",
+          "type": "IMAGE",
+          "links": [
+            10,
+            21,
+            25
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] CRM CCMs MVDiffusion Model"
+      },
+      "widgets_values": [
+        "3D assets",
+        "uniform low no texture ugly, boring, bad anatomy, blurry, pixelated,  obscure, unnatural colors, poor lighting, dull, and unclear.",
+        1234,
+        "fixed",
+        5.5,
+        50
+      ]
+    },
+    {
+      "id": 18,
+      "type": "SaveImage",
+      "pos": [
+        1165,
+        712
+      ],
+      "size": {
+        "0": 315,
+        "1": 270
+      },
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 24
+        }
+      ],
+      "properties": {},
+      "widgets_values": [
+        "CRMTest\\MVs\\cat"
+      ]
+    },
+    {
+      "id": 19,
+      "type": "SaveImage",
+      "pos": [
+        1954,
+        650
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 16,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 25
+        }
+      ],
+      "properties": {},
+      "widgets_values": [
+        "CRMTest\\CCMs\\cat"
+      ]
+    },
+    {
+      "id": 2,
+      "type": "[Comfy3D] Load CRM MVDiffusion Model",
+      "pos": [
+        -102,
+        131
+      ],
+      "size": {
+        "0": 489.21466064453125,
+        "1": 95.50737762451172
+      },
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "crm_mvdiffusion_sampler",
+          "type": "CRM_MVDIFFUSION_SAMPLER",
+          "links": [
+            1
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Load CRM MVDiffusion Model"
+      },
+      "widgets_values": [
+        "pixel-diffusion.pth",
+        "configs/crm_configs/sd_v2_base_ipmv_zero_SNR.yaml"
+      ]
+    },
+    {
+      "id": 20,
+      "type": "InvertMask",
+      "pos": [
+        298,
+        420
+      ],
+      "size": {
+        "0": 210,
+        "1": 26
+      },
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mask",
+          "type": "MASK",
+          "link": 26
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            27,
+            28
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "InvertMask"
+      }
+    },
+    {
+      "id": 7,
+      "type": "Reroute",
+      "pos": [
+        638,
+        230
+      ],
+      "size": [
+        75,
+        26
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "",
+          "type": "*",
+          "link": 27
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "MASK",
+          "links": [
+            15
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "showOutputText": false,
+        "horizontal": false
+      }
+    },
+    {
+      "id": 1,
+      "type": "LoadImage",
+      "pos": [
+        -222,
+        320
+      ],
+      "size": {
+        "0": 473.3881530761719,
+        "1": 545.7767944335938
+      },
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            2,
+            6
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            26
+          ],
+          "shape": 3,
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "PirateCat_1.png",
+        "image"
+      ]
+    },
+    {
+      "id": 14,
+      "type": "[Comfy3D] Save 3D Mesh",
+      "pos": [
+        2750,
+        200
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 18,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 30
+        }
+      ],
+      "outputs": [
+        {
+          "name": "save_path",
+          "type": "STRING",
+          "links": [
+            19
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Save 3D Mesh"
+      },
+      "widgets_values": [
+        "CRMTest/mesh.obj"
+      ]
+    },
+    {
+      "id": 8,
+      "type": "[Comfy3D] Convolutional Reconstruction Model",
+      "pos": [
+        2097,
+        201
+      ],
+      "size": {
+        "0": 285.6000061035156,
+        "1": 66
+      },
+      "flags": {},
+      "order": 14,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "crm_model",
+          "type": "CRM_MODEL",
+          "link": 17
+        },
+        {
+          "name": "multiview_images",
+          "type": "IMAGE",
+          "link": 12
+        },
+        {
+          "name": "multiview_CCMs",
+          "type": "IMAGE",
+          "link": 10
+        }
+      ],
+      "outputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "links": [
+            29
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Convolutional Reconstruction Model"
+      }
+    },
+    {
+      "id": 21,
+      "type": "[Comfy3D] Switch Mesh Axis",
+      "pos": [
+        2413,
+        199
+      ],
+      "size": {
+        "0": 315,
+        "1": 130
+      },
+      "flags": {},
+      "order": 17,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 29
+        }
+      ],
+      "outputs": [
+        {
+          "name": "switched_mesh",
+          "type": "MESH",
+          "links": [
+            30
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Switch Mesh Axis"
+      },
+      "widgets_values": [
+        "-x",
+        "+y",
+        "-z",
+        false
+      ]
+    }
+  ],
+  "links": [
+    [
+      1,
+      2,
+      0,
+      3,
+      0,
+      "CRM_MVDIFFUSION_SAMPLER"
+    ],
+    [
+      2,
+      1,
+      0,
+      3,
+      1,
+      "IMAGE"
+    ],
+    [
+      4,
+      5,
+      0,
+      4,
+      0,
+      "CRM_MVDIFFUSION_SAMPLER"
+    ],
+    [
+      5,
+      3,
+      0,
+      4,
+      3,
+      "IMAGE"
+    ],
+    [
+      6,
+      1,
+      0,
+      6,
+      0,
+      "*"
+    ],
+    [
+      10,
+      4,
+      0,
+      8,
+      2,
+      "IMAGE"
+    ],
+    [
+      11,
+      3,
+      0,
+      9,
+      0,
+      "*"
+    ],
+    [
+      12,
+      9,
+      0,
+      8,
+      1,
+      "IMAGE"
+    ],
+    [
+      13,
+      6,
+      0,
+      10,
+      0,
+      "*"
+    ],
+    [
+      14,
+      10,
+      0,
+      4,
+      1,
+      "IMAGE"
+    ],
+    [
+      15,
+      7,
+      0,
+      11,
+      0,
+      "*"
+    ],
+    [
+      16,
+      11,
+      0,
+      4,
+      2,
+      "MASK"
+    ],
+    [
+      17,
+      12,
+      0,
+      8,
+      0,
+      "CRM_MODEL"
+    ],
+    [
+      19,
+      14,
+      0,
+      13,
+      0,
+      "STRING"
+    ],
+    [
+      20,
+      3,
+      0,
+      15,
+      0,
+      "IMAGE"
+    ],
+    [
+      21,
+      4,
+      0,
+      16,
+      0,
+      "IMAGE"
+    ],
+    [
+      24,
+      3,
+      0,
+      18,
+      0,
+      "IMAGE"
+    ],
+    [
+      25,
+      4,
+      0,
+      19,
+      0,
+      "IMAGE"
+    ],
+    [
+      26,
+      1,
+      1,
+      20,
+      0,
+      "MASK"
+    ],
+    [
+      27,
+      20,
+      0,
+      7,
+      0,
+      "*"
+    ],
+    [
+      28,
+      20,
+      0,
+      3,
+      2,
+      "MASK"
+    ],
+    [
+      29,
+      8,
+      0,
+      21,
+      0,
+      "MESH"
+    ],
+    [
+      30,
+      21,
+      0,
+      14,
+      0,
+      "MESH"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {},
+  "version": 0.4
+}

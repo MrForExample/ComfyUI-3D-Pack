@@ -33,6 +33,8 @@ from diffusers.pipelines.stable_diffusion import StableDiffusionPipelineOutput
 from diffusers.pipelines.stable_diffusion.safety_checker import StableDiffusionSafetyChecker
 from einops import rearrange, repeat
 
+import comfy.utils
+
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
 
 
@@ -459,7 +461,10 @@ class MVDiffusionImagePipeline(DiffusionPipeline):
         extra_step_kwargs = self.prepare_extra_step_kwargs(generator, eta)
 
         # 7. Denoising loop
-        num_warmup_steps = len(timesteps) - num_inference_steps * self.scheduler.order
+        timesteps_len = len(timesteps)
+        comfy_pbar = comfy.utils.ProgressBar(timesteps_len)
+        
+        num_warmup_steps = timesteps_len - num_inference_steps * self.scheduler.order
         with self.progress_bar(total=num_inference_steps) as progress_bar:
             for i, t in enumerate(timesteps):
                 # expand the latents if we are doing classifier free guidance
@@ -485,6 +490,8 @@ class MVDiffusionImagePipeline(DiffusionPipeline):
                     progress_bar.update()
                     if callback is not None and i % callback_steps == 0:
                         callback(i, t, latents)
+                        
+                comfy_pbar.update_absolute(i + 1)
 
         if not output_type == "latent":
             if num_channels_latents == 8:
