@@ -204,6 +204,10 @@ pip install -r requirements_post.txt
 **Plus:**<br>
 - For those who want to run it inside Google Colab, you can check the [install instruction from @lovisdotio](https://github.com/MrForExample/ComfyUI-3D-Pack/issues/13)
 
+#### Install with docker:
+
+`docker build -t test . && docker run --rm -it -p8188:8188 test`
+
 ## Run:
 Copy the files inside folder [__New_ComfyUI_Bats](./_New_ComfyUI_Bats/) to your ComfyUI root directory, and double click run_nvidia_gpu_miniconda.bat to start ComfyUI!
 - Alternatively you can just activate the Conda env: `python_miniconda_env\ComfyUI`, and go to your ComfyUI root directory then run command `python ./ComfyUI/main.py`
