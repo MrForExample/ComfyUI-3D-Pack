@@ -6,8 +6,8 @@ set "python_exec=..\..\..\python_embeded\python.exe"
 
 set "python_target_include=..\..\..\python_embeded\include"
 set "python_target_libs=..\..\..\python_embeded\libs"
-set "python_include=%~dp0\_Python311_cpp\include"
-set "python_libs=%~dp0\_Python311_cpp\libs"
+set "python_include=%~dp0\_Pre_Builds\_Python311_cpp\include"
+set "python_libs=%~dp0\_Pre_Builds\_Python311_cpp\libs"
 
 echo Starting to install ComfyUI-3D-Pack...
 

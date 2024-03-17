@@ -130,26 +130,20 @@
 
 Assume you have already downloaded [ComfyUI](https://github.com/comfyanonymous/ComfyUI) & Configed your [CUDA](https://developer.nvidia.com/cuda-12-1-0-download-archive) environment.
 
-### Install Method 0: Directly inside ComfyUI Python Embeded Environment 
-***Node: (I've only built the packages with windows_python3.11_cuda12.1, whitch is ComfyUI Windows Portable's default setup)***
+### Install Method 0: Directly inside ComfyUI Windows Python Embeded Environment 
+***Currently support: (python3.10/3.11/3.12 cuda12.1)***
 
 First install [Visual Studio Build Tools 2022/2019](https://visualstudio.microsoft.com/downloads/?q=build+tools) with Workloads: Desktop development with C++ (There are a few JIT torch cpp extension that builds in runtime)
-- Alternatively, according to [@doctorpangloss](https://github.com/MrForExample/ComfyUI-3D-Pack/issues/5), you can setup the c++/cuda build environments in windows by using [chocolatey](https://chocolatey.org/) with following command:
-
-  ```bash
-  # using git bash for the sake of simplicity
-  # enable developer mode
-  # google this: allow os.symlink on windows by adding your username to the local security policy entry for it.
-  # you will have to restart your computer
-  # install chocolatey using powershell, then install the prereqs for compilation on Windows
-  choco install -y visualstudio2022buildtools
-  choco install -y visualstudio2022-workload-vctools --package-parameters "--add Microsoft.VisualStudio.Component.VC.Llvm.ClangToolset --add Microsoft.VisualStudio.Component.VC.Llvm.Clang"
-  ```
+- Alternatively, according to [@doctorpangloss](https://github.com/MrForExample/ComfyUI-3D-Pack/issues/5), you can setup the c++/cuda build environments in windows by using [chocolatey](https://chocolatey.org/)
 
 Go to the Comfy3D root directory: *ComfyUI Root Directory\ComfyUI\custom_nodes\ComfyUI-3D-Pack* and run:
 
 ```bash
+# Run .bat with python version corresponding to the version of your ComfyUI python environment
+
+# install_windows_portable_win_py310_cu121.bat
 install_windows_portable_win_py311_cu121.bat
+# install_windows_portable_win_py312_cu121.bat
 ```
 
 ### Install Method 1: Using Miniconda(Works on Windows & Linux & Mac)

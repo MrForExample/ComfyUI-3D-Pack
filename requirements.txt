@@ -18,6 +18,7 @@ scikit-learn
 diffusers>=0.26.1
 transformers>=4.36.2
 safetensors
+open_clip_torch
 
 # for training differentiable tensors
 pytorch_msssim
