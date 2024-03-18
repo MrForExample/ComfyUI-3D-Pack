@@ -112,11 +112,12 @@ class LatentDiffusionInterface(nn.Module):
         self.register_buffer(
             "log_one_minus_alphas_cumprod", to_torch(np.log(1.0 - alphas_cumprod))
         )
+        eps = 1e-8  # Added this epsilon to avoid divide by zero errors
         self.register_buffer(
-            "sqrt_recip_alphas_cumprod", to_torch(np.sqrt(1.0 / alphas_cumprod))
+            "sqrt_recip_alphas_cumprod", to_torch(np.sqrt(1.0 / (alphas_cumprod + eps)))
         )
         self.register_buffer(
-            "sqrt_recipm1_alphas_cumprod", to_torch(np.sqrt(1.0 / alphas_cumprod - 1))
+            "sqrt_recipm1_alphas_cumprod", to_torch(np.sqrt(1.0 / (alphas_cumprod + eps) - 1))
         )
 
         # calculations for posterior q(x_{t-1} | x_t, x_0)
