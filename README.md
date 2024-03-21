@@ -198,9 +198,41 @@ pip install -r requirements_post.txt
 **Plus:**<br>
 - For those who want to run it inside Google Colab, you can check the [install instruction from @lovisdotio](https://github.com/MrForExample/ComfyUI-3D-Pack/issues/13)
 
-#### Install with docker:
+#### Install and run with docker:
 
-`docker build -t test . && docker run --rm -it -p8188:8188 test`
+Gpu support during Docker build time is required to install all requirenents. 
+On Linux host you could setup `nvidia-container-runtime`. On Windows
+it is quite different and not checked at moment.
+
+##### Linux setup:
+
+1. Install nvidia-container-runtime:
+    ```bash
+    sudo apt-get install nvidia-container-runtime
+    ```
+
+1. Edit/create the /etc/docker/daemon.json with content:
+    ```json
+    {
+        "runtimes": {
+            "nvidia": {
+                "path": "/usr/bin/nvidia-container-runtime",
+                "runtimeArgs": []
+            } 
+        },
+        "default-runtime": "nvidia" 
+    }
+    ```
+    
+1. Restart docker daemon:
+    ```bash
+    sudo systemctl restart docker
+    ```
+
+Finally build and run docker container with:
+```bash
+docker build -t comfy3d . && docker run --rm -it -p 8188:8188 --gpus all comfy3d
+```
 
 ## Run:
 Copy the files inside folder [__New_ComfyUI_Bats](./_New_ComfyUI_Bats/) to your ComfyUI root directory, and double click run_nvidia_gpu_miniconda.bat to start ComfyUI!
