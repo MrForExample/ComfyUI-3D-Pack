@@ -459,4 +459,82 @@ def switch_mesh_axis_and_scale(mesh, target_axis, target_scale, flip_normal=Fals
     if flip_normal:
         mesh.vn *= -1
     return mesh
+
+
+def marching_cubes_density_to_mesh(get_density_func, grid_size=256, S=128, density_thresh=10, decimate_target=5e4):
+    import mcubes
+    from kiui.mesh_utils import clean_mesh, decimate_mesh
     
+    
+    sigmas = np.zeros([grid_size, grid_size, grid_size], dtype=np.float32)
+
+    X = torch.linspace(-1, 1, grid_size).split(S)
+    Y = torch.linspace(-1, 1, grid_size).split(S)
+    Z = torch.linspace(-1, 1, grid_size).split(S)
+
+    for xi, xs in enumerate(X):
+        for yi, ys in enumerate(Y):
+            for zi, zs in enumerate(Z):
+                xx, yy, zz = torch.meshgrid(xs, ys, zs, indexing='ij')
+                pts = torch.cat([xx.reshape(-1, 1), yy.reshape(-1, 1), zz.reshape(-1, 1)], dim=-1) # [S, 3]
+                val = get_density_func(pts)
+                sigmas[xi * S: xi * S + len(xs), yi * S: yi * S + len(ys), zi * S: zi * S + len(zs)] = val.reshape(len(xs), len(ys), len(zs)).detach().cpu().numpy() # [S, 1] --> [x, y, z]
+
+    print(f'[INFO] marching cubes thresh: {density_thresh} ({sigmas.min()} ~ {sigmas.max()})')
+
+    vertices, triangles = mcubes.marching_cubes(sigmas, density_thresh)
+    vertices = vertices / (grid_size - 1.0) * 2 - 1
+    
+    # clean
+    vertices = vertices.astype(np.float32)
+    triangles = triangles.astype(np.int32)
+    vertices, triangles = clean_mesh(vertices, triangles, remesh=True, remesh_size=0.01)
+    if triangles.shape[0] > decimate_target:
+        vertices, triangles = decimate_mesh(vertices, triangles, decimate_target, optimalplacement=False)
+    
+    return vertices, triangles
+
+def color_func_to_albedo(mesh, get_rgb_func, texture_resolution=1024, padding=2, batch_size=640000, device="cuda", force_cuda_rast=False):
+    import nvdiffrast.torch as dr
+    from kiui.op import uv_padding
+    
+    if force_cuda_rast:
+        glctx = dr.RasterizeCudaContext()
+    else:
+        glctx = dr.RasterizeGLContext()
+    
+    # render uv maps
+    h = w = texture_resolution
+    uv = mesh.vt * 2.0 - 1.0 # uvs to range [-1, 1]
+    uv = torch.cat((uv, torch.zeros_like(uv[..., :1]), torch.ones_like(uv[..., :1])), dim=-1) # [N, 4]
+
+    rast, _ = dr.rasterize(glctx, uv.unsqueeze(0), mesh.ft, (h, w)) # [1, h, w, 4]
+    xyzs, _ = dr.interpolate(mesh.v.unsqueeze(0), rast, mesh.f) # [1, h, w, 3]
+    mask, _ = dr.interpolate(torch.ones_like(mesh.v[:, :1]).unsqueeze(0), rast, mesh.f) # [1, h, w, 1]
+
+    # masked query 
+    xyzs = xyzs.view(-1, 3)
+    mask = (mask > 0).view(-1)
+    
+    albedo = torch.zeros(h * w, 3, device=device, dtype=torch.float32)
+
+    if mask.any():
+        print(f"[INFO] querying texture...")
+
+        xyzs = xyzs[mask] # [M, 3]
+
+        # batched inference to avoid OOM
+        batch = []
+        head = 0
+        while head < xyzs.shape[0]:
+            tail = min(head + batch_size, xyzs.shape[0])
+            batch.append(get_rgb_func(xyzs[head:tail]).float())
+            head += batch_size
+
+        albedo[mask] = torch.cat(batch, dim=0)
+    
+    albedo = albedo.view(h, w, -1)
+    mask = mask.view(h, w)
+    albedo = uv_padding(albedo, mask, padding)
+    
+    return albedo

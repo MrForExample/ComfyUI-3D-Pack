@@ -26,16 +26,20 @@ from .mesh_processer.mesh_utils import (
     switch_ply_axis_and_scale, 
     switch_mesh_axis_and_scale, 
     calculate_max_sh_degree_from_gs_ply,
+    marching_cubes_density_to_mesh,
+    color_func_to_albedo,
+    
 )
 from .algorithms.main_3DGS import GaussianSplatting, GaussianSplattingCameraController, GSParams
 from .algorithms.main_3DGS_renderer import GaussianSplattingRenderer
-from .algorithms.diff_texturing import DiffTextureBaker
+from .algorithms.diff_mesh import DiffMesh
 from .algorithms.dmtet import DMTetMesh
 from .algorithms.triplane_gaussian_transformers import TGS
 from .algorithms.large_multiview_gaussian_model import LGM
 from .algorithms.nerf_marching_cubes_converter import GSConverterNeRFMarchingCubes
 from .algorithms.NeuS_runner import NeuSParams, NeuSRunner
 from .algorithms.convolutional_reconstruction_model import CRMSampler
+from .algorithms.Instant_NGP import InstantNGP
 from .tgs.utils.config import ExperimentConfig, load_config as load_config_tgs
 from .tgs.data import CustomImageOrbitDataset
 from .tgs.utils.misc import todevice, get_device
@@ -876,7 +880,7 @@ class Gaussian_Splatting:
 
         return (gs_ply, )
     
-class Bake_Texture_To_Mesh:
+class Fitting_Mesh_With_Multiview_Images:
     
     def __init__(self):
         self.need_update = False
@@ -892,12 +896,13 @@ class Bake_Texture_To_Mesh:
                 "mesh": ("MESH",),
                 "mesh_albedo_width": ("INT", {"default": 1024, "min": 128, "max": 8192}),
                 "mesh_albedo_height": ("INT", {"default": 1024, "min": 128, "max": 8192}),
-                "training_iterations": ("INT", {"default": 1000, "min": 1, "max": 100000}),
+                "training_iterations": ("INT", {"default": 1024, "min": 1, "max": 100000}),
                 "batch_size": ("INT", {"default": 3, "min": 1, "max": 0xffffffffffffffff}),
-                "texture_learning_rate": ("FLOAT", {"default": 0.1, "min": 0.00001, "step": 0.00001}),
+                "texture_learning_rate": ("FLOAT", {"default": 0.001, "min": 0.00001, "step": 0.00001}),
                 "train_mesh_geometry": ("BOOLEAN", {"default": False},),
-                "geometry_learning_rate": ("FLOAT", {"default": 0.01, "min": 0.00001, "step": 0.00001}),
+                "geometry_learning_rate": ("FLOAT", {"default": 0.0001, "min": 0.00001, "step": 0.00001}),
                 "ms_ssim_loss_weight": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.01}),
+                "remesh_after_n_iteration": ("INT", {"default": 512, "min": 128, "max": 100000}),
                 "force_cuda_rasterize": ("BOOLEAN", {"default": False},),
             },
         }
@@ -910,10 +915,10 @@ class Bake_Texture_To_Mesh:
         "trained_mesh",
         "baked_texture",    # [1, H, W, 3]
     )
-    FUNCTION = "bake_texture"
+    FUNCTION = "fitting_mesh"
     CATEGORY = "Comfy3D/Algorithm"
     
-    def bake_texture(
+    def fitting_mesh(
         self, 
         reference_images, 
         reference_masks, 
@@ -928,6 +933,7 @@ class Bake_Texture_To_Mesh:
         train_mesh_geometry, 
         geometry_learning_rate, 
         ms_ssim_loss_weight, 
+        remesh_after_n_iteration,
         force_cuda_rasterize
     ):
         
@@ -949,12 +955,12 @@ class Bake_Texture_To_Mesh:
                     
                 with torch.inference_mode(False):
                 
-                    texture_baker = DiffTextureBaker(mesh, training_iterations, batch_size, texture_learning_rate, train_mesh_geometry, geometry_learning_rate, ms_ssim_loss_weight, force_cuda_rasterize)
+                    mesh_fitter = DiffMesh(mesh, training_iterations, batch_size, texture_learning_rate, train_mesh_geometry, geometry_learning_rate, ms_ssim_loss_weight, remesh_after_n_iteration, force_cuda_rasterize)
                     
-                    texture_baker.prepare_training(reference_images, reference_masks, reference_orbit_camera_poses, reference_orbit_camera_fovy)
-                    texture_baker.training()
+                    mesh_fitter.prepare_training(reference_images, reference_masks, reference_orbit_camera_poses, reference_orbit_camera_fovy)
+                    mesh_fitter.training()
                     
-                    trained_mesh, baked_texture = texture_baker.get_mesh_and_texture()
+                    trained_mesh, baked_texture = mesh_fitter.get_mesh_and_texture()
                     
             else:
                 cstr(f"[{self.__class__.__name__}] Number of reference images {ref_imgs_num} does not equal to number of reference camera poses {ref_cam_poses_num}").error.print()
@@ -1444,9 +1450,13 @@ class Convert_3DGS_to_Mesh_with_NeRF_and_Marching_Cubes:
 
     RETURN_TYPES = (
         "MESH",
+        "IMAGE",
+        "MASK",
     )
     RETURN_NAMES = (
         "mesh",
+        "imgs",
+        "alphas",
     )
     FUNCTION = "convert_gs_ply"
     CATEGORY = "Comfy3D/Algorithm"
@@ -1456,11 +1466,11 @@ class Convert_3DGS_to_Mesh_with_NeRF_and_Marching_Cubes:
             chosen_config = config_defaults[gs_config]
             chosen_config.force_cuda_rast = force_cuda_rast
             converter = GSConverterNeRFMarchingCubes(config_defaults[gs_config], gs_ply).cuda()
-            converter.fit_nerf()
+            imgs, alphas = converter.fit_nerf()
             converter.fit_mesh()
             converter.fit_mesh_uv()
         
-            return(converter.get_mesh(), )
+            return(converter.get_mesh(), imgs, alphas)
     
 class NeuS:
     NeuS_config_path = "configs/NeuS.conf"
@@ -1934,3 +1944,66 @@ class Convolutional_Reconstruction_Model:
         mesh = CRMSampler.generate3d(crm_model, np_imgs, np_xyzs, device)
         
         return (mesh,)
+    
+class Instant_NGP:
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "reference_image": ("IMAGE",),
+                "reference_mask": ("MASK",),
+                "reference_orbit_camera_poses": ("ORBIT_CAMPOSES",),    # (orbit radius, elevation, azimuth, orbit center X,  orbit center Y,  orbit center Z)
+                "reference_orbit_camera_fovy": ("FLOAT", {"default": 49.1, "min": 0.0, "max": 180.0, "step": 0.1}),
+                "training_iterations": ("INT", {"default": 512, "min": 1, "max": 0xffffffffffffffff}),
+                "training_resolution": ("INT", {"default": 128, "min": 128, "max": 8192}),
+                "marching_cude_grids_resolution": ("INT", {"default": 256, "min": 1, "max": 0xffffffffffffffff}),
+                "marching_cude_grids_batch_size": ("INT", {"default": 128, "min": 1, "max": 0xffffffffffffffff}),
+                "marching_cude_threshold": ("FLOAT", {"default": 10.0, "min": 0.0, "step": 0.01}),
+                "texture_resolution": ("INT", {"default": 1024, "min": 128, "max": 8192}),
+                "force_cuda_rast": ("BOOLEAN", {"default": False}),
+            },
+        }
+
+    RETURN_TYPES = (
+        "MESH",
+    )
+    RETURN_NAMES = (
+        "mesh",
+    )
+    FUNCTION = "run_instant_ngp"
+    CATEGORY = "Comfy3D/Algorithm"
+    
+    def run_instant_ngp(
+        self, 
+        reference_image, 
+        reference_mask, 
+        reference_orbit_camera_poses, 
+        reference_orbit_camera_fovy,
+        training_iterations,
+        training_resolution,
+        marching_cude_grids_resolution,
+        marching_cude_grids_batch_size,
+        marching_cude_threshold,
+        texture_resolution,
+        force_cuda_rast
+    ):
+        with torch.inference_mode(False):
+            device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+            
+            ngp = InstantNGP(training_resolution).to(device)
+            ngp.prepare_training(reference_image, reference_mask, reference_orbit_camera_poses, reference_orbit_camera_fovy)
+            ngp.fit_nerf(training_iterations)
+            
+            vertices, triangles = marching_cubes_density_to_mesh(ngp.get_density, marching_cude_grids_resolution, marching_cude_grids_batch_size, marching_cude_threshold)
+
+            v = torch.from_numpy(vertices).contiguous().float().to(device)
+            f = torch.from_numpy(triangles).contiguous().int().to(device)
+
+            mesh = Mesh(v=v, f=f, albedo=None, device=device)
+            mesh.auto_normal()
+            mesh.auto_uv()
+            
+            mesh.albedo = color_func_to_albedo(mesh, ngp.get_color, texture_resolution, device=device, force_cuda_rast=force_cuda_rast)
+            
+            return (mesh, )

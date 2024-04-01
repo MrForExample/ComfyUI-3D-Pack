@@ -162,6 +162,7 @@ class GSConverterNeRFMarchingCubes(nn.Module):
         ])
 
         print(f"[INFO] fitting nerf...")
+        imgs, alphas = [], []
         pbar = tqdm.trange(iters)
         for i in pbar:
 
@@ -172,6 +173,8 @@ class GSConverterNeRFMarchingCubes(nn.Module):
             pose = orbit_camera(ver, hor, rad)
             
             image_gt, alpha_gt = self.render_gs(pose)
+            imgs.append(image_gt.permute(1, 2, 0).unsqueeze(0))
+            alphas.append(alpha_gt.unsqueeze(0))
             image_pred, alpha_pred = self.render_nerf(pose)
 
             # if i % 200 == 0:
@@ -189,6 +192,8 @@ class GSConverterNeRFMarchingCubes(nn.Module):
             pbar.set_description(f"MSE = {loss_mse.item():.6f}")
         
         print(f"[INFO] finished fitting nerf!")
+        
+        return torch.cat(imgs, dim=0), torch.cat(alphas, dim=0)
     
     def render_mesh(self, pose):
 
@@ -265,6 +270,11 @@ class GSConverterNeRFMarchingCubes(nn.Module):
         self.v = torch.from_numpy(vertices).contiguous().float().to(self.device)
         self.f = torch.from_numpy(triangles).contiguous().int().to(self.device)
         self.deform = nn.Parameter(torch.zeros_like(self.v)).to(self.device)
+        
+        # Here coarse mesh already resemble the target shape closely
+        #mcube_mesh = Mesh(v=self.v, f=self.f, albedo=None, device=self.device)
+        #mcube_mesh.auto_normal()
+        #mcube_mesh.auto_uv()
 
         # fit mesh from gs
         lr_factor = 1

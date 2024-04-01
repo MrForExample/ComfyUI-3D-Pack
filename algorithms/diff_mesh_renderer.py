@@ -7,6 +7,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import nvdiffrast.torch as dr
 
+from kiui.op import inverse_sigmoid
+
 from ..mesh_processer.mesh import safe_normalize
 
 def scale_img_nhwc(x, size, mag='bilinear', min='bilinear'):
@@ -30,10 +32,6 @@ def scale_img_nhw(x, size, mag='bilinear', min='bilinear'):
 def scale_img_hw(x, size, mag='bilinear', min='bilinear'):
     return scale_img_nhwc(x[None, ..., None], size, mag, min)[0, ..., 0]
 
-def trunc_rev_sigmoid(x, eps=1e-6):
-    x = x.clamp(eps, 1 - eps)
-    return torch.log(x / (1 - x))
-
 def make_divisible(x, m=8):
     return int(math.ceil(x / m) * m)
 
@@ -51,7 +49,7 @@ class DiffRastRenderer(nn.Module):
         
         # extract trainable parameters
         self.v_offsets = nn.Parameter(torch.zeros_like(self.mesh.v), requires_grad=True)
-        self.raw_albedo = nn.Parameter(trunc_rev_sigmoid(self.mesh.albedo), requires_grad=True)
+        self.raw_albedo = nn.Parameter(inverse_sigmoid(self.mesh.albedo), requires_grad=True)
 
 
     def get_params(self, texture_lr, train_geo, geom_lr):

@@ -1,6 +1,6 @@
 {
-  "last_node_id": 47,
-  "last_link_id": 76,
+  "last_node_id": 48,
+  "last_link_id": 81,
   "nodes": [
     {
       "id": 9,
@@ -188,38 +188,6 @@
       }
     },
     {
-      "id": 37,
-      "type": "[Comfy3D] Preview 3DMesh",
-      "pos": [
-        3740,
-        110
-      ],
-      "size": [
-        600,
-        500
-      ],
-      "flags": {},
-      "order": 29,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "mesh_file_path",
-          "type": "STRING",
-          "link": 55,
-          "widget": {
-            "name": "mesh_file_path"
-          }
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "[Comfy3D] Preview 3DMesh"
-      },
-      "widgets_values": [
-        "",
-        null
-      ]
-    },
-    {
       "id": 39,
       "type": "Reroute",
       "pos": [
@@ -329,42 +297,6 @@
       }
     },
     {
-      "id": 43,
-      "type": "Reroute",
-      "pos": [
-        2195,
-        -25
-      ],
-      "size": [
-        75,
-        26
-      ],
-      "flags": {},
-      "order": 13,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "",
-          "type": "*",
-          "link": 64
-        }
-      ],
-      "outputs": [
-        {
-          "name": "",
-          "type": "ORBIT_CAMPOSES",
-          "links": [
-            65
-          ],
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "showOutputText": false,
-        "horizontal": false
-      }
-    },
-    {
       "id": 35,
       "type": "[Comfy3D] Convert 3DGS To Pointcloud",
       "pos": [
@@ -414,7 +346,7 @@
       "flags": {
         "collapsed": false
       },
-      "order": 26,
+      "order": 25,
       "mode": 0,
       "inputs": [
         {
@@ -466,7 +398,7 @@
         500
       ],
       "flags": {},
-      "order": 27,
+      "order": 26,
       "mode": 0,
       "inputs": [
         {
@@ -561,42 +493,6 @@
       ]
     },
     {
-      "id": 40,
-      "type": "Reroute",
-      "pos": [
-        2288,
-        -552
-      ],
-      "size": [
-        75,
-        26
-      ],
-      "flags": {},
-      "order": 9,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "",
-          "type": "*",
-          "link": 59
-        }
-      ],
-      "outputs": [
-        {
-          "name": "",
-          "type": "IMAGE",
-          "links": [
-            69
-          ],
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "showOutputText": false,
-        "horizontal": false
-      }
-    },
-    {
       "id": 32,
       "type": "[Comfy3D] Gaussian Splatting Orbit Renderer",
       "pos": [
@@ -653,246 +549,6 @@
         0,
         0,
         0
-      ]
-    },
-    {
-      "id": 42,
-      "type": "Reroute",
-      "pos": [
-        2241,
-        -484
-      ],
-      "size": [
-        75,
-        26
-      ],
-      "flags": {},
-      "order": 15,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "",
-          "type": "*",
-          "link": 62
-        }
-      ],
-      "outputs": [
-        {
-          "name": "",
-          "type": "MASK",
-          "links": [
-            63
-          ],
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "showOutputText": false,
-        "horizontal": false
-      }
-    },
-    {
-      "id": 36,
-      "type": "[Comfy3D] Save 3D Mesh",
-      "pos": [
-        3399,
-        110
-      ],
-      "size": {
-        "0": 315,
-        "1": 58
-      },
-      "flags": {},
-      "order": 28,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "mesh",
-          "type": "MESH",
-          "link": 54
-        }
-      ],
-      "outputs": [
-        {
-          "name": "save_path",
-          "type": "STRING",
-          "links": [
-            55
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "[Comfy3D] Save 3D Mesh"
-      },
-      "widgets_values": [
-        "MeshTest\\3DMesh_%Y-%m-%d-%M-%S-%f.obj"
-      ]
-    },
-    {
-      "id": 34,
-      "type": "[Comfy3D] Deep Marching Tetrahedrons",
-      "pos": [
-        2332,
-        249
-      ],
-      "size": {
-        "0": 443.4000244140625,
-        "1": 314
-      },
-      "flags": {},
-      "order": 19,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "reference_points_cloud",
-          "type": "POINTCLOUD",
-          "link": 53
-        },
-        {
-          "name": "reference_images",
-          "type": "IMAGE",
-          "link": null
-        },
-        {
-          "name": "reference_masks",
-          "type": "MASK",
-          "link": null
-        }
-      ],
-      "outputs": [
-        {
-          "name": "trained_mesh",
-          "type": "MESH",
-          "links": [
-            56,
-            68
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "[Comfy3D] Deep Marching Tetrahedrons"
-      },
-      "widgets_values": [
-        3000,
-        1,
-        0.1,
-        1,
-        1,
-        128,
-        0.0001,
-        2,
-        128,
-        5
-      ]
-    },
-    {
-      "id": 46,
-      "type": "[Comfy3D] Save 3D Mesh",
-      "pos": [
-        2843,
-        495
-      ],
-      "size": {
-        "0": 315,
-        "1": 58
-      },
-      "flags": {},
-      "order": 25,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "mesh",
-          "type": "MESH",
-          "link": 68
-        }
-      ],
-      "outputs": [
-        {
-          "name": "save_path",
-          "type": "STRING",
-          "links": [],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "[Comfy3D] Save 3D Mesh"
-      },
-      "widgets_values": [
-        "MeshTest\\3DMesh_%Y-%m-%d-%M-%S-%f.obj"
-      ]
-    },
-    {
-      "id": 38,
-      "type": "[Comfy3D] Bake Texture To Mesh",
-      "pos": [
-        2840,
-        110
-      ],
-      "size": {
-        "0": 531.5999755859375,
-        "1": 334
-      },
-      "flags": {},
-      "order": 24,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "reference_images",
-          "type": "IMAGE",
-          "link": 69
-        },
-        {
-          "name": "reference_masks",
-          "type": "MASK",
-          "link": 63
-        },
-        {
-          "name": "reference_orbit_camera_poses",
-          "type": "ORBIT_CAMPOSES",
-          "link": 65
-        },
-        {
-          "name": "mesh",
-          "type": "MESH",
-          "link": 56
-        }
-      ],
-      "outputs": [
-        {
-          "name": "trained_mesh",
-          "type": "MESH",
-          "links": [
-            54
-          ],
-          "shape": 3,
-          "slot_index": 0
-        },
-        {
-          "name": "baked_texture",
-          "type": "IMAGE",
-          "links": null,
-          "shape": 3
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "[Comfy3D] Bake Texture To Mesh"
-      },
-      "widgets_values": [
-        49.1,
-        1024,
-        1024,
-        1000,
-        1,
-        0.1,
-        false,
-        0.01,
-        0.5,
-        false
       ]
     },
     {
@@ -1276,6 +932,313 @@
       ],
       "color": "#432",
       "bgcolor": "#653"
+    },
+    {
+      "id": 40,
+      "type": "Reroute",
+      "pos": [
+        2288,
+        -552
+      ],
+      "size": [
+        75,
+        26
+      ],
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "",
+          "type": "*",
+          "link": 59
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "IMAGE",
+          "links": [
+            77
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "showOutputText": false,
+        "horizontal": false
+      }
+    },
+    {
+      "id": 42,
+      "type": "Reroute",
+      "pos": [
+        2241,
+        -484
+      ],
+      "size": [
+        75,
+        26
+      ],
+      "flags": {},
+      "order": 15,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "",
+          "type": "*",
+          "link": 62
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "MASK",
+          "links": [
+            78
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "showOutputText": false,
+        "horizontal": false
+      }
+    },
+    {
+      "id": 34,
+      "type": "[Comfy3D] Deep Marching Tetrahedrons",
+      "pos": [
+        2332,
+        249
+      ],
+      "size": {
+        "0": 443.4000244140625,
+        "1": 314
+      },
+      "flags": {},
+      "order": 19,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "reference_points_cloud",
+          "type": "POINTCLOUD",
+          "link": 53
+        },
+        {
+          "name": "reference_images",
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "reference_masks",
+          "type": "MASK",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "trained_mesh",
+          "type": "MESH",
+          "links": [
+            79
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Deep Marching Tetrahedrons"
+      },
+      "widgets_values": [
+        3000,
+        1,
+        0.1,
+        1,
+        1,
+        128,
+        0.0001,
+        2,
+        128,
+        5
+      ]
+    },
+    {
+      "id": 43,
+      "type": "Reroute",
+      "pos": [
+        2195,
+        -25
+      ],
+      "size": [
+        75,
+        26
+      ],
+      "flags": {},
+      "order": 13,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "",
+          "type": "*",
+          "link": 64
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "ORBIT_CAMPOSES",
+          "links": [
+            80
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "showOutputText": false,
+        "horizontal": false
+      }
+    },
+    {
+      "id": 48,
+      "type": "[Comfy3D] Fitting Mesh With Multiview Images",
+      "pos": [
+        2831,
+        90
+      ],
+      "size": {
+        "0": 531.5999755859375,
+        "1": 358
+      },
+      "flags": {},
+      "order": 24,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "reference_images",
+          "type": "IMAGE",
+          "link": 77
+        },
+        {
+          "name": "reference_masks",
+          "type": "MASK",
+          "link": 78
+        },
+        {
+          "name": "reference_orbit_camera_poses",
+          "type": "ORBIT_CAMPOSES",
+          "link": 80
+        },
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 79
+        }
+      ],
+      "outputs": [
+        {
+          "name": "trained_mesh",
+          "type": "MESH",
+          "links": [
+            81
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "baked_texture",
+          "type": "IMAGE",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Fitting Mesh With Multiview Images"
+      },
+      "widgets_values": [
+        49.1,
+        1024,
+        1024,
+        1024,
+        3,
+        0.001,
+        false,
+        0.0001,
+        0.5,
+        512,
+        false
+      ]
+    },
+    {
+      "id": 36,
+      "type": "[Comfy3D] Save 3D Mesh",
+      "pos": [
+        3398,
+        89
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 27,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 81
+        }
+      ],
+      "outputs": [
+        {
+          "name": "save_path",
+          "type": "STRING",
+          "links": [
+            55
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Save 3D Mesh"
+      },
+      "widgets_values": [
+        "MeshTest\\3DMesh_%Y-%m-%d-%M-%S-%f.obj"
+      ]
+    },
+    {
+      "id": 37,
+      "type": "[Comfy3D] Preview 3DMesh",
+      "pos": [
+        3744,
+        89
+      ],
+      "size": [
+        600,
+        500
+      ],
+      "flags": {},
+      "order": 28,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh_file_path",
+          "type": "STRING",
+          "link": 55,
+          "widget": {
+            "name": "mesh_file_path"
+          }
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Preview 3DMesh"
+      },
+      "widgets_values": [
+        "",
+        null
+      ]
     }
   ],
   "links": [
@@ -1392,28 +1355,12 @@
       "POINTCLOUD"
     ],
     [
-      54,
-      38,
-      0,
-      36,
-      0,
-      "MESH"
-    ],
-    [
       55,
       36,
       0,
       37,
       0,
       "STRING"
-    ],
-    [
-      56,
-      34,
-      0,
-      38,
-      3,
-      "MESH"
     ],
     [
       58,
@@ -1448,44 +1395,12 @@
       "*"
     ],
     [
-      63,
-      42,
-      0,
-      38,
-      1,
-      "MASK"
-    ],
-    [
       64,
       31,
       0,
       43,
       0,
       "*"
-    ],
-    [
-      65,
-      43,
-      0,
-      38,
-      2,
-      "ORBIT_CAMPOSES"
-    ],
-    [
-      68,
-      34,
-      0,
-      46,
-      0,
-      "MESH"
-    ],
-    [
-      69,
-      40,
-      0,
-      38,
-      0,
-      "IMAGE"
     ],
     [
       70,
@@ -1534,6 +1449,46 @@
       24,
       0,
       "GS_PLY"
+    ],
+    [
+      77,
+      40,
+      0,
+      48,
+      0,
+      "IMAGE"
+    ],
+    [
+      78,
+      42,
+      0,
+      48,
+      1,
+      "MASK"
+    ],
+    [
+      79,
+      34,
+      0,
+      48,
+      3,
+      "MESH"
+    ],
+    [
+      80,
+      43,
+      0,
+      48,
+      2,
+      "ORBIT_CAMPOSES"
+    ],
+    [
+      81,
+      48,
+      0,
+      36,
+      0,
+      "MESH"
     ]
   ],
   "groups": [

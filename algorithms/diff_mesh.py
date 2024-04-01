@@ -2,9 +2,12 @@ import random
 import tqdm
 
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
+from kiui.mesh_utils import clean_mesh, decimate_mesh
 from kiui.cam import orbit_camera
+from kiui.mesh_utils import laplacian_smooth_loss, normal_consistency
 from pytorch_msssim import SSIM, MS_SSIM
 
 import comfy.utils
@@ -13,10 +16,13 @@ from .diff_mesh_renderer import DiffRastRenderer
 from ..shared_utils.camera_utils import OrbitCamera
 from ..shared_utils.image_utils import prepare_torch_img
 
-class DiffTextureBaker:
+class DiffMesh:
     
-    def __init__(self, mesh, training_iterations, batch_size, texture_learning_rate, train_mesh_geometry, geometry_learning_rate, ms_ssim_loss_weight, force_cuda_rasterize):
+    def __init__(self, mesh, training_iterations, batch_size, texture_learning_rate, train_mesh_geometry, geometry_learning_rate, ms_ssim_loss_weight, remesh_after_n_iteration, force_cuda_rasterize):
         self.device = torch.device("cuda")
+        
+        self.train_mesh_geometry = train_mesh_geometry
+        self.remesh_after_n_iteration = remesh_after_n_iteration
         
         # prepare main components for optimization
         self.renderer = DiffRastRenderer(mesh, force_cuda_rasterize).to(self.device)
@@ -51,7 +57,7 @@ class DiffTextureBaker:
         self.ref_imgs_torch = torch.cat(ref_imgs_torch_list, dim=0)
         self.ref_masks_torch = torch.cat(ref_masks_torch_list, dim=0)
     
-    def training(self):
+    def training(self, decimate_target=5e4):
         starter = torch.cuda.Event(enable_timing=True)
         ender = torch.cuda.Event(enable_timing=True)
         starter.record()
@@ -100,6 +106,24 @@ class DiffTextureBaker:
             # [1, 3, H, W] in [0, 1]
             #loss += self.lambda_ssim * (1 - self.ssim_loss(X, Y))
             loss += self.lambda_ssim * (1 - self.ms_ssim_loss(masked_ref_img_batch_torch, masked_rendered_img_batch_torch))
+            
+            # Regularization loss
+            if self.train_mesh_geometry:
+                current_v = self.renderer.mesh.v + self.renderer.v_offsets
+                loss += 0.01 * laplacian_smooth_loss(current_v, self.renderer.mesh.f)
+                loss += 0.001 * normal_consistency(current_v, self.renderer.mesh.f)
+                loss += 0.1 * (self.renderer.v_offsets ** 2).sum(-1).mean()
+                
+                # remesh periodically
+                if step > 0 and step % self.remesh_after_n_iteration == 0:
+                    vertices = (self.renderer.mesh.v + self.renderer.v_offsets).detach().cpu().numpy()
+                    triangles = self.renderer.mesh.f.detach().cpu().numpy()
+                    vertices, triangles = clean_mesh(vertices, triangles, remesh=True, remesh_size=0.01)
+                    if triangles.shape[0] > decimate_target:
+                        vertices, triangles = decimate_mesh(vertices, triangles, decimate_target, optimalplacement=False)
+                    self.renderer.mesh.v = torch.from_numpy(vertices).contiguous().float().to(self.device)
+                    self.renderer.mesh.f = torch.from_numpy(triangles).contiguous().int().to(self.device)
+                    self.renderer.v_offsets = nn.Parameter(torch.zeros_like(self.renderer.mesh.v)).to(self.device)
 
             # optimize step
             loss.backward()
