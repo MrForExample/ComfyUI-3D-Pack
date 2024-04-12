@@ -13,7 +13,7 @@
 ### Note: this project is still a WIP
 
 ## Currently support:
-- For use case please check [Example Workflows](./_Example_Workflows/). [**Last update: 01/04/2024**]
+- For use case please check [Example Workflows](./_Example_Workflows/). [**Last update: 12/04/2024**]
   - **Note:** you need to put [Example Inputs Files & Folders](_Example_Workflows/_Example_Inputs_Files/) under ComfyUI Root Directory\ComfyUI\input folder before you can run the example workflow
   - [tripoSR-layered-diffusion workflow](https://github.com/C0nsumption/Consume-ComfyUI-Workflows/tree/main/assets/tripo_sr/00) by [@Consumption](https://twitter.com/c0nsumption_)
 
@@ -75,6 +75,9 @@
     - *sdf_regularizer_weight*: Helps to remove floaters in areas of the shape that are not supervised by the application objective, such as internal faces when using image supervision only
     - *remove_floaters_weight*: This can be increased if you observe artifacts in flat areas
     - *cube_stabilizer_weight*: This does not have a significant impact during the optimization of a single shape, however it helps to stabilizing training in somecases
+
+    <video controls autoplay loop src="https://github.com/MrForExample/ComfyUI-3D-Pack/assets/62230687/166bbc1f-04b7-42c8-87bb-302e3f5aabb2"></video>
+
 
 - **Instant NGP**: [nerfacc](https://github.com/nerfstudio-project/nerfacc)
   - Multi-View images as inputs
