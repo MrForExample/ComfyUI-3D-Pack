@@ -28,7 +28,7 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color( 0x000000 );
 scene.environment = pmremGenerator.fromScene( new RoomEnvironment( renderer ), 0.04 ).texture;
 
-const ambientLight = new THREE.AmbientLight( 0xffffff );
+const ambientLight = new THREE.AmbientLight( 0xffffff , 3.0 );
 
 const camera = new THREE.PerspectiveCamera( 40, window.innerWidth / window.innerHeight, 1, 100 );
 camera.position.set( 5, 2, 8 );

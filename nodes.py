@@ -40,6 +40,8 @@ from .algorithms.nerf_marching_cubes_converter import GSConverterNeRFMarchingCub
 from .algorithms.NeuS_runner import NeuSParams, NeuSRunner
 from .algorithms.convolutional_reconstruction_model import CRMSampler
 from .algorithms.Instant_NGP import InstantNGP
+from .algorithms.flexicubes_trainer import FlexiCubesTrainer
+
 from .tgs.utils.config import ExperimentConfig, load_config as load_config_tgs
 from .tgs.data import CustomImageOrbitDataset
 from .tgs.utils.misc import todevice, get_device
@@ -2000,10 +2002,98 @@ class Instant_NGP:
             v = torch.from_numpy(vertices).contiguous().float().to(device)
             f = torch.from_numpy(triangles).contiguous().int().to(device)
 
-            mesh = Mesh(v=v, f=f, albedo=None, device=device)
+            mesh = Mesh(v=v, f=f, device=device)
             mesh.auto_normal()
             mesh.auto_uv()
             
             mesh.albedo = color_func_to_albedo(mesh, ngp.get_color, texture_resolution, device=device, force_cuda_rast=force_cuda_rast)
+            
+            return (mesh, )
+        
+class FlexiCubes_MVS:
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "reference_depth_maps": ("IMAGE",),
+                "reference_masks": ("MASK",),
+                "reference_orbit_camera_poses": ("ORBIT_CAMPOSES",),    # (orbit radius, elevation, azimuth, orbit center X,  orbit center Y,  orbit center Z)
+                "reference_orbit_camera_fovy": ("FLOAT", {"default": 49.1, "min": 0.0, "max": 180.0, "step": 0.1}),
+                "training_iterations": ("INT", {"default": 512, "min": 1, "max": 0xffffffffffffffff}),
+                "batch_size": ("INT", {"default": 4, "min": 1, "max": 0xffffffffffffffff}),
+                "learning_rate": ("FLOAT", {"default": 0.01, "min": 0.001, "step": 0.001}),
+                "voxel_grids_resolution": ("INT", {"default": 128, "min": 1, "max": 0xffffffffffffffff}),
+                "depth_min_distance": ("FLOAT", {"default": 0.5, "min": 0.0, "step": 0.01}),
+                "depth_max_distance": ("FLOAT", {"default": 5.5, "min": 0.0, "step": 0.01}),
+                "mask_loss_weight": ("FLOAT", {"default": 1.0, "min": 0.01, "step": 0.01}),
+                "depth_loss_weight": ("FLOAT", {"default": 100.0, "min": 0.01, "step": 0.01}),
+                "normal_loss_weight": ("FLOAT", {"default": 1.0, "min": 0.01, "step": 0.01}),
+                "sdf_regularizer_weight": ("FLOAT", {"default": 0.2, "min": 0.01, "step": 0.01}),
+                "remove_floaters_weight": ("FLOAT", {"default": 0.5, "min": 0.01, "step": 0.01}),
+                "cube_stabilizer_weight": ("FLOAT", {"default": 0.1, "min": 0.01, "step": 0.01}),
+                "force_cuda_rast": ("BOOLEAN", {"default": False}),
+            },
+            "optional": {
+                "reference_normal_maps": ("IMAGE",), 
+            }
+        }
+
+    RETURN_TYPES = (
+        "MESH",
+    )
+    RETURN_NAMES = (
+        "mesh",
+    )
+    FUNCTION = "run_flexicubes"
+    CATEGORY = "Comfy3D/Algorithm"
+    
+    def run_flexicubes(
+        self,
+        reference_depth_maps,
+        reference_masks,
+        reference_orbit_camera_poses,
+        reference_orbit_camera_fovy,
+        training_iterations,
+        batch_size,
+        learning_rate,
+        voxel_grids_resolution,
+        depth_min_distance,
+        depth_max_distance,
+        mask_loss_weight,
+        depth_loss_weight,
+        normal_loss_weight,
+        sdf_regularizer_weight,
+        remove_floaters_weight,
+        cube_stabilizer_weight,
+        force_cuda_rast,
+        reference_normal_maps=None
+    ):
+        
+        with torch.inference_mode(False):
+            device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+            
+            fc_trainer = FlexiCubesTrainer(
+                training_iterations,
+                batch_size,
+                learning_rate,
+                voxel_grids_resolution,
+                depth_min_distance,
+                depth_max_distance,
+                mask_loss_weight,
+                depth_loss_weight,
+                normal_loss_weight,
+                sdf_regularizer_weight,
+                remove_floaters_weight,
+                cube_stabilizer_weight,
+                force_cuda_rast,
+                device=device
+            )
+            
+            fc_trainer.prepare_training(reference_depth_maps, reference_masks, reference_orbit_camera_poses, reference_orbit_camera_fovy, reference_normal_maps)
+            
+            fc_trainer.training()
+            
+            mesh = fc_trainer.get_mesh()
             
             return (mesh, )

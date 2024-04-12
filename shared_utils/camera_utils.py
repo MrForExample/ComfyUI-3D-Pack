@@ -151,13 +151,11 @@ class OrbitCamera:
 def calculate_fovX(H, W, fovy):
     return 2 * np.arctan(np.tan(fovy / 2) * W / H)
         
-def get_projection_matrix(znear, zfar, fovX, fovY):
+def get_projection_matrix(znear, zfar, fovX, fovY, z_sign=1.0):
     tanHalfFovY = math.tan((fovY / 2))
     tanHalfFovX = math.tan((fovX / 2))
 
     P = torch.zeros(4, 4)
-
-    z_sign = 1.0
 
     P[0, 0] = 1 / tanHalfFovX
     P[1, 1] = 1 / tanHalfFovY

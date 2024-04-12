@@ -832,10 +832,10 @@ class Mesh:
             fp.write(f"newmtl defaultMat \n")
             fp.write(f"Ka 1 1 1 \n")
             fp.write(f"Kd 1 1 1 \n")
-            fp.write(f"Ks 0 0 0 \n")
+            fp.write(f"Ks 1 1 1 \n")
             #fp.write(f"Tr 1 \n") # will cause the mesh materials in three.js completely transparent
             fp.write(f"illum 1 \n")
-            fp.write(f"Ns 0 \n")
+            fp.write(f"Ns 10 \n")
             if self.albedo is not None:
                 fp.write(f"map_Kd {os.path.basename(albedo_path)} \n")
             if self.metallicRoughness is not None:

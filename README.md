@@ -63,6 +63,19 @@
     - Azimuth: In top view, from angle 0 rotate 360 degree with step -90 you get (0, -90, -180/180, 90, 0), in this case camera rotates clock-wise, vice versa.
     - Elevation: 0 when camera points horizontally forward, pointing down to the ground is negitive angle, vice versa.
 
+- **FlexiCubes**: [nv-tlabs/FlexiCubes](https://github.com/nv-tlabs/FlexiCubes)
+  - Multi-View depth & mask (optional normal maps) as inputs
+  - Export to 3D Mesh
+  - Usage guide: 
+    - *voxel_grids_resolution*: determine mesh resolution/quality
+    - *depth_min_distance* *depth_max_distance* : distance from object to camera, object parts in the render that is closer(futher) to camera than depth_min_distance(depth_max_distance) will be rendered with pure white(black) RGB value 1, 1, 1(0, 0, 0)
+    - *mask_loss_weight*: Control the silhouette of reconstrocted 3D mesh
+    - *depth_loss_weight*: Control the shape of reconstrocted 3D mesh, this loss will also affect the mesh deform detail on the surface, so results depends on quality of the depth map
+    - *normal_loss_weight*: Optional. Use to refine the mesh deform detail on the surface
+    - *sdf_regularizer_weight*: Helps to remove floaters in areas of the shape that are not supervised by the application objective, such as internal faces when using image supervision only
+    - *remove_floaters_weight*: This can be increased if you observe artifacts in flat areas
+    - *cube_stabilizer_weight*: This does not have a significant impact during the optimization of a single shape, however it helps to stabilizing training in somecases
+
 - **Instant NGP**: [nerfacc](https://github.com/nerfstudio-project/nerfacc)
   - Multi-View images as inputs
   - Export to 3D Mesh using marching cubes
