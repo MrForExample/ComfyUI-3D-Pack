@@ -7,7 +7,6 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 import imageio
 import numpy as np
 import PIL.Image
-import rembg
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -404,6 +403,7 @@ def remove_background(
     force: bool = False,
     **rembg_kwargs,
 ) -> PIL.Image.Image:
+    import rembg
     do_remove = True
     if image.mode == "RGBA" and image.getextrema()[3][0] < 255:
         do_remove = False
