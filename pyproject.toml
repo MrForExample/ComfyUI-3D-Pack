@@ -1,0 +1,15 @@
+[project]
+name = "comfyui-3d-pack"
+description = ""
+version = "1.0.0"
+license = "LICENSE"
+dependencies = ["# base", "cmake", "ninja", "# computational libraries", "numpy", "einops", "scipy", "kornia", "opencv-python", "pillow", "roma", "nerfacc>=0.5.3", "PyMCubes", "scikit-learn", "# for use ML models", "diffusers>=0.26.1", "transformers>=4.36.2", "safetensors", "open_clip_torch", "# for training differentiable tensors", "pytorch_msssim", "# for process images & videos", "imageio", "imageio-ffmpeg", "matplotlib", "# for dmtet and mesh import & export", "trimesh", "plyfile", "pygltflib", "xatlas", "pymeshlab", "# configs & extra", "torchtyping", "tqdm", "jaxtyping", "packaging", "OmegaConf", "pyhocon"]
+
+[project.urls]
+Repository = "https://github.com/MrForExample/ComfyUI-3D-Pack"
+
+[tool.comfy]
+PublisherId = ""
+DisplayName = "ComfyUI-3D-Pack"
+Icon = ""
+Models = [{location = "/checkpoints/model.safetensor", model_url = "https://example.com/model.zip"}]
