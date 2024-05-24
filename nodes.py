@@ -1487,9 +1487,11 @@ class MVDream_Model:
     
     RETURN_TYPES = (
         "IMAGE",
+        "ORBIT_CAMPOSES",   # [orbit radius, elevation, azimuth, orbit center X, orbit center Y, orbit center Z]
     )
     RETURN_NAMES = (
         "multiview_images",
+        "orbit_camposes",
     )
     FUNCTION = "run_mvdream"
     CATEGORY = "Comfy3D/Algorithm"
@@ -1521,7 +1523,14 @@ class MVDream_Model:
         mv_images = mvdream_pipe(prompt, reference_image, generator=generator, negative_prompt=prompt_neg, guidance_scale=mv_guidance_scale, num_inference_steps=num_inference_steps, elevation=elevation)
         mv_images = torch.from_numpy(np.stack([mv_images[1], mv_images[2], mv_images[3], mv_images[0]], axis=0)).float() # [4, H, W, 3], float32
         
-        return (mv_images, )
+        azimuths = [0, 90, 180, -90]
+        elevations = [0, 0, 0, 0]
+        radius = [4.0] * 4
+        center = [0.0] * 4
+
+        orbit_camposes = [azimuths, elevations, radius, center, center, center]
+
+        return (mv_images, orbit_camposes)
     
 class Load_Large_Multiview_Gaussian_Model:
     
@@ -2245,8 +2254,6 @@ class InstantMesh_Reconstruction_Model:
     
     @torch.no_grad()
     def run_LRM(self, lrm_model, multiview_images, orbit_camera_poses, orbit_camera_fovy, texture_resolution):
-
-        multiview_images
 
         images = multiview_images.permute(0, 3, 1, 2).unsqueeze(0).to(DEVICE)   # [N, H, W, 3] -> [1, N, 3, H, W]
         images = v2.functional.resize(images, 320, interpolation=3, antialias=True).clamp(0, 1)

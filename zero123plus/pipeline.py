@@ -26,6 +26,11 @@ from diffusers.image_processor import VaeImageProcessor
 from diffusers.models.attention_processor import Attention, AttnProcessor, XFormersAttnProcessor, AttnProcessor2_0
 from diffusers.utils.import_utils import is_xformers_available
 
+import comfy.utils
+
+def callback_update_comfy_bar(pipe, step_index, timestep, callback_kwargs):
+        pipe.comfy_pbar.update_absolute(step_index + 1)
+        return callback_kwargs
 
 def to_rgb_image(maybe_rgba: Image.Image):
     if maybe_rgba.mode == 'RGB':
@@ -380,6 +385,9 @@ class Zero123PlusPipeline(diffusers.StableDiffusionPipeline):
         cak = dict(cond_lat=cond_lat)
         if hasattr(self.unet, "controlnet"):
             cak['control_depth'] = depth_image
+
+        self.comfy_pbar = comfy.utils.ProgressBar(num_inference_steps)
+
         latents: torch.Tensor = super().__call__(
             None,
             *args,
@@ -391,6 +399,8 @@ class Zero123PlusPipeline(diffusers.StableDiffusionPipeline):
             output_type='latent',
             width=width,
             height=height,
+            callback_on_step_end=callback_update_comfy_bar,
+            callback_on_step_end_tensor_inputs=[],
             **kwargs
         ).images
         latents = unscale_latents(latents)

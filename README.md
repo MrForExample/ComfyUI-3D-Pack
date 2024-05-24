@@ -1,5 +1,7 @@
 # ComfyUI-3D-Pack
- An extensive node suite that enables ComfyUI to process 3D inputs (Mesh & UV Texture, etc) using cutting edge algorithms (3DGS, NeRF, Differentiable Rendering, SDS/VSD Optimization, etc.)
+**Make ComfyUI generates 3D assets as good & convenient as it generates image/video!**
+<br>
+This is an extensive node suite that enables ComfyUI to process 3D inputs (Mesh & UV Texture, etc.) using cutting edge algorithms (3DGS, NeRF, etc.) and models (InstantMesh, CRM, TripoSR, etc.)
 
 <span style="font-size:1.5em;">
 <a href=#currently-support>Features</a> &mdash;
@@ -9,8 +11,6 @@
 <a href=#tips>Tips</a> &mdash;
 <a href=#supporters>Supporters</a>
 </span>
-
-### Note: this project is still a WIP
 
 ## Currently support:
 - For use case please check [Example Workflows](./_Example_Workflows/). [**Last update: 23/05/2024**]
@@ -180,7 +180,7 @@ install_windows_portable_win_py311_cu121.bat
 ```
 
 ### Install Method 1: Using Miniconda(Works on Windows & Linux & Mac)
-***Note: [In some edge cases Miniconda fails Anaconda could fix the issue](https://github.com/MrForExample/ComfyUI-3D-Pack/issues/49)***
+***Note: [In some edge cases Miniconda fails but Anaconda could fix the issue](https://github.com/MrForExample/ComfyUI-3D-Pack/issues/49)***
 
 #### Setup with Miniconda:
 First download [Miniconda](https://docs.conda.io/projects/miniconda/en/latest/) (*One of the best way to manage a clean and separated python envirments*)
@@ -230,6 +230,7 @@ pip install -r requirements_post.txt
 
 **Plus:**<br>
 - For those who want to run it inside Google Colab, you can check the [install instruction from @lovisdotio](https://github.com/MrForExample/ComfyUI-3D-Pack/issues/13)
+- You can find some of the pre-build wheels for Linux here: [remsky/ComfyUI3D-Assorted-Wheels](https://github.com/remsky/ComfyUI3D-Assorted-Wheels)
 
 #### Install and run with docker:
 
