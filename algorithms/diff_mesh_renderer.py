@@ -51,6 +51,7 @@ class DiffRastRenderer(nn.Module):
         self.v_offsets = nn.Parameter(torch.zeros_like(self.mesh.v), requires_grad=True)
         self.raw_albedo = nn.Parameter(inverse_sigmoid(self.mesh.albedo), requires_grad=True)
 
+        self.train_geo = False
 
     def get_params(self, texture_lr, train_geo, geom_lr):
 
@@ -68,7 +69,8 @@ class DiffRastRenderer(nn.Module):
         self.mesh.v = (self.mesh.v + self.v_offsets).detach()
         self.mesh.albedo = torch.sigmoid(self.raw_albedo.detach())
     
-    def render(self, pose, proj, h0, w0, ssaa=1, bg_color=1, texture_filter='linear-mipmap-linear'):
+    def render(self, pose, proj, h0, w0, ssaa=1, bg_color=1, texture_filter='linear-mipmap-linear', 
+               optional_render_types=['depth', 'normal']):
         
         # do super-sampling
         if ssaa != 1:
@@ -94,36 +96,40 @@ class DiffRastRenderer(nn.Module):
 
         rast, rast_db = dr.rasterize(self.glctx, v_clip, self.mesh.f, (h, w))
 
-        alpha = (rast[0, ..., 3:] > 0).float()
-        depth, _ = dr.interpolate(-v_cam[..., [2]], rast, self.mesh.f) # [1, H, W, 1]
-        depth = depth.squeeze(0) # [H, W, 1]
-
+        alpha = (rast[0, ..., 3:] > 0).float() # [H, W, 1]
+        # render depth
+        if 'depth' in optional_render_types:
+            depth, _ = dr.interpolate(-v_cam[..., [2]], rast, self.mesh.f) # [1, H, W, 1]
+            depth = depth.squeeze(0) # [H, W, 1]
+        # render albedo
         texc, texc_db = dr.interpolate(self.mesh.vt.unsqueeze(0).contiguous(), rast, self.mesh.ft, rast_db=rast_db, diff_attrs='all')
         albedo = dr.texture(self.raw_albedo.unsqueeze(0), texc, uv_da=texc_db, filter_mode=texture_filter) # [1, H, W, 3]
         albedo = torch.sigmoid(albedo)
+
         # get vn and render normal
-        if self.train_geo:
-            i0, i1, i2 = self.mesh.f[:, 0].long(), self.mesh.f[:, 1].long(), self.mesh.f[:, 2].long()
-            v0, v1, v2 = v[i0, :], v[i1, :], v[i2, :]
+        if 'normal' in optional_render_types:
+            if self.train_geo:
+                i0, i1, i2 = self.mesh.f[:, 0].long(), self.mesh.f[:, 1].long(), self.mesh.f[:, 2].long()
+                v0, v1, v2 = v[i0, :], v[i1, :], v[i2, :]
 
-            face_normals = torch.cross(v1 - v0, v2 - v0)
-            face_normals = safe_normalize(face_normals)
+                face_normals = torch.cross(v1 - v0, v2 - v0)
+                face_normals = safe_normalize(face_normals)
+                
+                vn = torch.zeros_like(v)
+                vn.scatter_add_(0, i0[:, None].repeat(1,3), face_normals)
+                vn.scatter_add_(0, i1[:, None].repeat(1,3), face_normals)
+                vn.scatter_add_(0, i2[:, None].repeat(1,3), face_normals)
+
+                vn = torch.where(torch.sum(vn * vn, -1, keepdim=True) > 1e-20, vn, torch.tensor([0.0, 0.0, 1.0], dtype=torch.float32, device=vn.device))
+            else:
+                vn = self.mesh.vn
             
-            vn = torch.zeros_like(v)
-            vn.scatter_add_(0, i0[:, None].repeat(1,3), face_normals)
-            vn.scatter_add_(0, i1[:, None].repeat(1,3), face_normals)
-            vn.scatter_add_(0, i2[:, None].repeat(1,3), face_normals)
+            normal, _ = dr.interpolate(vn.unsqueeze(0).contiguous(), rast, self.mesh.fn)
+            normal = safe_normalize(normal[0])
 
-            vn = torch.where(torch.sum(vn * vn, -1, keepdim=True) > 1e-20, vn, torch.tensor([0.0, 0.0, 1.0], dtype=torch.float32, device=vn.device))
-        else:
-            vn = self.mesh.vn
-        
-        normal, _ = dr.interpolate(vn.unsqueeze(0).contiguous(), rast, self.mesh.fn)
-        normal = safe_normalize(normal[0])
-
-        # rotated normal (where [0, 0, 1] always faces camera)
-        rot_normal = normal @ pose[:3, :3]
-        viewcos = rot_normal[..., [2]]
+            # rotated normal (where [0, 0, 1] always faces camera)
+            rot_normal = normal @ pose[:3, :3]
+            viewcos = rot_normal[..., [2]]
 
         # antialias
         albedo = dr.antialias(albedo, rast, v_clip, self.mesh.f).squeeze(0) # [H, W, 3]
@@ -133,14 +139,18 @@ class DiffRastRenderer(nn.Module):
         if ssaa != 1:
             albedo = scale_img_hwc(albedo, (h0, w0))
             alpha = scale_img_hwc(alpha, (h0, w0))
-            depth = scale_img_hwc(depth, (h0, w0))
-            normal = scale_img_hwc(normal, (h0, w0))
-            viewcos = scale_img_hwc(viewcos, (h0, w0))
+            if 'depth' in optional_render_types:
+                depth = scale_img_hwc(depth, (h0, w0))
+            if 'normal' in optional_render_types:
+                normal = scale_img_hwc(normal, (h0, w0))
+                viewcos = scale_img_hwc(viewcos, (h0, w0))
 
         results['image'] = albedo.clamp(0, 1)
         results['alpha'] = alpha
-        results['depth'] = depth
-        results['normal'] = (normal + 1) / 2
-        results['viewcos'] = viewcos
+        if 'depth' in optional_render_types:
+            results['depth'] = depth
+        if 'normal' in optional_render_types:
+            results['normal'] = (normal + 1) / 2
+            results['viewcos'] = viewcos
 
         return results

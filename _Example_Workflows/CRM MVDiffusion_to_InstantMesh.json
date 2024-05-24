@@ -1,0 +1,652 @@
+{
+  "last_node_id": 30,
+  "last_link_id": 46,
+  "nodes": [
+    {
+      "id": 2,
+      "type": "[Comfy3D] Load CRM MVDiffusion Model",
+      "pos": [
+        -102,
+        131
+      ],
+      "size": {
+        "0": 489.21466064453125,
+        "1": 95.50737762451172
+      },
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "crm_mvdiffusion_sampler",
+          "type": "CRM_MVDIFFUSION_SAMPLER",
+          "links": [
+            1
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Load CRM MVDiffusion Model"
+      },
+      "widgets_values": [
+        "pixel-diffusion.pth",
+        "configs/crm_configs/sd_v2_base_ipmv_zero_SNR.yaml"
+      ]
+    },
+    {
+      "id": 24,
+      "type": "[Comfy3D] Save 3D Mesh",
+      "pos": [
+        2540,
+        310
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 34
+        }
+      ],
+      "outputs": [
+        {
+          "name": "save_path",
+          "type": "STRING",
+          "links": [
+            35
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Save 3D Mesh"
+      },
+      "widgets_values": [
+        "InstantMesh_test\\Mesh_Cat_CRM.obj"
+      ]
+    },
+    {
+      "id": 26,
+      "type": "[Comfy3D] Switch Mesh Axis",
+      "pos": [
+        2170,
+        310
+      ],
+      "size": {
+        "0": 315,
+        "1": 130
+      },
+      "flags": {},
+      "order": 10,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 36
+        }
+      ],
+      "outputs": [
+        {
+          "name": "switched_mesh",
+          "type": "MESH",
+          "links": [
+            34
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Switch Mesh Axis"
+      },
+      "widgets_values": [
+        "+y",
+        "+z",
+        "+x",
+        false
+      ]
+    },
+    {
+      "id": 3,
+      "type": "[Comfy3D] CRM Images MVDiffusion Model",
+      "pos": [
+        600,
+        300
+      ],
+      "size": {
+        "0": 506.4000244140625,
+        "1": 262
+      },
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "crm_mvdiffusion_sampler",
+          "type": "CRM_MVDIFFUSION_SAMPLER",
+          "link": 1
+        },
+        {
+          "name": "reference_image",
+          "type": "IMAGE",
+          "link": 2
+        },
+        {
+          "name": "reference_mask",
+          "type": "MASK",
+          "link": 28
+        }
+      ],
+      "outputs": [
+        {
+          "name": "multiview_images",
+          "type": "IMAGE",
+          "links": [
+            39
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "orbit_camposes",
+          "type": "ORBIT_CAMPOSES",
+          "links": [
+            41
+          ],
+          "shape": 3,
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] CRM Images MVDiffusion Model"
+      },
+      "widgets_values": [
+        "3D assets",
+        "uniform low no texture ugly, boring, bad anatomy, blurry, pixelated,  obscure, unnatural colors, poor lighting, dull, and unclear.",
+        1234,
+        "fixed",
+        5.5,
+        50
+      ]
+    },
+    {
+      "id": 25,
+      "type": "[Comfy3D] Preview 3DMesh",
+      "pos": [
+        2900,
+        310
+      ],
+      "size": [
+        600,
+        500
+      ],
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh_file_path",
+          "type": "STRING",
+          "link": 35,
+          "widget": {
+            "name": "mesh_file_path"
+          }
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Preview 3DMesh"
+      },
+      "widgets_values": [
+        "",
+        null
+      ]
+    },
+    {
+      "id": 27,
+      "type": "GetImagesFromBatchIndexed",
+      "pos": [
+        1141,
+        214
+      ],
+      "size": {
+        "0": 255.99082946777344,
+        "1": 76.0000228881836
+      },
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 39
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            44
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "GetImagesFromBatchIndexed"
+      },
+      "widgets_values": [
+        "5, 3, 2, 0"
+      ]
+    },
+    {
+      "id": 22,
+      "type": "[Comfy3D] Load InstantMesh Reconstruction Model",
+      "pos": [
+        1439,
+        101
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "lrm_model",
+          "type": "LRM_MODEL",
+          "links": [
+            33
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Load InstantMesh Reconstruction Model"
+      },
+      "widgets_values": [
+        "instant_mesh_large.ckpt"
+      ]
+    },
+    {
+      "id": 29,
+      "type": "[Comfy3D] Get Camposes From List Indexed",
+      "pos": [
+        1389,
+        513
+      ],
+      "size": {
+        "0": 354.3999938964844,
+        "1": 76
+      },
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "original_orbit_camera_poses",
+          "type": "ORBIT_CAMPOSES",
+          "link": 41
+        }
+      ],
+      "outputs": [
+        {
+          "name": "ORBIT_CAMPOSES",
+          "type": "ORBIT_CAMPOSES",
+          "links": [
+            42
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Get Camposes From List Indexed"
+      },
+      "widgets_values": [
+        "5, 3, 2, 0"
+      ]
+    },
+    {
+      "id": 30,
+      "type": "Image Rembg (Remove Background)",
+      "pos": [
+        1427,
+        213
+      ],
+      "size": {
+        "0": 315,
+        "1": 250
+      },
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 44
+        }
+      ],
+      "outputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "links": [
+            45,
+            46
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "Image Rembg (Remove Background)"
+      },
+      "widgets_values": [
+        false,
+        "u2net",
+        false,
+        false,
+        false,
+        240,
+        10,
+        10,
+        "white"
+      ]
+    },
+    {
+      "id": 23,
+      "type": "[Comfy3D] InstantMesh Reconstruction Model",
+      "pos": [
+        1800,
+        310
+      ],
+      "size": {
+        "0": 315,
+        "1": 122
+      },
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "lrm_model",
+          "type": "LRM_MODEL",
+          "link": 33
+        },
+        {
+          "name": "multiview_images",
+          "type": "IMAGE",
+          "link": 46
+        },
+        {
+          "name": "orbit_camera_poses",
+          "type": "ORBIT_CAMPOSES",
+          "link": 42
+        }
+      ],
+      "outputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "links": [
+            36
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] InstantMesh Reconstruction Model"
+      },
+      "widgets_values": [
+        30,
+        1024
+      ]
+    },
+    {
+      "id": 20,
+      "type": "InvertMask",
+      "pos": [
+        341,
+        400
+      ],
+      "size": {
+        "0": 210,
+        "1": 26
+      },
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mask",
+          "type": "MASK",
+          "link": 26
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            28
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "InvertMask"
+      }
+    },
+    {
+      "id": 1,
+      "type": "LoadImage",
+      "pos": [
+        -191,
+        320
+      ],
+      "size": {
+        "0": 473.3881530761719,
+        "1": 545.7767944335938
+      },
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            2
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            26
+          ],
+          "shape": 3,
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "Mario_Cat.png",
+        "image"
+      ]
+    },
+    {
+      "id": 15,
+      "type": "PreviewImage",
+      "pos": [
+        1805,
+        494
+      ],
+      "size": {
+        "0": 770.9938354492188,
+        "1": 246
+      },
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 45
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    }
+  ],
+  "links": [
+    [
+      1,
+      2,
+      0,
+      3,
+      0,
+      "CRM_MVDIFFUSION_SAMPLER"
+    ],
+    [
+      2,
+      1,
+      0,
+      3,
+      1,
+      "IMAGE"
+    ],
+    [
+      26,
+      1,
+      1,
+      20,
+      0,
+      "MASK"
+    ],
+    [
+      28,
+      20,
+      0,
+      3,
+      2,
+      "MASK"
+    ],
+    [
+      33,
+      22,
+      0,
+      23,
+      0,
+      "LRM_MODEL"
+    ],
+    [
+      34,
+      26,
+      0,
+      24,
+      0,
+      "MESH"
+    ],
+    [
+      35,
+      24,
+      0,
+      25,
+      0,
+      "STRING"
+    ],
+    [
+      36,
+      23,
+      0,
+      26,
+      0,
+      "MESH"
+    ],
+    [
+      39,
+      3,
+      0,
+      27,
+      0,
+      "IMAGE"
+    ],
+    [
+      41,
+      3,
+      1,
+      29,
+      0,
+      "ORBIT_CAMPOSES"
+    ],
+    [
+      42,
+      29,
+      0,
+      23,
+      2,
+      "ORBIT_CAMPOSES"
+    ],
+    [
+      44,
+      27,
+      0,
+      30,
+      0,
+      "IMAGE"
+    ],
+    [
+      45,
+      30,
+      0,
+      15,
+      0,
+      "IMAGE"
+    ],
+    [
+      46,
+      30,
+      0,
+      23,
+      1,
+      "IMAGE"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.5644739300537773,
+      "offset": [
+        148.6926373068756,
+        262.952479355259
+      ]
+    }
+  },
+  "version": 0.4
+}

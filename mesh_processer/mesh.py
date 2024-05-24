@@ -55,7 +55,7 @@ class Mesh:
         self.ft = ft
         # will first see if there is vertex color to use
         self.vc = vc
-        # only support a single albedo image
+        # only support a single albedo image, (H, W, 3)
         self.albedo = albedo
         # pbr extension, metallic(Blue) = metallicRoughness[..., 2], roughness(Green) = metallicRoughness[..., 1]
         # ref: https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html

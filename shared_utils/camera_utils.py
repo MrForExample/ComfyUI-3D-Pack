@@ -1,8 +1,12 @@
+from abc import ABC, abstractmethod
+
 import numpy as np
 import math
 from scipy.spatial.transform import Rotation as R
 
 import torch
+
+from kiui.cam import orbit_camera
 
 def dot(x, y):
     if isinstance(x, np.ndarray):
@@ -192,3 +196,54 @@ class MiniCam:
         ) if projection_matrix is None else projection_matrix
         self.full_proj_transform = self.world_view_transform @ self.projection_matrix
         self.camera_center = -torch.tensor(c2w[:3, 3]).cuda()
+
+class BaseCameraController(ABC):
+    def __init__(self, renderer, cam_size_W, cam_size_H, reference_orbit_camera_fovy, invert_bg_prob=1.0, static_bg=None, device='cuda'):
+        self.device = torch.device(device)
+        
+        self.renderer = renderer
+        self.cam = OrbitCamera(cam_size_W, cam_size_H, fovy=reference_orbit_camera_fovy)
+        
+        self.invert_bg_prob = invert_bg_prob
+        self.black_bg = torch.tensor([0, 0, 0], dtype=torch.float32, device=self.device)
+        self.white_bg = torch.tensor([1, 1, 1], dtype=torch.float32, device=self.device)
+        self.static_bg = None if static_bg is None else torch.tensor(static_bg, dtype=torch.float32, device=self.device)
+
+        self.pose_init()
+
+        super().__init__()
+    
+    def pose_init(self):
+        # Calls after default initialize at the end of __init__()
+        pass
+
+    @abstractmethod
+    def get_render_result(self, render_pose, bg_color):
+        pass
+        
+    def render_at_pose(self, cam_pose):
+        radius, elevation, azimuth, center_X, center_Y, center_Z = cam_pose
+        
+        orbit_target = np.array([center_X, center_Y, center_Z], dtype=np.float32)
+        render_pose = orbit_camera(elevation, azimuth, radius, target=orbit_target)
+        
+        if self.static_bg is None:
+            bg_color = self.white_bg if np.random.rand() > self.invert_bg_prob else self.black_bg
+        else:
+            bg_color = self.static_bg
+            
+        return self.get_render_result(render_pose, bg_color)
+    
+    def render_all_pose(self, all_cam_poses):
+        all_rendered_images, all_rendered_masks = [], []
+        for cam_pose in all_cam_poses:
+            out = self.render_at_pose(cam_pose)
+            
+            image = out["image"] # [3, H, W] in [0, 1]
+            mask = out["alpha"] # [1, H, W] in [0, 1]
+            
+            all_rendered_images.append(image)
+            all_rendered_masks.append(mask)
+            
+        # [Number of Poses, 3, H, W], [Number of Poses, 1, H, W] both in [0, 1]
+        return torch.stack(all_rendered_images, dim=0), torch.stack(all_rendered_masks, dim=0)

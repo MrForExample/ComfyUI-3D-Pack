@@ -13,8 +13,13 @@ from pytorch_msssim import SSIM, MS_SSIM
 import comfy.utils
 
 from .diff_mesh_renderer import DiffRastRenderer
-from ..shared_utils.camera_utils import OrbitCamera
+from ..shared_utils.camera_utils import BaseCameraController
 from ..shared_utils.image_utils import prepare_torch_img
+
+class DiffMeshCameraController(BaseCameraController):
+    def get_render_result(self, render_pose, bg_color):
+        ref_cam = (render_pose, self.cam.perspective)
+        return self.renderer.render(*ref_cam, self.cam.H, self.cam.W, ssaa=1, bg_color=bg_color, optional_render_types=[]) #ssaa = min(2.0, max(0.125, 2 * np.random.random()))
 
 class DiffMesh:
     
@@ -38,14 +43,16 @@ class DiffMesh:
     
     def prepare_training(self, reference_images, reference_masks, reference_orbit_camera_poses, reference_orbit_camera_fovy):
         self.ref_imgs_num = len(reference_images)
-
-        self.all_ref_cam_poses = reference_orbit_camera_poses
-        self.ref_cam_fovy = reference_orbit_camera_fovy
     
         self.ref_size_H = reference_images[0].shape[0]
         self.ref_size_W = reference_images[0].shape[1]
         
-        self.cam = OrbitCamera(self.ref_size_W, self.ref_size_H, fovy=reference_orbit_camera_fovy)
+        # default camera settings
+        self.cam_controller = DiffMeshCameraController(
+            self.renderer, self.ref_size_W, self.ref_size_H, reference_orbit_camera_fovy, self.gs_params.invert_bg_prob, None, self.device
+        )
+
+        self.all_ref_cam_poses = reference_orbit_camera_poses
         
         # prepare reference images and masks
         ref_imgs_torch_list = []
@@ -80,13 +87,7 @@ class DiffMesh:
                 
                 i = random.randint(0, ref_imgs_num_minus_1)
 
-                radius, elevation, azimuth, center_X, center_Y, center_Z = self.all_ref_cam_poses[i]
-                
-                # render output
-                orbit_target = np.array([center_X, center_Y, center_Z], dtype=np.float32)
-                ref_pose = orbit_camera(elevation, azimuth, radius, target=orbit_target)
-                ref_cam = (ref_pose, self.cam.perspective)
-                out = self.renderer.render(*ref_cam, self.ref_size_H, self.ref_size_W, ssaa=1) #ssaa = min(2.0, max(0.125, 2 * np.random.random()))
+                out = self.cam_controller.render_at_pose(self.all_ref_cam_poses[i])                
 
                 image = out["image"]    # [H, W, 3] in [0, 1]
                 image = image.permute(2, 0, 1).contiguous()  # [3, H, W] in [0, 1]

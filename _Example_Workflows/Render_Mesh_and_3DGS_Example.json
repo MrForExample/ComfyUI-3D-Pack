@@ -1,0 +1,383 @@
+{
+  "last_node_id": 9,
+  "last_link_id": 6,
+  "nodes": [
+    {
+      "id": 6,
+      "type": "[Comfy3D] Load 3D Mesh",
+      "pos": [
+        337,
+        232
+      ],
+      "size": {
+        "0": 315,
+        "1": 154
+      },
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "links": [
+            3
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Load 3D Mesh"
+      },
+      "widgets_values": [
+        "C:\\Users\\reall\\Softwares\\ComfyUI_windows_portable\\ComfyUI\\input\\Meshes\\Cammy_Uniform.obj",
+        false,
+        false,
+        false,
+        true
+      ]
+    },
+    {
+      "id": 4,
+      "type": "[Comfy3D] Stack Orbit Camera Poses",
+      "pos": [
+        339,
+        476
+      ],
+      "size": {
+        "0": 315,
+        "1": 586
+      },
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "orbit_camposes",
+          "type": "ORBIT_CAMPOSES",
+          "links": [
+            2,
+            4
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "orbit_radius_list",
+          "type": "FLOAT",
+          "links": null,
+          "shape": 6
+        },
+        {
+          "name": "elevation_list",
+          "type": "FLOAT",
+          "links": null,
+          "shape": 6
+        },
+        {
+          "name": "azimuth_list",
+          "type": "FLOAT",
+          "links": null,
+          "shape": 6
+        },
+        {
+          "name": "orbit_center_X_list",
+          "type": "FLOAT",
+          "links": null,
+          "shape": 6
+        },
+        {
+          "name": "orbit_center_Y_list",
+          "type": "FLOAT",
+          "links": null,
+          "shape": 6
+        },
+        {
+          "name": "orbit_center_Z_list",
+          "type": "FLOAT",
+          "links": null,
+          "shape": 6
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Stack Orbit Camera Poses"
+      },
+      "widgets_values": [
+        1.75,
+        1.75,
+        0.1,
+        -45,
+        45,
+        45,
+        0,
+        -0.01,
+        12,
+        0,
+        0,
+        0.1,
+        0,
+        0,
+        0.1,
+        0,
+        0,
+        0.1
+      ]
+    },
+    {
+      "id": 7,
+      "type": "[Comfy3D] Gaussian Splatting Orbit Renderer",
+      "pos": [
+        730,
+        720
+      ],
+      "size": {
+        "0": 556.800048828125,
+        "1": 198
+      },
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "gs_ply",
+          "type": "GS_PLY",
+          "link": 5
+        },
+        {
+          "name": "render_orbit_camera_poses",
+          "type": "ORBIT_CAMPOSES",
+          "link": 4
+        }
+      ],
+      "outputs": [
+        {
+          "name": "rendered_gs_images",
+          "type": "IMAGE",
+          "links": [
+            6
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "rendered_gs_masks",
+          "type": "MASK",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Gaussian Splatting Orbit Renderer"
+      },
+      "widgets_values": [
+        1024,
+        1024,
+        49.1,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": 9,
+      "type": "PreviewImage",
+      "pos": [
+        1361,
+        657
+      ],
+      "size": {
+        "0": 210,
+        "1": 246
+      },
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 6
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 1,
+      "type": "[Comfy3D] Mesh Orbit Renderer",
+      "pos": [
+        734,
+        330
+      ],
+      "size": {
+        "0": 395,
+        "1": 247
+      },
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 3
+        },
+        {
+          "name": "render_orbit_camera_poses",
+          "type": "ORBIT_CAMPOSES",
+          "link": 2
+        }
+      ],
+      "outputs": [
+        {
+          "name": "rendered_mesh_images",
+          "type": "IMAGE",
+          "links": [
+            1
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "rendered_mesh_masks",
+          "type": "MASK",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Mesh Orbit Renderer"
+      },
+      "widgets_values": [
+        1024,
+        1024,
+        49.1,
+        0,
+        0,
+        0,
+        false
+      ]
+    },
+    {
+      "id": 2,
+      "type": "PreviewImage",
+      "pos": [
+        1197,
+        230
+      ],
+      "size": {
+        "0": 210,
+        "1": 246
+      },
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 8,
+      "type": "[Comfy3D] Load 3DGS",
+      "pos": [
+        329,
+        1139
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "gs_ply",
+          "type": "GS_PLY",
+          "links": [
+            5
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Load 3DGS"
+      },
+      "widgets_values": [
+        "C:\\Users\\reall\\Softwares\\ComfyUI_windows_portable\\ComfyUI\\input\\Meshes\\3DGS_TGS.ply"
+      ]
+    }
+  ],
+  "links": [
+    [
+      1,
+      1,
+      0,
+      2,
+      0,
+      "IMAGE"
+    ],
+    [
+      2,
+      4,
+      0,
+      1,
+      1,
+      "ORBIT_CAMPOSES"
+    ],
+    [
+      3,
+      6,
+      0,
+      1,
+      0,
+      "MESH"
+    ],
+    [
+      4,
+      4,
+      0,
+      7,
+      1,
+      "ORBIT_CAMPOSES"
+    ],
+    [
+      5,
+      8,
+      0,
+      7,
+      0,
+      "GS_PLY"
+    ],
+    [
+      6,
+      7,
+      0,
+      9,
+      0,
+      "IMAGE"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.6830134553650709,
+      "offset": [
+        232.77218799488367,
+        -20.214945769251532
+      ]
+    }
+  },
+  "version": 0.4
+}

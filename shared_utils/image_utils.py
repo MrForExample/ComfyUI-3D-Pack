@@ -25,3 +25,20 @@ def torch_img_to_pil_rgba(img, mask):
     single_image = Image.fromarray((single_image * 255).astype(np.uint8), mode="RGBA")
     
     return single_image
+
+def troch_image_dilate(img):
+    """
+    Remove thin seams on generated texture
+        img (torch): [H, W, C]
+    """
+    import cv2
+    img = np.asarray(img.cpu().numpy(), dtype=np.float32)
+    img = img * 255
+    img = img.clip(0, 255)
+    mask = np.sum(img.astype(np.float32), axis=-1, keepdims=True)
+    mask = (mask <= 3.0).astype(np.float32)
+    kernel = np.ones((3, 3), 'uint8')
+    dilate_img = cv2.dilate(img, kernel, iterations=1)
+    img = img * (1 - mask) + dilate_img * mask
+    img = (img.clip(0, 255) / 255).astype(np.float32)
+    return torch.from_numpy(img)

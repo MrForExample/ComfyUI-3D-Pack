@@ -11,10 +11,26 @@ import json
 
 import torch
 from torch.utils.data import DataLoader
+from torchvision.transforms import v2
 import torchvision.transforms.functional as TF
 import numpy as np
 from safetensors.torch import load_file
 from einops import rearrange
+
+from diffusers import (
+    DiffusionPipeline, 
+    StableDiffusionPipeline
+)
+
+from diffusers import (
+    EulerAncestralDiscreteScheduler,
+    EulerDiscreteScheduler,
+    DDIMScheduler,
+    DDIMParallelScheduler,
+    LCMScheduler,
+    KDPM2AncestralDiscreteScheduler,
+    KDPM2DiscreteScheduler,
+)
 
 from plyfile import PlyData
 from PIL import Image
@@ -32,7 +48,8 @@ from .mesh_processer.mesh_utils import (
 )
 from .algorithms.main_3DGS import GaussianSplatting, GaussianSplattingCameraController, GSParams
 from .algorithms.main_3DGS_renderer import GaussianSplattingRenderer
-from .algorithms.diff_mesh import DiffMesh
+from .algorithms.diff_mesh import DiffMesh, DiffMeshCameraController
+from .algorithms.diff_mesh import DiffRastRenderer
 from .algorithms.dmtet import DMTetMesh
 from .algorithms.triplane_gaussian_transformers import TGS
 from .algorithms.large_multiview_gaussian_model import LGM
@@ -52,13 +69,29 @@ from .mvdiffusion.data.single_image_dataset import SingleImageDataset
 from .mvdiffusion.utils.misc import load_config as load_config_wonder3d
 from .tsr.system import TSR
 from .crm.model.crm.model import CRM
+from .zero123plus.pipeline import Zero123PlusPipeline
+from .instant_mesh.utils.camera_util import oribt_camera_poses_to_input_cameras
 
-from .shared_utils.image_utils import prepare_torch_img, torch_img_to_pil_rgba
-from .shared_utils.common_utils import cstr, parse_save_filename, get_list_filenames
+from .shared_utils.image_utils import prepare_torch_img, torch_img_to_pil_rgba, troch_image_dilate
+from .shared_utils.common_utils import cstr, parse_save_filename, get_list_filenames, resume_or_download_model_from_hf
 
 DIFFUSERS_PIPE_DICT = OrderedDict([
     ("MVDreamPipeline", MVDreamPipeline),
     ("Wonder3DMVDiffusionPipeline", MVDiffusionImagePipeline),
+    ("Zero123PlusPipeline", Zero123PlusPipeline),
+    ("DiffusionPipeline", DiffusionPipeline),
+    ("StableDiffusionPipeline", StableDiffusionPipeline),
+])
+
+DIFFUSERS_SCHEDULER_DICT = OrderedDict([
+    ("EulerAncestralDiscreteScheduler", EulerAncestralDiscreteScheduler),
+    ("Wonder3DMVDiffusionPipeline", MVDiffusionImagePipeline),
+    ("EulerDiscreteScheduler,", EulerDiscreteScheduler),
+    ("DDIMScheduler,", DDIMScheduler),
+    ("DDIMParallelScheduler,", DDIMParallelScheduler),
+    ("LCMScheduler,", LCMScheduler),
+    ("KDPM2AncestralDiscreteScheduler,", KDPM2AncestralDiscreteScheduler),
+    ("KDPM2DiscreteScheduler,", KDPM2DiscreteScheduler),
 ])
 
 ROOT_PATH = os.path.join(comfy_paths.get_folder_paths("custom_nodes")[0], "ComfyUI-3D-Pack")
@@ -93,6 +126,8 @@ AZIMUTH_MIN = -180.0
 AZIMUTH_MAX = 180.0
 
 WEIGHT_DTYPE = torch.float16
+
+DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 class Preview_3DGS:
 
@@ -437,7 +472,7 @@ class Stack_Orbit_Camera_Poses:
         }
 
     RETURN_TYPES = (
-        "ORBIT_CAMPOSES",   # (orbit radius, elevation, azimuth, orbit center X,  orbit center Y,  orbit center Z)
+        "ORBIT_CAMPOSES",   # [orbit radius, elevation, azimuth, orbit center X, orbit center Y, orbit center Z]
         "FLOAT",
         "FLOAT",
         "FLOAT",
@@ -446,7 +481,7 @@ class Stack_Orbit_Camera_Poses:
         "FLOAT",
     )
     RETURN_NAMES = (
-        "orbit_camposes",
+        "orbit_camposes",  # List of 6 lists
         "orbit_radius_list",
         "elevation_list", 
         "azimuth_list", 
@@ -612,7 +647,7 @@ class Generate_Orbit_Camera_Poses:
         }
 
     RETURN_TYPES = (
-        "ORBIT_CAMPOSES",   # (orbit radius, elevation, azimuth, orbit center X,  orbit center Y,  orbit center Z)
+        "ORBIT_CAMPOSES",   # [orbit radius, elevation, azimuth, orbit center X,  orbit center Y,  orbit center Z]
     )
     RETURN_NAMES = (
         "orbit_camposes",
@@ -673,6 +708,95 @@ class Generate_Orbit_Camera_Poses:
                 cstr(f"[{self.__class__.__name__}] Last end_reference_image_index: {end_reference_image_index} plus 1 must equal to current start_reference_image_index: {start_reference_image_index}").error.print()
         
         return (orbit_camposes, )
+    
+class Get_Camposes_From_List_Indexed:
+    
+    RETURN_TYPES = ("ORBIT_CAMPOSES",)
+    FUNCTION = "get_indexed_camposes"
+    CATEGORY = "Comfy3D/Preprocessor"
+    DESCRIPTION = """
+        Selects and returns the camera poses at the specified indices as an list.
+    """
+
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "original_orbit_camera_poses": ("ORBIT_CAMPOSES",),    # [orbit radius, elevation, azimuth, orbit center X,  orbit center Y,  orbit center Z]
+                "indexes": ("STRING", {"default": "0, 1, 2", "multiline": True}),
+            },
+        }
+    
+    def get_indexed_camposes(self, original_orbit_camera_poses, indexes):
+        
+        # Parse the indexes string into a list of integers
+        index_list = [int(index.strip()) for index in indexes.split(',')]
+        
+        # Select the camposes at the specified indices
+        orbit_camera_poses = []
+        for pose_list in original_orbit_camera_poses:
+            new_pose_list = [pose_list[i] for i in index_list]
+            orbit_camera_poses.append(new_pose_list)
+
+        return (orbit_camera_poses,)
+
+class Mesh_Orbit_Renderer:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "mesh": ("MESH",),
+                "render_image_width": ("INT", {"default": 1024, "min": 128, "max": 8192}),
+                "render_image_height": ("INT", {"default": 1024, "min": 128, "max": 8192}),
+                "render_orbit_camera_poses": ("ORBIT_CAMPOSES",),    # [orbit radius, elevation, azimuth, orbit center X,  orbit center Y,  orbit center Z]
+                "render_orbit_camera_fovy": ("FLOAT", {"default": 49.1, "min": 0.0, "max": 180.0, "step": 0.1}),
+                "render_background_color_r": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001}),
+                "render_background_color_g": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001}),
+                "render_background_color_b": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001}),
+                "force_cuda_rasterize": ("BOOLEAN", {"default": False},),
+            }
+        }
+        
+    RETURN_TYPES = (
+        "IMAGE",
+        "MASK",
+    )
+    RETURN_NAMES = (
+        "rendered_mesh_images",    # [Number of Poses, H, W, 3]
+        "rendered_mesh_masks",    # [Number of Poses, H, W, 1]
+    )
+    
+    FUNCTION = "render_mesh"
+    CATEGORY = "Comfy3D/Preprocessor"
+    
+    def render_mesh(
+        self, 
+        mesh, 
+        render_image_width, 
+        render_image_height, 
+        render_orbit_camera_poses, 
+        render_orbit_camera_fovy,
+        render_background_color_r, 
+        render_background_color_g, 
+        render_background_color_b,
+        force_cuda_rasterize,
+    ):
+        
+        renderer = DiffRastRenderer(mesh, force_cuda_rasterize)
+        
+        cam_controller = DiffMeshCameraController(
+            renderer, 
+            render_image_width, 
+            render_image_height, 
+            render_orbit_camera_fovy, 
+            static_bg=[render_background_color_r, render_background_color_g, render_background_color_b]
+        )
+        
+        all_rendered_images, all_rendered_masks = cam_controller.render_all_pose(render_orbit_camera_poses)
+        all_rendered_masks = all_rendered_masks.squeeze(-1)  # [N, H, W, 1] -> [N, H, W]
+        
+        return (all_rendered_images, all_rendered_masks)    # [N, H, W, 3], [N, H, W]
+        
    
 class Gaussian_Splatting_Orbit_Renderer:
     @classmethod
@@ -682,7 +806,7 @@ class Gaussian_Splatting_Orbit_Renderer:
                 "gs_ply": ("GS_PLY",),
                 "render_image_width": ("INT", {"default": 1024, "min": 128, "max": 8192}),
                 "render_image_height": ("INT", {"default": 1024, "min": 128, "max": 8192}),
-                "render_orbit_camera_poses": ("ORBIT_CAMPOSES",),    # (orbit radius, elevation, azimuth, orbit center X,  orbit center Y,  orbit center Z)
+                "render_orbit_camera_poses": ("ORBIT_CAMPOSES",),    # [orbit radius, elevation, azimuth, orbit center X,  orbit center Y,  orbit center Z]
                 "render_orbit_camera_fovy": ("FLOAT", {"default": 49.1, "min": 0.0, "max": 180.0, "step": 0.1}),
                 "render_background_color_r": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001}),
                 "render_background_color_g": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001}),
@@ -740,7 +864,7 @@ class Gaussian_Splatting:
             "required": {
                 "reference_images": ("IMAGE",), 
                 "reference_masks": ("MASK",),
-                "reference_orbit_camera_poses": ("ORBIT_CAMPOSES",),    # (orbit radius, elevation, azimuth, orbit center X,  orbit center Y,  orbit center Z)
+                "reference_orbit_camera_poses": ("ORBIT_CAMPOSES",),    # [orbit radius, elevation, azimuth, orbit center X,  orbit center Y,  orbit center Z]
                 "reference_orbit_camera_fovy": ("FLOAT", {"default": 49.1, "min": 0.0, "max": 180.0, "step": 0.1}),
                 "training_iterations": ("INT", {"default": 30_000, "min": 1, "max": 0xffffffffffffffff}),
                 "batch_size": ("INT", {"default": 1, "min": 1, "max": 0xffffffffffffffff}),
@@ -893,7 +1017,7 @@ class Fitting_Mesh_With_Multiview_Images:
             "required": {
                 "reference_images": ("IMAGE",), 
                 "reference_masks": ("MASK",),
-                "reference_orbit_camera_poses": ("ORBIT_CAMPOSES",),    # (orbit radius, elevation, azimuth, orbit center X,  orbit center Y,  orbit center Z)
+                "reference_orbit_camera_poses": ("ORBIT_CAMPOSES",),    # [orbit radius, elevation, azimuth, orbit center X,  orbit center Y,  orbit center Z]
                 "reference_orbit_camera_fovy": ("FLOAT", {"default": 49.1, "min": 0.0, "max": 180.0, "step": 0.1}),
                 "mesh": ("MESH",),
                 "mesh_albedo_width": ("INT", {"default": 1024, "min": 128, "max": 8192}),
@@ -1066,15 +1190,8 @@ class Load_Triplane_Gaussian_Transformers:
         
         config_path = os.path.join(ROOT_PATH, self.tgs_config_path)
         cfg: ExperimentConfig = load_config_tgs(config_path)
-        
-        # Download pre-trained model if it not exist locally
-        ckpt_path = os.path.join(self.checkpoints_dir_abs, model_name)
-        if not os.path.isfile(ckpt_path):
-            cstr(f"[{self.__class__.__name__}] can't find checkpoint {ckpt_path}, will download it from repo {self.default_repo_id} instead").warning.print()
-            
-            from huggingface_hub import hf_hub_download
-            hf_hub_download(repo_id=self.default_repo_id, local_dir=self.checkpoints_dir_abs, filename=model_name, repo_type="model")
-            ckpt_path = os.path.join(self.checkpoints_dir_abs, model_name)
+
+        ckpt_path = resume_or_download_model_from_hf(self.checkpoints_dir_abs, self.default_repo_id, model_name, self.__class__.__name__)
             
         cfg.system.weights=ckpt_path
         tgs_model = TGS(cfg=cfg.system).to(device)
@@ -1154,6 +1271,7 @@ class Load_Diffusers_Pipeline:
             "required": {
                 "diffusers_pipeline_name": (list(DIFFUSERS_PIPE_DICT.keys()),),
                 "model_name": ("STRING", {"default": "ashawkey/imagedream-ipmv-diffusers", "multiline": False}),
+                "custom_pipeline": ("STRING", {"default": "", "multiline": False}),
             },
         }
     
@@ -1166,7 +1284,7 @@ class Load_Diffusers_Pipeline:
     FUNCTION = "load_diffusers_pipe"
     CATEGORY = "Comfy3D/Import|Export"
     
-    def load_diffusers_pipe(self, diffusers_pipeline_name, model_name):
+    def load_diffusers_pipe(self, diffusers_pipeline_name, model_name, custom_pipeline):
         
         # resume pretrained checkpoint
         ckpt_path = os.path.join(ROOT_PATH, "checkpoints", model_name)
@@ -1176,22 +1294,87 @@ class Load_Diffusers_Pipeline:
             from huggingface_hub import snapshot_download
             snapshot_download(repo_id=model_name, local_dir=ckpt_path, repo_type="model")
         
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        
         diffusers_pipeline_class = DIFFUSERS_PIPE_DICT[diffusers_pipeline_name]
         
-        # load image dream
-        
+        # load diffusers pipeline
+        if not custom_pipeline:
+            custom_pipeline = None
+            
         pipe = diffusers_pipeline_class.from_pretrained(
             ckpt_path,
             torch_dtype=WEIGHT_DTYPE,
+            custom_pipeline=custom_pipeline,
             trust_remote_code=True,
-        ).to(device)
+        ).to(DEVICE)
         
         pipe.enable_xformers_memory_efficient_attention()
         
         return (pipe, )
     
+class Set_Diffusers_Pipeline_Scheduler:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "pipe": ("DIFFUSERS_PIPE",),
+                "diffusers_scheduler_name": (list(DIFFUSERS_SCHEDULER_DICT.keys()),),
+            },
+        }
+
+    RETURN_TYPES = (
+        "DIFFUSERS_PIPE",
+    )
+    RETURN_NAMES = (
+        "pipe",
+    )
+    FUNCTION = "set_pipe_scheduler"
+    CATEGORY = "Comfy3D/Import|Export"
+
+    def set_pipe_scheduler(self, pipe, diffusers_scheduler_name):
+
+        diffusers_scheduler_class = DIFFUSERS_SCHEDULER_DICT[diffusers_scheduler_name]
+
+        pipe.scheduler = diffusers_scheduler_class.from_config(
+            pipe.scheduler.config, timestep_spacing='trailing'
+        )
+        return (pipe, )
+
+class Set_Diffusers_Pipeline_State_Dict:
+    
+    checkpoints_dir = "checkpoints"
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        cls.checkpoints_base_dir_abs = os.path.join(ROOT_PATH, cls.checkpoints_dir)
+        return {
+            "required": {
+                "pipe": ("DIFFUSERS_PIPE",),
+                "repo_id": ("STRING", {"default": "TencentARC/InstantMesh", "multiline": False}),
+                "model_name": ("STRING", {"default": "diffusion_pytorch_model.bin", "multiline": False}),
+            },
+        }
+
+    RETURN_TYPES = (
+        "DIFFUSERS_PIPE",
+    )
+    RETURN_NAMES = (
+        "pipe",
+    )
+    FUNCTION = "set_pipe_state_dict"
+    CATEGORY = "Comfy3D/Import|Export"
+
+    def set_pipe_state_dict(self, pipe, repo_id, model_name):
+
+        checkpoints_dir_abs = os.path.join(self.checkpoints_base_dir_abs, repo_id)
+        ckpt_path = resume_or_download_model_from_hf(checkpoints_dir_abs, repo_id, model_name, self.__class__.__name__)
+
+        state_dict = torch.load(ckpt_path, map_location='cpu')
+        pipe.unet.load_state_dict(state_dict, strict=True)
+
+        pipe = pipe.to(DEVICE)
+
+        return (pipe, )
+
 class Wonder3D_MVDiffusion_Model:
     
     wonder3d_config_path = "configs/wonder3d_config.yaml"
@@ -1373,14 +1556,7 @@ class Load_Large_Multiview_Gaussian_Model:
 
         lgm_model = LGM(config_defaults[lgb_config])
         
-        # resume pretrained checkpoint
-        ckpt_path = os.path.join(self.checkpoints_dir_abs, model_name)
-        if not os.path.isfile(ckpt_path):
-            cstr(f"[{self.__class__.__name__}] can't find checkpoint {ckpt_path}, will download it from repo {self.default_repo_id} instead").warning.print()
-            
-            from huggingface_hub import hf_hub_download
-            hf_hub_download(repo_id=self.default_repo_id, local_dir=self.checkpoints_dir_abs, filename=model_name, repo_type="model")
-            ckpt_path = os.path.join(self.checkpoints_dir_abs, model_name)
+        ckpt_path = resume_or_download_model_from_hf(self.checkpoints_dir_abs, self.default_repo_id, model_name, self.__class__.__name__)
             
         if ckpt_path.endswith('safetensors'):
             ckpt = load_file(ckpt_path, device='cpu')
@@ -1389,9 +1565,7 @@ class Load_Large_Multiview_Gaussian_Model:
 
         lgm_model.load_state_dict(ckpt, strict=False)
 
-        # device
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        lgm_model = lgm_model.half().to(device)
+        lgm_model = lgm_model.half().to(DEVICE)
         lgm_model.eval()
         
         cstr(f"[{self.__class__.__name__}] loaded model ckpt from {ckpt_path}").msg.print()
@@ -1605,16 +1779,7 @@ class Load_TripoSR_Model:
     
     def load_TSR(self, model_name, chunk_size):
         
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        
-        # resume pretrained checkpoint
-        ckpt_path = os.path.join(self.checkpoints_dir_abs, model_name)
-        if not os.path.isfile(ckpt_path):
-            cstr(f"[{self.__class__.__name__}] can't find checkpoint {ckpt_path}, will download it from repo {self.default_repo_id} instead").warning.print()
-            
-            from huggingface_hub import hf_hub_download
-            hf_hub_download(repo_id=self.default_repo_id, local_dir=self.checkpoints_dir_abs, filename=model_name, repo_type="model")
-            ckpt_path = os.path.join(self.checkpoints_dir_abs, model_name)
+        ckpt_path = resume_or_download_model_from_hf(self.checkpoints_dir_abs, self.default_repo_id, model_name, self.__class__.__name__)
             
         tsr_model = TSR.from_pretrained(
             weight_path = ckpt_path,
@@ -1622,7 +1787,7 @@ class Load_TripoSR_Model:
         )
         
         tsr_model.renderer.set_chunk_size(chunk_size)
-        tsr_model.to(device)
+        tsr_model.to(DEVICE)
         
         cstr(f"[{self.__class__.__name__}] loaded model ckpt from {ckpt_path}").msg.print()
         
@@ -1656,8 +1821,6 @@ class TripoSR:
     def run_TSR(self, tsr_model, reference_image, reference_mask, geometry_extract_resolution, marching_cude_threshold):
         cstr(f"[{self.__class__.__name__}] Running TripoSR...").msg.print()
         
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        
         mesh = None
         
         image = reference_image[0]
@@ -1667,7 +1830,8 @@ class TripoSR:
         image = Image.fromarray(np.clip(255. * image, 0, 255).astype(np.uint8))
         image = self.fill_background(image)
         image = image.convert('RGB')
-        scene_codes = tsr_model([image], device)
+        
+        scene_codes = tsr_model([image], DEVICE)
         meshes = tsr_model.extract_mesh(scene_codes, resolution=geometry_extract_resolution, threshold=marching_cude_threshold)
         mesh = Mesh.load_trimesh(given_mesh=meshes[0])
 
@@ -1720,26 +1884,17 @@ class Load_CRM_MVDiffusion_Model:
         if not os.path.isabs(crm_config_path):
             crm_config_path = os.path.join(ROOT_PATH, crm_config_path)
         
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        
-        # resume pretrained checkpoint
-        ckpt_path = os.path.join(self.checkpoints_dir_abs, model_name)
-        if not os.path.isfile(ckpt_path):
-            cstr(f"[{self.__class__.__name__}] can't find checkpoint {ckpt_path}, will download it from repo {self.default_repo_id} instead").warning.print()
-            
-            from huggingface_hub import hf_hub_download
-            hf_hub_download(repo_id=self.default_repo_id, local_dir=self.checkpoints_dir_abs, filename=model_name, repo_type="model")
-            ckpt_path = os.path.join(self.checkpoints_dir_abs, model_name)
+        ckpt_path = resume_or_download_model_from_hf(self.checkpoints_dir_abs, self.default_repo_id, model_name, self.__class__.__name__)
             
         crm_config = OmegaConf.load(crm_config_path)
 
         crm_mvdiffusion_model = instantiate_from_config(crm_config.model)
         crm_mvdiffusion_model.load_state_dict(torch.load(ckpt_path, map_location="cpu"), strict=False)
-        crm_mvdiffusion_model = crm_mvdiffusion_model.to(device).to(WEIGHT_DTYPE)
-        crm_mvdiffusion_model.device = device
+        crm_mvdiffusion_model = crm_mvdiffusion_model.to(DEVICE).to(WEIGHT_DTYPE)
+        crm_mvdiffusion_model.device = DEVICE
         
         crm_mvdiffusion_sampler = get_obj_from_str(crm_config.sampler.target)(
-            crm_mvdiffusion_model, device=device, dtype=WEIGHT_DTYPE, **crm_config.sampler.params
+            crm_mvdiffusion_model, device=DEVICE, dtype=WEIGHT_DTYPE, **crm_config.sampler.params
         )
         
         cstr(f"[{self.__class__.__name__}] loaded model ckpt from {ckpt_path}").msg.print()
@@ -1766,14 +1921,17 @@ class CRM_Images_MVDiffusion_Model:
                 "seed": ("INT", {"default": 1234, "min": 0, "max": 0xffffffffffffffff}),
                 "mv_guidance_scale": ("FLOAT", {"default": 5.5, "min": 0.0, "step": 0.01}),
                 "num_inference_steps": ("INT", {"default": 50, "min": 1}),
+                
             },
         }
     
     RETURN_TYPES = (
         "IMAGE",
+        "ORBIT_CAMPOSES",   # [orbit radius, elevation, azimuth, orbit center X, orbit center Y, orbit center Z]
     )
     RETURN_NAMES = (
         "multiview_images",
+        "orbit_camposes",
     )
     FUNCTION = "run_model"
     CATEGORY = "Comfy3D/Algorithm"
@@ -1801,8 +1959,15 @@ class CRM_Images_MVDiffusion_Model:
             mv_guidance_scale, 
             num_inference_steps
         )
-        
-        return (multiview_images, )
+
+        azimuths = [-90, 0, 180, 90, 0, 0]
+        elevations = [0, 90, 0, 0, -90, 0]
+        radius = [4.0] * 6
+        center = [0.0] * 6
+
+        orbit_camposes = [azimuths, elevations, radius, center, center, center]
+
+        return (multiview_images, orbit_camposes)
     
 class CRM_CCMs_MVDiffusion_Model:
     
@@ -1837,6 +2002,7 @@ class CRM_CCMs_MVDiffusion_Model:
     FUNCTION = "run_model"
     CATEGORY = "Comfy3D/Algorithm"
     
+    @torch.no_grad()
     def run_model(
         self, 
         crm_mvdiffusion_sampler, 
@@ -1869,7 +2035,7 @@ class Load_Convolutional_Reconstruction_Model:
     checkpoints_dir = "checkpoints/crm"
     default_ckpt_name = "CRM.pth"
     default_repo_id = "Zhengyi/CRM"
-    crm_config_path = "configs/crm_configs/specs_objaverse_total.json"
+    config_path = "configs/crm_configs/specs_objaverse_total.json"
     
     @classmethod
     def INPUT_TYPES(cls):
@@ -1895,19 +2061,10 @@ class Load_Convolutional_Reconstruction_Model:
     
     def load_CRM(self, model_name):
         
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        ckpt_path = resume_or_download_model_from_hf(self.checkpoints_dir_abs, self.default_repo_id, model_name, self.__class__.__name__)
         
-        # resume pretrained checkpoint
-        ckpt_path = os.path.join(self.checkpoints_dir_abs, model_name)
-        if not os.path.isfile(ckpt_path):
-            cstr(f"[{self.__class__.__name__}] can't find checkpoint {ckpt_path}, will download it from repo {self.default_repo_id} instead").warning.print()
-            
-            from huggingface_hub import hf_hub_download
-            hf_hub_download(repo_id=self.default_repo_id, local_dir=self.checkpoints_dir_abs, filename=model_name, repo_type="model")
-            ckpt_path = os.path.join(self.checkpoints_dir_abs, model_name)
-        
-        crm_conf = json.load(open(os.path.join(ROOT_PATH, self.crm_config_path)))
-        crm_model = CRM(crm_conf).to(device)
+        crm_conf = json.load(open(os.path.join(ROOT_PATH, self.config_path)))
+        crm_model = CRM(crm_conf).to(DEVICE)
         crm_model.load_state_dict(torch.load(ckpt_path, map_location="cpu"), strict=False)
         
         cstr(f"[{self.__class__.__name__}] loaded model ckpt from {ckpt_path}").msg.print()
@@ -1938,13 +2095,181 @@ class Convolutional_Reconstruction_Model:
     
     @torch.no_grad()
     def run_CRM(self, crm_model, multiview_images, multiview_CCMs):
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        
+
         np_imgs = np.concatenate(multiview_images.cpu().numpy(), 1) # (256, 256*6==1536, 3)
         np_xyzs = np.concatenate(multiview_CCMs.cpu().numpy(), 1) # (256, 1536, 3)
         
-        mesh = CRMSampler.generate3d(crm_model, np_imgs, np_xyzs, device)
+        mesh = CRMSampler.generate3d(crm_model, np_imgs, np_xyzs, DEVICE)
         
+        return (mesh,)
+    
+class Zero123Plus_Diffusion_Model:
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "zero123plus_pipe": ("DIFFUSERS_PIPE",),
+                "reference_image": ("IMAGE",),
+                "reference_mask": ("MASK",),
+                "seed": ("INT", {"default": 1234, "min": 0, "max": 0xffffffffffffffff}),
+                "guidance_scale": ("FLOAT", {"default": 4.0, "min": 0.0, "step": 0.01}),
+                "num_inference_steps": ("INT", {"default": 28, "min": 1}),
+            },
+        }
+    
+    RETURN_TYPES = (
+        "IMAGE",
+        "ORBIT_CAMPOSES",   # [orbit radius, elevation, azimuth, orbit center X, orbit center Y, orbit center Z]
+    )
+    RETURN_NAMES = (
+        "multiviews",
+        "orbit_camposes",
+    )
+    FUNCTION = "run_model"
+    CATEGORY = "Comfy3D/Algorithm"
+    
+    @torch.no_grad()
+    def run_model(
+        self,
+        zero123plus_pipe,
+        reference_image,
+        reference_mask,
+        seed,
+        guidance_scale,
+        num_inference_steps,
+    ):
+        
+        single_image = torch_img_to_pil_rgba(reference_image, reference_mask)
+
+        seed = int(seed)
+        generator = torch.Generator(device=zero123plus_pipe.unet.device).manual_seed(seed)
+
+        # sampling
+        output_image = zero123plus_pipe(
+            single_image, 
+            generator=generator,
+            guidance_scale=guidance_scale,
+            num_inference_steps=num_inference_steps, 
+        ).images[0]
+
+        multiview_images = np.asarray(output_image, dtype=np.float32) / 255.0
+        multiview_images = torch.from_numpy(multiview_images).permute(2, 0, 1).contiguous().float()     # (3, 960, 640)
+        multiview_images = rearrange(multiview_images, 'c (n h) (m w) -> (n m) h w c', n=3, m=2)        # (6, 320, 320, 3)
+
+        azimuths = [30, 90, 150, -150, -90, -30]
+        elevations = [-20, 10, -20, 10, -20, 10]
+        radius = [4.0] * 6
+        center = [0.0] * 6
+
+        orbit_camposes = [azimuths, elevations, radius, center, center, center]
+
+        return (multiview_images, orbit_camposes)
+    
+class Load_InstantMesh_Reconstruction_Model:
+    checkpoints_dir = "checkpoints/crm"
+    default_ckpt_names = ["instant_mesh_large.ckpt", "instant_mesh_base.ckpt", "instant_nerf_large.ckpt", "instant_nerf_base.ckpt"]
+    default_repo_id = "TencentARC/InstantMesh"
+    config_root_dir = "configs/InstantMesh_configs"
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        cls.checkpoints_dir_abs = os.path.join(ROOT_PATH, cls.checkpoints_dir)
+        all_models_names = get_list_filenames(cls.checkpoints_dir_abs, SUPPORTED_CHECKPOINTS_EXTENSIONS)
+        for ckpt_name in cls.default_ckpt_names:
+            if ckpt_name not in all_models_names:
+                all_models_names += [ckpt_name]
+            
+        return {
+            "required": {
+                "model_name": (all_models_names, ),
+            },
+        }
+    
+    RETURN_TYPES = (
+        "LRM_MODEL",
+    )
+    RETURN_NAMES = (
+        "lrm_model",
+    )
+    FUNCTION = "load_LRM"
+    CATEGORY = "Comfy3D/Import|Export"
+    
+    def load_LRM(self, model_name):
+
+        from .instant_mesh.utils.train_util import instantiate_from_config
+
+        is_flexicubes = True if model_name.startswith('instant_mesh') else False
+        
+        config_name = model_name.split(".")[0] + ".yaml"
+        config_path = os.path.join(ROOT_PATH, self.config_root_dir, config_name)
+        config = OmegaConf.load(config_path)
+
+        lrm_model = instantiate_from_config(config.model_config)
+        ckpt_path = resume_or_download_model_from_hf(self.checkpoints_dir_abs, self.default_repo_id, model_name, self.__class__.__name__)
+
+        state_dict = torch.load(ckpt_path, map_location='cpu')['state_dict']
+        state_dict = {k[14:]: v for k, v in state_dict.items() if k.startswith('lrm_generator.')}
+        lrm_model.load_state_dict(state_dict, strict=True)
+
+        lrm_model = lrm_model.to(DEVICE)
+        if is_flexicubes:
+            lrm_model.init_flexicubes_geometry(DEVICE, fovy=30.0)
+        lrm_model = lrm_model.eval()
+
+        return (lrm_model, )
+    
+class InstantMesh_Reconstruction_Model:
+
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "lrm_model": ("LRM_MODEL", ),
+                "multiview_images": ("IMAGE",),
+                "orbit_camera_poses": ("ORBIT_CAMPOSES",),    # [orbit radius, elevation, azimuth, orbit center X,  orbit center Y,  orbit center Z]
+                "orbit_camera_fovy": ("FLOAT", {"default": 30.0, "min": 0.0, "max": 180.0, "step": 0.1}),
+                "texture_resolution": ("INT", {"default": 1024, "min": 128, "max": 8192}),
+            }
+        }
+
+    RETURN_TYPES = (
+        "MESH",
+    )
+    RETURN_NAMES = (
+        "mesh",
+    )
+    
+    FUNCTION = "run_LRM"
+    CATEGORY = "Comfy3D/Algorithm"
+    
+    @torch.no_grad()
+    def run_LRM(self, lrm_model, multiview_images, orbit_camera_poses, orbit_camera_fovy, texture_resolution):
+
+        multiview_images
+
+        images = multiview_images.permute(0, 3, 1, 2).unsqueeze(0).to(DEVICE)   # [N, H, W, 3] -> [1, N, 3, H, W]
+        images = v2.functional.resize(images, 320, interpolation=3, antialias=True).clamp(0, 1)
+
+        # convert camera format from orbit to lrm inputs
+        azimuths, elevations, radius = orbit_camera_poses[0], orbit_camera_poses[1], orbit_camera_poses[2]
+        input_cameras = oribt_camera_poses_to_input_cameras(azimuths, elevations, radius=radius, fov=orbit_camera_fovy).to(DEVICE)
+
+        # get triplane
+        planes = lrm_model.forward_planes(images, input_cameras)
+
+        # get mesh
+        mesh_out = lrm_model.extract_mesh(
+            planes,
+            use_texture_map=True,
+            texture_resolution=texture_resolution,
+        )
+
+        vertices, faces, uvs, mesh_tex_idx, tex_map = mesh_out
+        tex_map = troch_image_dilate(tex_map.permute(1, 2, 0))  # [3, H, W] -> [H, W, 3]
+        
+        mesh = Mesh(v=vertices, f=faces, vt=uvs, ft=mesh_tex_idx, albedo=tex_map, device=DEVICE)
+        mesh.auto_normal()
         return (mesh,)
     
 class Instant_NGP:
@@ -1955,7 +2280,7 @@ class Instant_NGP:
             "required": {
                 "reference_image": ("IMAGE",),
                 "reference_mask": ("MASK",),
-                "reference_orbit_camera_poses": ("ORBIT_CAMPOSES",),    # (orbit radius, elevation, azimuth, orbit center X,  orbit center Y,  orbit center Z)
+                "reference_orbit_camera_poses": ("ORBIT_CAMPOSES",),    # [orbit radius, elevation, azimuth, orbit center X,  orbit center Y,  orbit center Z]
                 "reference_orbit_camera_fovy": ("FLOAT", {"default": 49.1, "min": 0.0, "max": 180.0, "step": 0.1}),
                 "training_iterations": ("INT", {"default": 512, "min": 1, "max": 0xffffffffffffffff}),
                 "training_resolution": ("INT", {"default": 128, "min": 128, "max": 8192}),
@@ -1991,22 +2316,21 @@ class Instant_NGP:
         force_cuda_rast
     ):
         with torch.inference_mode(False):
-            device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
             
-            ngp = InstantNGP(training_resolution).to(device)
+            ngp = InstantNGP(training_resolution).to(DEVICE)
             ngp.prepare_training(reference_image, reference_mask, reference_orbit_camera_poses, reference_orbit_camera_fovy)
             ngp.fit_nerf(training_iterations)
             
             vertices, triangles = marching_cubes_density_to_mesh(ngp.get_density, marching_cude_grids_resolution, marching_cude_grids_batch_size, marching_cude_threshold)
 
-            v = torch.from_numpy(vertices).contiguous().float().to(device)
-            f = torch.from_numpy(triangles).contiguous().int().to(device)
+            v = torch.from_numpy(vertices).contiguous().float().to(DEVICE)
+            f = torch.from_numpy(triangles).contiguous().int().to(DEVICE)
 
-            mesh = Mesh(v=v, f=f, device=device)
+            mesh = Mesh(v=v, f=f, device=DEVICE)
             mesh.auto_normal()
             mesh.auto_uv()
             
-            mesh.albedo = color_func_to_albedo(mesh, ngp.get_color, texture_resolution, device=device, force_cuda_rast=force_cuda_rast)
+            mesh.albedo = color_func_to_albedo(mesh, ngp.get_color, texture_resolution, device=DEVICE, force_cuda_rast=force_cuda_rast)
             
             return (mesh, )
         
@@ -2018,7 +2342,7 @@ class FlexiCubes_MVS:
             "required": {
                 "reference_depth_maps": ("IMAGE",),
                 "reference_masks": ("MASK",),
-                "reference_orbit_camera_poses": ("ORBIT_CAMPOSES",),    # (orbit radius, elevation, azimuth, orbit center X,  orbit center Y,  orbit center Z)
+                "reference_orbit_camera_poses": ("ORBIT_CAMPOSES",),    # [orbit radius, elevation, azimuth, orbit center X,  orbit center Y,  orbit center Z]
                 "reference_orbit_camera_fovy": ("FLOAT", {"default": 49.1, "min": 0.0, "max": 180.0, "step": 0.1}),
                 "training_iterations": ("INT", {"default": 512, "min": 1, "max": 0xffffffffffffffff}),
                 "batch_size": ("INT", {"default": 4, "min": 1, "max": 0xffffffffffffffff}),
@@ -2071,7 +2395,6 @@ class FlexiCubes_MVS:
     ):
         
         with torch.inference_mode(False):
-            device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
             
             fc_trainer = FlexiCubesTrainer(
                 training_iterations,
@@ -2087,7 +2410,7 @@ class FlexiCubes_MVS:
                 remove_floaters_weight,
                 cube_stabilizer_weight,
                 force_cuda_rast,
-                device=device
+                device=DEVICE
             )
             
             fc_trainer.prepare_training(reference_depth_maps, reference_masks, reference_orbit_camera_poses, reference_orbit_camera_fovy, reference_normal_maps)

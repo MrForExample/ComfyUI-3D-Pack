@@ -21,7 +21,9 @@ safetensors
 open_clip_torch
 
 # for training differentiable tensors
+torchmetrics
 pytorch_msssim
+pytorch-lightning
 
 # for process images & videos
 imageio

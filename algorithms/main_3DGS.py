@@ -4,13 +4,12 @@ import tqdm
 import torch
 import torch.nn.functional as F
 import numpy as np
-from kiui.cam import orbit_camera
 from pytorch_msssim import SSIM, MS_SSIM
 
 import comfy.utils
 
 from .main_3DGS_renderer import GaussianSplattingRenderer
-from ..shared_utils.camera_utils import OrbitCamera, MiniCam, calculate_fovX, get_projection_matrix
+from ..shared_utils.camera_utils import BaseCameraController, MiniCam, calculate_fovX, get_projection_matrix
 from ..shared_utils.image_utils import prepare_torch_img
 
 class GSParams:
@@ -74,46 +73,13 @@ class GSParams:
         # other gaussian params
         self.sh_degree = sh_degree
         
-class GaussianSplattingCameraController:
-    def __init__(self, renderer, cam_size_W, cam_size_H, reference_orbit_camera_fovy, invert_bg_prob=1.0, static_bg=None, device='cuda'):
-        self.device = torch.device(device)
-        
-        self.renderer = renderer
-        self.cam = OrbitCamera(cam_size_W, cam_size_H, fovy=reference_orbit_camera_fovy)
-        self.projection_matrix = get_projection_matrix(self.cam.near, self.cam.far, self.cam.fovx, self.cam.fovy).transpose(0, 1).cuda()
-        
-        self.invert_bg_prob = invert_bg_prob
-        self.black_bg = torch.tensor([0, 0, 0], dtype=torch.float32, device=self.device)
-        self.white_bg = torch.tensor([1, 1, 1], dtype=torch.float32, device=self.device)
-        self.static_bg = None if static_bg is None else torch.tensor(static_bg, dtype=torch.float32, device=self.device)
-        
-    def render_at_pose(self, cam_pose):
-        radius, elevation, azimuth, center_X, center_Y, center_Z = cam_pose
-        
-        orbit_target = np.array([center_X, center_Y, center_Z], dtype=np.float32)
-        render_pose = orbit_camera(elevation, azimuth, radius, target=orbit_target)
+class GaussianSplattingCameraController(BaseCameraController):
+    def get_render_result(self, render_pose, bg_color):
         render_cam = MiniCam(render_pose, self.cam.W, self.cam.H, self.cam.fovy, self.cam.fovx, self.cam.near, self.cam.far, self.projection_matrix)
-        
-        if self.static_bg is None:
-            bg_color = self.white_bg if np.random.rand() > self.invert_bg_prob else self.black_bg
-        else:
-            bg_color = self.static_bg
-            
         return self.renderer.render(render_cam, bg_color=bg_color)
     
-    def render_all_pose(self, all_cam_poses):
-        all_rendered_images, all_rendered_masks = [], []
-        for cam_pose in all_cam_poses:
-            out = self.render_at_pose(cam_pose)
-            
-            image = out["image"] # [3, H, W] in [0, 1]
-            mask = out["alpha"] # [1, H, W] in [0, 1]
-            
-            all_rendered_images.append(image)
-            all_rendered_masks.append(mask)
-            
-        # [Number of Poses, 3, H, W], [Number of Poses, 1, H, W] both in [0, 1]
-        return torch.stack(all_rendered_images, dim=0), torch.stack(all_rendered_masks, dim=0)
+    def pose_init(self):
+        self.projection_matrix = get_projection_matrix(self.cam.near, self.cam.far, self.cam.fovx, self.cam.fovy).transpose(0, 1).cuda()
 
 class GaussianSplatting:
             
