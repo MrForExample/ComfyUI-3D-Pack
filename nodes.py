@@ -44,7 +44,6 @@ from .mesh_processer.mesh_utils import (
     calculate_max_sh_degree_from_gs_ply,
     marching_cubes_density_to_mesh,
     color_func_to_albedo,
-    
 )
 from .algorithms.main_3DGS import GaussianSplatting, GaussianSplattingCameraController, GSParams
 from .algorithms.main_3DGS_renderer import GaussianSplattingRenderer
@@ -65,12 +64,15 @@ from .tgs.utils.misc import todevice, get_device
 from .lgm.core.options import config_defaults
 from .lgm.mvdream.pipeline_mvdream import MVDreamPipeline
 from .mvdiffusion.pipelines.pipeline_mvdiffusion_image import MVDiffusionImagePipeline
-from .mvdiffusion.data.single_image_dataset import SingleImageDataset
+from .mvdiffusion.data.single_image_dataset import SingleImageDataset as MVSingleImageDataset
 from .mvdiffusion.utils.misc import load_config as load_config_wonder3d
 from .tsr.system import TSR
 from .crm.model.crm.model import CRM
 from .zero123plus.pipeline import Zero123PlusPipeline
 from .instant_mesh.utils.camera_util import oribt_camera_poses_to_input_cameras
+from .era3d.mvdiffusion.pipelines.pipeline_mvdiffusion_unclip import StableUnCLIPImg2ImgPipeline
+from .era3d.mvdiffusion.data.single_image_dataset import SingleImageDataset as Era3DSingleImageDataset
+from .era3d.utils.misc import load_config as load_config_era3d
 
 from .shared_utils.image_utils import prepare_torch_img, torch_img_to_pil_rgba, troch_image_dilate
 from .shared_utils.common_utils import cstr, parse_save_filename, get_list_filenames, resume_or_download_model_from_hf
@@ -81,6 +83,7 @@ DIFFUSERS_PIPE_DICT = OrderedDict([
     ("Zero123PlusPipeline", Zero123PlusPipeline),
     ("DiffusionPipeline", DiffusionPipeline),
     ("StableDiffusionPipeline", StableDiffusionPipeline),
+    ("Era3DPipeline", StableUnCLIPImg2ImgPipeline)
 ])
 
 DIFFUSERS_SCHEDULER_DICT = OrderedDict([
@@ -127,7 +130,8 @@ AZIMUTH_MAX = 180.0
 
 WEIGHT_DTYPE = torch.float16
 
-DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+DEVICE_STR = "cuda" if torch.cuda.is_available() else "cpu"
+DEVICE = torch.device(DEVICE_STR)
 
 class Preview_3DGS:
 
@@ -1288,11 +1292,9 @@ class Load_Diffusers_Pipeline:
         
         # resume pretrained checkpoint
         ckpt_path = os.path.join(ROOT_PATH, "checkpoints", model_name)
-        if not os.path.exists(ckpt_path):
-            cstr(f"[{self.__class__.__name__}] can't find checkpoint {ckpt_path}, will download it from repo {model_name}").warning.print()
             
-            from huggingface_hub import snapshot_download
-            snapshot_download(repo_id=model_name, local_dir=ckpt_path, repo_type="model")
+        from huggingface_hub import snapshot_download
+        snapshot_download(repo_id=model_name, local_dir=ckpt_path, repo_type="model", ignore_patterns=["*.json"])
         
         diffusers_pipeline_class = DIFFUSERS_PIPE_DICT[diffusers_pipeline_name]
         
@@ -1450,15 +1452,16 @@ class Wonder3D_MVDiffusion_Model:
         ).images
 
         num_views = out.shape[0] // 2
-        mv_images = out[num_views:].permute(0, 2, 3, 1)   # [N, 3, H, W] -> [N, H, W, 3]
-        mv_normals = out[:num_views].permute(0, 2, 3, 1)   # [N, 3, H, W] -> [N, H, W, 3]
+        # [N, 3, H, W] -> [N, H, W, 3]
+        mv_images = out[num_views:].permute(0, 2, 3, 1)
+        mv_normals = out[:num_views].permute(0, 2, 3, 1)
     
         return (mv_images, mv_normals, )
     
     def prepare_data(self, ref_image, ref_mask):
         single_image = torch_img_to_pil_rgba(ref_image, ref_mask)
         abs_fix_cam_pose_dir = os.path.join(ROOT_PATH, self.fix_cam_pose_dir)
-        dataset = SingleImageDataset(fix_cam_pose_dir=abs_fix_cam_pose_dir, num_views=6, img_wh=[256, 256], bg_color='white', single_image=single_image)
+        dataset = MVSingleImageDataset(fix_cam_pose_dir=abs_fix_cam_pose_dir, num_views=6, img_wh=[256, 256], bg_color='white', single_image=single_image)
         return dataset[0]
 
 class MVDream_Model:
@@ -1606,13 +1609,12 @@ class Large_Multiview_Gaussian_Model:
     
     @torch.no_grad()
     def run_LGM(self, multiview_images, lgm_model):
-        device = "cuda"
-        ref_image_torch = prepare_torch_img(multiview_images, lgm_model.opt.input_size, lgm_model.opt.input_size, device) # [4, 3, 256, 256]
+        ref_image_torch = prepare_torch_img(multiview_images, lgm_model.opt.input_size, lgm_model.opt.input_size, DEVICE_STR) # [4, 3, 256, 256]
         ref_image_torch = TF.normalize(ref_image_torch, IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD)
-        rays_embeddings = lgm_model.prepare_default_rays(device)
+        rays_embeddings = lgm_model.prepare_default_rays(DEVICE_STR)
         ref_image_torch = torch.cat([ref_image_torch, rays_embeddings], dim=1).unsqueeze(0) # [1, 4, 9, 256, 256]
         
-        with torch.autocast(device_type=device, dtype=WEIGHT_DTYPE):
+        with torch.autocast(device_type=DEVICE_STR, dtype=WEIGHT_DTYPE):
             # generate gaussians
             gaussians = lgm_model.forward_gaussians(ref_image_torch)
         
@@ -1789,10 +1791,11 @@ class Load_TripoSR_Model:
     def load_TSR(self, model_name, chunk_size):
         
         ckpt_path = resume_or_download_model_from_hf(self.checkpoints_dir_abs, self.default_repo_id, model_name, self.__class__.__name__)
-            
+        config_path = os.path.join(ROOT_PATH, self.tsr_config_path)
+
         tsr_model = TSR.from_pretrained(
-            weight_path = ckpt_path,
-            config_path = os.path.join(ROOT_PATH, self.tsr_config_path)
+            weight_path=ckpt_path,
+            config_path=config_path
         )
         
         tsr_model.renderer.set_chunk_size(chunk_size)
@@ -2278,6 +2281,104 @@ class InstantMesh_Reconstruction_Model:
         mesh = Mesh(v=vertices, f=faces, vt=uvs, ft=mesh_tex_idx, albedo=tex_map, device=DEVICE)
         mesh.auto_normal()
         return (mesh,)
+
+class Era3D_Diffusion_Model:
+    
+    era3d_config_path = "configs/era3d_config.yaml"
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "era3d_pipe": ("DIFFUSERS_PIPE",),
+                "reference_image": ("IMAGE",),
+                "reference_mask": ("MASK",),
+                "image_crop_size": ("INT", {"default": 420, "min": 400, "max": 8192}),
+                "seed": ("INT", {"default": 600, "min": 0, "max": 0xffffffffffffffff}),
+                "guidance_scale": ("FLOAT", {"default": 3.0, "min": 0.0, "step": 0.01}),
+                "num_inference_steps": ("INT", {"default": 40, "min": 1}),
+                "eta": ("FLOAT", {"default": 1.0, "min": 0.0, "step": 0.01}),
+                "radius": ("FLOAT", {"default": 4.0, "min": 0.1, "step": 0.01}),
+            },
+        }
+    
+    RETURN_TYPES = (
+        "IMAGE",
+        "IMAGE",
+        "ORBIT_CAMPOSES",   # [orbit radius, elevation, azimuth, orbit center X, orbit center Y, orbit center Z]
+    )
+    RETURN_NAMES = (
+        "multiviews",
+        "multiview_normals",
+        "orbit_camposes",
+    )
+    FUNCTION = "run_model"
+    CATEGORY = "Comfy3D/Algorithm"
+    
+    @torch.no_grad()
+    def run_model(
+        self,
+        era3d_pipe,
+        reference_image,
+        reference_mask,
+        image_crop_size,
+        seed,
+        guidance_scale,
+        num_inference_steps,
+        eta,
+        radius,
+    ):
+        config_path = os.path.join(ROOT_PATH, self.era3d_config_path)
+        cfg = load_config_era3d(config_path)
+        
+        single_image = torch_img_to_pil_rgba(reference_image, reference_mask)
+
+        # Get the dataset
+        cfg.dataset.prompt_embeds_path = os.path.join(ROOT_PATH, cfg.dataset.prompt_embeds_path)
+        dataset = Era3DSingleImageDataset(
+            single_image=single_image,
+            crop_size=image_crop_size,
+            dtype=WEIGHT_DTYPE,
+            **cfg.dataset
+        )
+
+        # Get input data
+        img_batch = dataset.__getitem__(0)
+
+        imgs_in = torch.cat([img_batch['imgs_in']]*2, dim=0).to(DEVICE).to(WEIGHT_DTYPE)    # (B*Nv, 3, H, W) B==1
+        #num_views = imgs_in.shape[1]
+
+        normal_prompt_embeddings, clr_prompt_embeddings = img_batch['normal_prompt_embeddings'], img_batch['color_prompt_embeddings'] 
+        prompt_embeddings = torch.cat([normal_prompt_embeddings, clr_prompt_embeddings], dim=0).to(DEVICE).to(WEIGHT_DTYPE)    # (B*Nv, N, C) B==1
+
+        generator = torch.Generator(device=era3d_pipe.unet.device).manual_seed(seed)
+
+        # sampling
+        with torch.autocast(DEVICE_STR):
+            unet_out = era3d_pipe(
+                imgs_in, None, prompt_embeds=prompt_embeddings,
+                generator=generator, guidance_scale=guidance_scale, output_type='pt', num_images_per_prompt=1, 
+                num_inference_steps=num_inference_steps, eta=eta
+            )
+        
+        out = unet_out.images
+        bsz = out.shape[0] // 2
+
+        # (1, 3, 512, 512)
+        normals_pred = out[:bsz]    
+        images_pred = out[bsz:] 
+        
+        # [N, 3, H, W] -> [N, H, W, 3]
+        multiview_images = images_pred.permute(0, 2, 3, 1)   
+        multiview_normals = normals_pred.permute(0, 2, 3, 1)
+
+        azimuths = [0, 45, 90, 180, -90, -45]
+        elevations = [0.0] * 6
+        radius = [radius] * 6
+        center = [0.0] * 6
+
+        orbit_camposes = [azimuths, elevations, radius, center, center, center]
+
+        return (multiview_images, multiview_normals, orbit_camposes)
     
 class Instant_NGP:
     

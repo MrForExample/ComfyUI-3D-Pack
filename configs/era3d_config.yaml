@@ -1,0 +1,8 @@
+num_views: 6
+
+dataset:
+  prompt_embeds_path: era3d/mvdiffusion/data/fixed_prompt_embeds_6view
+  num_views: ${num_views}
+  bg_color: 'white'
+  img_wh:  [512, 512]
+  num_validation_samples: 1000

@@ -13,9 +13,14 @@ This is an extensive node suite that enables ComfyUI to process 3D inputs (Mesh 
 </span>
 
 ## Currently support:
-- For use case please check [Example Workflows](./_Example_Workflows/). [**Last update: 23/05/2024**]
+- For use case please check [Example Workflows](./_Example_Workflows/). [**Last update: 02/06/2024**]
   - **Note:** you need to put [Example Inputs Files & Folders](_Example_Workflows/_Example_Inputs_Files/) under ComfyUI Root Directory\ComfyUI\input folder before you can run the example workflow
   - [tripoSR-layered-diffusion workflow](https://github.com/C0nsumption/Consume-ComfyUI-Workflows/tree/main/assets/tripo_sr/00) by [@Consumption](https://twitter.com/c0nsumption_)
+
+- **Era3D Diffusion Model**: [pengHTYX/Era3D](https://github.com/pengHTYX/Era3D)
+  - Single image to 6 multi-view images & normal maps with resulution: 512X512
+  - *Note: you need at least 16GB vram to run this model*
+
 
 - **InstantMesh Reconstruction Model**: [TencentARC/InstantMesh](https://github.com/TencentARC/InstantMesh)
   - Sparse multi-view images with white background to 3D Mesh with RGB texture
@@ -25,13 +30,13 @@ This is an extensive node suite that enables ComfyUI to process 3D inputs (Mesh 
   <video controls autoplay loop src="https://github.com/MrForExample/ComfyUI-3D-Pack/assets/62230687/33aecedb-f595-4c12-90dd-89d5f718598e"></video>
 
 - **Zero123++**: [SUDO-AI-3D/zero123plus](https://github.com/SUDO-AI-3D/zero123plus)
-  - Single image to 6 multi-view images
+  - Single image to 6 view images with resulution: 320X320
 
 - **CRM**: [thu-ml/CRM](https://github.com/thu-ml/CRM)
   - Three stages pipeline: 
-    1. Single image to 6 multi-view images (Front, Back, Left, Right, Top & Down)
-    2. Single image & 6 multi-view images to 6 same views CCMs (Canonical Coordinate Maps)
-    3. 6 multi-view images & CCMs to 3D mesh
+    1. Single image to 6 view images (Front, Back, Left, Right, Top & Down)
+    2. Single image & 6 view images to 6 same views CCMs (Canonical Coordinate Maps)
+    3. 6 view images & CCMs to 3D mesh
   - *Note: For low vram pc, if you can't fit all three models for each stages into your GPU memory, then you can divide those three stages into different comfy workflow and run them separately*
 
     <video controls autoplay loop src="https://github.com/MrForExample/ComfyUI-3D-Pack/assets/62230687/cf68bb83-9244-44df-9db8-f80eb3fdc29e"></video>
