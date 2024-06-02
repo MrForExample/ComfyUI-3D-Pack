@@ -104,7 +104,7 @@ def parse_save_filename(save_path, output_directory, supported_extensions, class
         
         # replace time date format to current time
         now = datetime.now() # current date and time
-        all_date_format = ["%Y", "%m", "%d", "%M", "%S", "%f"]
+        all_date_format = ["%Y", "%m", "%d", "%H", "%M", "%S", "%f"]
         for date_format in all_date_format:
             if date_format in filename:
                 filename = filename.replace(date_format, now.strftime(date_format))
