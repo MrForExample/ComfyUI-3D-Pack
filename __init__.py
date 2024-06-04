@@ -1,5 +1,6 @@
 import os
 import sys
+import logging
 import folder_paths as comfy_paths
 from pyhocon import ConfigFactory
 
@@ -11,6 +12,30 @@ import __main__
 import importlib
 import inspect
 from .webserver.server import server, set_web_conf
+
+# Set logging
+logger = logging.getLogger('transformers')
+
+for handler in logger.handlers:
+    logger.removeHandler(handler)
+
+logging_level = logging.WARNING # This is the default for transformers
+
+logger.setLevel(logging_level)
+
+stdout_handler = logging.StreamHandler(sys.stdout)
+stdout_handler.setLevel(logging.WARNING)
+stdout_handler.addFilter(lambda record: record.levelno <= logging.WARNING)
+
+stderr_handler = logging.StreamHandler(sys.stderr)
+stderr_handler.setLevel(logging.ERROR)
+
+formatter = logging.Formatter('%(message)s')
+stdout_handler.setFormatter(formatter)
+stderr_handler.setFormatter(formatter)
+
+logger.addHandler(stdout_handler)
+logger.addHandler(stderr_handler)
 
 conf_path = os.path.join(ROOT_PATH, "configs/system.conf")
 # Configuration
