@@ -30,10 +30,13 @@ This is an extensive node suite that enables ComfyUI to process 3D inputs (Mesh 
     - [ip-adapter_sd15](https://huggingface.co/h94/IP-Adapter/blob/main/models/ip-adapter_sd15.safetensors) and put it into `Your ComfyUI root directory/ComfyUI/models/ipadapter`
     - [RealESRGAN_x4plus](https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth) and put it into `Your ComfyUI root directory/ComfyUI/models/upscale_models`
 
+  <video controls autoplay loop src="https://github.com/MrForExample/ComfyUI-3D-Pack/assets/62230687/45dd6bfc-4f2b-4b1f-baed-13a1b0722896"></video>
+
 - **Era3D Diffusion Model**: [pengHTYX/Era3D](https://github.com/pengHTYX/Era3D)
   - Single image to 6 multi-view images & normal maps with resulution: 512X512
   - *Note: you need at least 16GB vram to run this model*
 
+  <video controls autoplay loop src="https://github.com/MrForExample/ComfyUI-3D-Pack/assets/62230687/fc210cac-6c7d-4a55-926c-adb5fb7b0c57"></video>
 
 - **InstantMesh Reconstruction Model**: [TencentARC/InstantMesh](https://github.com/TencentARC/InstantMesh)
   - Sparse multi-view images with white background to 3D Mesh with RGB texture
