@@ -1,0 +1,43 @@
+init_config: 
+  # enable controls
+  enable_cross_attn_lora: False
+  enable_cross_attn_ip: False
+  enable_self_attn_lora: False
+  enable_self_attn_ref: False
+  enable_multiview_attn: True
+
+  # for cross attention
+  init_cross_attn_lora: False
+  init_cross_attn_ip: False
+  cross_attn_lora_rank: 256        # 0 for not enabled
+  cross_attn_lora_only_kv: False
+  ipadapter_pretrained_name: "h94/IP-Adapter"
+  ipadapter_subfolder_name: "models"
+  ipadapter_weight_name: "ip-adapter_sd15.safetensors"
+  ipadapter_effect_on: "all"    # all, first
+
+  # for self attention
+  init_self_attn_lora: False
+  self_attn_lora_rank: 256
+  self_attn_lora_only_kv: False
+
+  # for self attention ref
+  init_self_attn_ref: False
+  self_attn_ref_position: "attn1"
+  self_attn_ref_other_model_name: "lambdalabs/sd-image-variations-diffusers"
+  self_attn_ref_pixel_wise_crosspond: False
+  self_attn_ref_effect_on: "all"
+  
+  # for multiview attention
+  init_multiview_attn: True
+  multiview_attn_position: "attn1"
+  use_mv_joint_attn: True
+  num_modalities: 1
+  
+  # for unet
+  init_unet_path: ""
+  cat_condition: True       # cat condition to input
+  
+  # for cls embedding
+  init_num_cls_label: 8     # for initialize
+  cls_labels: [0, 1, 2, 3]  # for current task

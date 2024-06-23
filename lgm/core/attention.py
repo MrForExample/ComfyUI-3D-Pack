@@ -8,10 +8,13 @@
 #   https://github.com/rwightman/pytorch-image-models/tree/master/timm/models/vision_transformer.py
 
 import os
-import warnings
+import logging
 
 from torch import Tensor
 from torch import nn
+from .utils import setup_logger
+
+setup_logger('', logging.INFO, [logging.INFO, logging.WARNING], [logging.ERROR, logging.CRITICAL], logging.Formatter('%(message)s'))
 
 XFORMERS_ENABLED = os.environ.get("XFORMERS_DISABLED") is None
 try:
@@ -19,14 +22,13 @@ try:
         from xformers.ops import memory_efficient_attention, unbind
 
         XFORMERS_AVAILABLE = True
-        warnings.warn("xFormers is available (Attention)")
+        logging.warn("xFormers is available (Attention)")
     else:
-        warnings.warn("xFormers is disabled (Attention)")
+        logging.warn("xFormers is disabled (Attention)")
         raise ImportError
 except ImportError:
     XFORMERS_AVAILABLE = False
-    warnings.warn("xFormers is not available (Attention)")
-
+    logging.warn("xFormers is not available (Attention)")
 
 class Attention(nn.Module):
     def __init__(

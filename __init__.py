@@ -2,15 +2,31 @@ import os
 import sys
 import folder_paths as comfy_paths
 from pyhocon import ConfigFactory
+import logging
 
 ROOT_PATH = os.path.join(comfy_paths.get_folder_paths("custom_nodes")[0], "ComfyUI-3D-Pack")
+MODULE_PATH = os.path.join(ROOT_PATH, "gen_3d_modules")
 sys.path.append(ROOT_PATH)
+sys.path.append(MODULE_PATH)
 
 import shutil
 import __main__
 import importlib
 import inspect
 from .webserver.server import server, set_web_conf
+from .utils import setup_logger
+
+# Common formatter for simplicity, adjust as needed
+common_formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
+
+# Setup logging for transformers
+setup_logger('transformers', logging.WARNING, [logging.WARNING], [logging.ERROR, logging.CRITICAL], common_formatter)
+
+# Setup logging for diffusers
+setup_logger('diffusers_logging', logging.INFO, [logging.INFO, logging.WARNING], [logging.ERROR, logging.CRITICAL], common_formatter)
+
+# Redirect warnings to the logging system
+logging.captureWarnings(True)
 
 conf_path = os.path.join(ROOT_PATH, "configs/system.conf")
 # Configuration

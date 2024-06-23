@@ -74,7 +74,18 @@ from .era3d.mvdiffusion.pipelines.pipeline_mvdiffusion_unclip import StableUnCLI
 from .era3d.mvdiffusion.data.single_image_dataset import SingleImageDataset as Era3DSingleImageDataset
 from .era3d.utils.misc import load_config as load_config_era3d
 
-from .shared_utils.image_utils import prepare_torch_img, torch_img_to_pil_rgba, troch_image_dilate
+from Unique3D.custum_3d_diffusion.custum_pipeline.unifield_pipeline_img2mvimg import StableDiffusionImage2MVCustomPipeline
+from Unique3D.custum_3d_diffusion.custum_pipeline.unifield_pipeline_img2img import StableDiffusionImageCustomPipeline
+from Unique3D.scripts.mesh_init import fast_geo
+from Unique3D.scripts.utils import from_py3d_mesh, to_py3d_mesh, to_pyml_mesh, simple_clean_mesh
+from Unique3D.scripts.project_mesh import multiview_color_projection, get_cameras_list
+from Unique3D.mesh_reconstruction.recon import reconstruct_stage1
+from Unique3D.mesh_reconstruction.refine import run_mesh_refine
+
+from .shared_utils.image_utils import (
+    prepare_torch_img, torch_imgs_to_pils, troch_image_dilate, 
+    pils_rgba_to_rgb, pil_make_image_grid, pil_split_image, pils_to_torch_imgs,
+)
 from .shared_utils.common_utils import cstr, parse_save_filename, get_list_filenames, resume_or_download_model_from_hf
 
 DIFFUSERS_PIPE_DICT = OrderedDict([
@@ -83,7 +94,9 @@ DIFFUSERS_PIPE_DICT = OrderedDict([
     ("Zero123PlusPipeline", Zero123PlusPipeline),
     ("DiffusionPipeline", DiffusionPipeline),
     ("StableDiffusionPipeline", StableDiffusionPipeline),
-    ("Era3DPipeline", StableUnCLIPImg2ImgPipeline)
+    ("Era3DPipeline", StableUnCLIPImg2ImgPipeline),
+    ("Unique3DImage2MVCustomPipeline", StableDiffusionImage2MVCustomPipeline),
+    ("Unique3DImageCustomPipeline", StableDiffusionImageCustomPipeline),
 ])
 
 DIFFUSERS_SCHEDULER_DICT = OrderedDict([
@@ -332,7 +345,205 @@ class Save_3DGS:
             gs_ply.write(save_path)
         
         return (save_path, )
+
+class Image_Add_Pure_Color_Background:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "images": ("IMAGE",),
+                "masks": ("MASK",),
+                "R": ("INT", {"default": 255, "min": 0, "max": 255}),
+                "G": ("INT", {"default": 255, "min": 0, "max": 255}),
+                "B": ("INT", {"default": 255, "min": 0, "max": 255}),
+            },
+        }
+        
+    RETURN_TYPES = (
+        "IMAGE",
+    )
+    RETURN_NAMES = (
+        "images",
+    )
     
+    FUNCTION = "image_add_bg"
+    CATEGORY = "Comfy3D/Preprocessor"
+
+    def image_add_bg(self, images, masks, R, G, B):
+        """
+        bg_mask = bg_mask.unsqueeze(3)
+        inv_bg_mask = torch.ones_like(bg_mask) - bg_mask
+        color = torch.tensor([R, G, B]).to(image.dtype) / 255
+        color_bg = color.repeat(bg_mask.shape)
+        image = inv_bg_mask * image + bg_mask * color_bg
+        """
+
+        image_pils = torch_imgs_to_pils(images, masks)
+        image_pils = pils_rgba_to_rgb(image_pils, (R, G, B))
+
+        images = pils_to_torch_imgs(image_pils, images.device)
+        return (images,)
+    
+class Make_Image_Grid:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "images": ("IMAGE",),
+                "grid_side_num": ("INT", {"default": 1, "min": 1, "max": 8192}),
+                "use_rows": ("BOOLEAN", {"default": True},),
+            },
+        }
+        
+    RETURN_TYPES = (
+        "IMAGE",
+    )
+    RETURN_NAMES = (
+        "image_grid",
+    )
+    
+    FUNCTION = "make_image_grid"
+    CATEGORY = "Comfy3D/Preprocessor"
+    
+    def make_image_grid(self, images, grid_side_num, use_rows):
+        pil_image_list = torch_imgs_to_pils(images)
+
+        if use_rows:
+            rows = grid_side_num
+            clos = None
+        else:
+            clos = grid_side_num
+            rows = None
+
+        image_grid = pil_make_image_grid(pil_image_list, rows, clos)
+
+        image_grid = TF.to_tensor(image_grid).permute(1, 2, 0).unsqueeze(0)  # [1, H, W, 3]
+
+        return (image_grid,)
+
+class Split_Image_Grid:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "image": ("IMAGE",),
+                "grid_side_num": ("INT", {"default": 1, "min": 1, "max": 8192}),
+                "use_rows": ("BOOLEAN", {"default": True},),
+            },
+        }
+        
+    RETURN_TYPES = (
+        "IMAGE",
+    )
+    RETURN_NAMES = (
+        "images",
+    )
+    
+    FUNCTION = "split_image_grid"
+    CATEGORY = "Comfy3D/Preprocessor"
+    
+    def split_image_grid(self, image, grid_side_num, use_rows):
+        image_pil = torch_imgs_to_pils(image)[0]
+
+        if use_rows:
+            rows = grid_side_num
+            clos = None
+        else:
+            clos = grid_side_num
+            rows = None
+
+        image_pils = pil_split_image(image_pil, rows, clos)
+
+        images = pils_to_torch_imgs(image_pils, image.device)
+
+        return (images,)
+
+class Get_Masks_From_Normal_Maps:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "normal_maps": ("IMAGE",),
+            },
+        }
+        
+    RETURN_TYPES = (
+        "MASK",
+    )
+    RETURN_NAMES = (
+        "normal_masks",
+    )
+    
+    FUNCTION = "make_image_grid"
+    CATEGORY = "Comfy3D/Preprocessor"
+    
+    def make_image_grid(self, normal_maps):
+        from Unique3D.scripts.utils import get_normal_map_masks
+        pil_normal_list = torch_imgs_to_pils(normal_maps)
+        normal_masks = get_normal_map_masks(pil_normal_list)
+        normal_masks = torch.stack(normal_masks, dim=0).to(normal_maps.dtype).to(normal_maps.device)
+        return (normal_masks,)
+
+class Rotate_Normal_Maps_Horizontally:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "normal_maps": ("IMAGE",),
+                "normal_masks": ("MASK",),
+                "clockwise": ("BOOLEAN", {"default": True},),
+            },
+        }
+        
+    RETURN_TYPES = (
+        "IMAGE",
+    )
+    RETURN_NAMES = (
+        "normal_maps",
+    )
+    
+    FUNCTION = "make_image_grid"
+    CATEGORY = "Comfy3D/Preprocessor"
+    
+    def make_image_grid(self, normal_maps, normal_masks, clockwise):
+        if normal_maps.shape[0] > 1:
+            from Unique3D.scripts.utils import rotate_normals_torch
+            pil_image_list = torch_imgs_to_pils(normal_maps, normal_masks)
+            pil_image_list = rotate_normals_torch(pil_image_list, return_types='pil', rotate_direction=int(clockwise))
+            normal_maps = pils_to_torch_imgs(pil_image_list, normal_maps.device)
+        return (normal_maps,)
+    
+class Fast_Clean_Mesh:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "mesh": ("MESH",),
+                "apply_smooth": ("BOOLEAN", {"default": True},),
+                "smooth_step": ("INT", {"default": 1, "min": 0, "max": 0xffffffffffffffff}),
+                "apply_sub_divide": ("BOOLEAN", {"default": True},),
+                "sub_divide_threshold": ("FLOAT", {"default": 0.25, 'step': 0.001}),
+            },
+        }
+
+    RETURN_TYPES = (
+        "MESH",
+    )
+    RETURN_NAMES = (
+        "mesh",
+    )
+    FUNCTION = "clean_mesh"
+    CATEGORY = "Comfy3D/Preprocessor"
+
+    def clean_mesh(self, mesh, apply_smooth, smooth_step, apply_sub_divide, sub_divide_threshold):
+
+        meshes = simple_clean_mesh(to_pyml_mesh(mesh.v, mesh.f), apply_smooth=apply_smooth, stepsmoothnum=smooth_step, apply_sub_divide=apply_sub_divide, sub_divide_threshold=sub_divide_threshold).to(DEVICE)
+        vertices, faces, _ = from_py3d_mesh(meshes)
+
+        mesh = Mesh(v=vertices, f=faces, device=DEVICE)
+
+        return (mesh,)
+
 class Switch_3DGS_Axis:
     @classmethod
     def INPUT_TYPES(cls):
@@ -454,8 +665,8 @@ class Stack_Orbit_Camera_Poses:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "orbit_radius_start": ("FLOAT", {"default": 0.0, 'step': 0.0001}),
-                "orbit_radius_stop": ("FLOAT", {"default": 0.0, 'step': 0.0001}),
+                "orbit_radius_start": ("FLOAT", {"default": 1.75, 'step': 0.0001}),
+                "orbit_radius_stop": ("FLOAT", {"default": 1.75, 'step': 0.0001}),
                 "orbit_radius_step": ("FLOAT", {"default": 0.1, 'step': 0.0001}),
                 "elevation_start": ("FLOAT", {"default": 0.0, "min": ELEVATION_MIN, "max": ELEVATION_MAX, 'step': 0.0001}),
                 "elevation_stop": ("FLOAT", {"default": 0.0, "min": ELEVATION_MIN, "max": ELEVATION_MAX, 'step': 0.0001}),
@@ -635,84 +846,7 @@ class Stack_Orbit_Camera_Poses:
             orbit_center_Z_list.append(campose[5])
         
         return (orbit_camposes, orbit_radius_list, elevation_list, azimuth_list, orbit_center_X_list, orbit_center_Y_list, orbit_center_Z_list, )
-    
-class Generate_Orbit_Camera_Poses:
 
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "reference_images": ("IMAGE",), 
-                "generate_pose_command": ("STRING", {
-                    "default": "#([start_reference_image_index : end_reference_image_index], orbit_radius, elevation_angle [-90, 90], start_azimuth_angle [0, 360], end_azimuth_angle [0, 360])\n([0:30], 1.75, 0, 0, 360)", 
-                    "multiline": True
-                }),
-            },
-        }
-
-    RETURN_TYPES = (
-        "ORBIT_CAMPOSES",   # [orbit radius, elevation, azimuth, orbit center X,  orbit center Y,  orbit center Z]
-    )
-    RETURN_NAMES = (
-        "orbit_camposes",
-    )
-    FUNCTION = "get_camposes"
-    CATEGORY = "Comfy3D/Preprocessor"
-    
-    class Slice_Camposes:
-        def __init__(self, start_reference_image_index, end_reference_image_index, camposes_start_to_end):
-            self.start_reference_image_index = start_reference_image_index
-            self.end_reference_image_index = end_reference_image_index
-            self.camposes_start_to_end = camposes_start_to_end
-    
-    def get_camposes(self, reference_images, generate_pose_command):
-        orbit_camposes = []
-        
-        self.ref_imgs_num_minus_1 = len(reference_images) - 1
-        
-        # To match pattern ( [ start_reference_image_index : end_reference_image_index ] , orbit_radius, elevation_angle , start_azimuth_angle , end_azimuth_angle )
-        pattern = re.compile(r"\([ \t]*\[[ \t]*(\d+)[ \t]*:[ \t]*(\d+)[ \t]*\][ \t]*,[ \t]*([\d]+\.?[\d]*)[ \t]*,[ \t]*([\d]+\.?[\d]*)[ \t]*,[ \t]*([\d]+\.?[\d]*)[ \t]*,[ \t]*([\d]+\.?[\d]*)[ \t]*\)")
-        all_matches = pattern.findall(generate_pose_command)
-
-        all_slice_camposes = []
-        for match in all_matches:
-            start_reference_image_index, end_reference_image_index, orbit_radius, elevation_angle, start_azimuth_angle, end_azimuth_angle = (int(s) if i < 2 else float(s) for i, s in enumerate(match))
-            
-            end_reference_image_index = min(end_reference_image_index, self.ref_imgs_num_minus_1)
-            
-            if start_reference_image_index <= end_reference_image_index:
-            
-                azimuth_imgs_num = end_reference_image_index - start_reference_image_index + 1
-                # calculate all the reference camera azimuth angles
-                camposes_start_to_end = []
-                if start_azimuth_angle > end_azimuth_angle:
-                    azimuth_angle_interval = -(end_azimuth_angle + 360 - start_azimuth_angle) / azimuth_imgs_num
-                else:
-                    azimuth_angle_interval = (end_azimuth_angle - start_azimuth_angle) / azimuth_imgs_num
-                    
-                now_azimuth_angle = start_azimuth_angle
-                for _ in range(azimuth_imgs_num):
-                    camposes_start_to_end.append((orbit_radius, elevation_angle, now_azimuth_angle, 0.0, 0.0, 0.0))
-                    now_azimuth_angle = (now_azimuth_angle + azimuth_angle_interval) % 360
-                    
-                all_slice_camposes.append(Generate_Orbit_Camera_Poses.Slice_Camposes(start_reference_image_index, end_reference_image_index, camposes_start_to_end))
-                    
-            else:
-                cstr(f"[{self.__class__.__name__}] start_reference_image_index: {start_reference_image_index} must smaller than or equal to end_reference_image_index: {end_reference_image_index}").error.print()
-        
-        all_slice_camposes = sorted(all_slice_camposes, key=lambda slice_camposes:slice_camposes.start_reference_image_index)
-        
-        last_end_index_plus_1 = 0
-        for slice_camposes in all_slice_camposes:
-            if last_end_index_plus_1 == slice_camposes.start_reference_image_index:
-                orbit_camposes.extend(slice_camposes.camposes_start_to_end)
-                last_end_index_plus_1 = slice_camposes.end_reference_image_index + 1
-            else:
-                orbit_camposes = []
-                cstr(f"[{self.__class__.__name__}] Last end_reference_image_index: {end_reference_image_index} plus 1 must equal to current start_reference_image_index: {start_reference_image_index}").error.print()
-        
-        return (orbit_camposes, )
-    
 class Get_Camposes_From_List_Indexed:
     
     RETURN_TYPES = ("ORBIT_CAMPOSES",)
@@ -1276,6 +1410,7 @@ class Load_Diffusers_Pipeline:
                 "diffusers_pipeline_name": (list(DIFFUSERS_PIPE_DICT.keys()),),
                 "model_name": ("STRING", {"default": "ashawkey/imagedream-ipmv-diffusers", "multiline": False}),
                 "custom_pipeline": ("STRING", {"default": "", "multiline": False}),
+                "download_from_remote": ("BOOLEAN", {"default": True}),
             },
         }
     
@@ -1288,13 +1423,14 @@ class Load_Diffusers_Pipeline:
     FUNCTION = "load_diffusers_pipe"
     CATEGORY = "Comfy3D/Import|Export"
     
-    def load_diffusers_pipe(self, diffusers_pipeline_name, model_name, custom_pipeline):
+    def load_diffusers_pipe(self, diffusers_pipeline_name, model_name, custom_pipeline, download_from_remote):
         
         # resume pretrained checkpoint
         ckpt_path = os.path.join(ROOT_PATH, "checkpoints", model_name)
             
-        from huggingface_hub import snapshot_download
-        snapshot_download(repo_id=model_name, local_dir=ckpt_path, repo_type="model", ignore_patterns=["*.json"])
+        if download_from_remote:
+            from huggingface_hub import snapshot_download
+            snapshot_download(repo_id=model_name, local_dir=ckpt_path, repo_type="model", ignore_patterns=["*.json"])
         
         diffusers_pipeline_class = DIFFUSERS_PIPE_DICT[diffusers_pipeline_name]
         
@@ -1306,7 +1442,6 @@ class Load_Diffusers_Pipeline:
             ckpt_path,
             torch_dtype=WEIGHT_DTYPE,
             custom_pipeline=custom_pipeline,
-            trust_remote_code=True,
         ).to(DEVICE)
         
         pipe.enable_xformers_memory_efficient_attention()
@@ -1372,7 +1507,7 @@ class Set_Diffusers_Pipeline_State_Dict:
 
         state_dict = torch.load(ckpt_path, map_location='cpu')
         pipe.unet.load_state_dict(state_dict, strict=True)
-
+        pipe.enable_xformers_memory_efficient_attention()
         pipe = pipe.to(DEVICE)
 
         return (pipe, )
@@ -1459,7 +1594,7 @@ class Wonder3D_MVDiffusion_Model:
         return (mv_images, mv_normals, )
     
     def prepare_data(self, ref_image, ref_mask):
-        single_image = torch_img_to_pil_rgba(ref_image, ref_mask)
+        single_image = torch_imgs_to_pils(ref_image, ref_mask)[0]
         abs_fix_cam_pose_dir = os.path.join(ROOT_PATH, self.fix_cam_pose_dir)
         dataset = MVSingleImageDataset(fix_cam_pose_dir=abs_fix_cam_pose_dir, num_views=6, img_wh=[256, 256], bg_color='white', single_image=single_image)
         return dataset[0]
@@ -1959,7 +2094,7 @@ class CRM_Images_MVDiffusion_Model:
         mv_guidance_scale, 
         num_inference_steps, 
     ):
-        pixel_img = torch_img_to_pil_rgba(reference_image, reference_mask)
+        pixel_img = torch_imgs_to_pils(reference_image, reference_mask)[0]
         pixel_img = CRMSampler.process_pixel_img(pixel_img)
         
         multiview_images = CRMSampler.stage1_sample(
@@ -2027,7 +2162,7 @@ class CRM_CCMs_MVDiffusion_Model:
         mv_guidance_scale, 
         num_inference_steps, 
     ):
-        pixel_img = torch_img_to_pil_rgba(reference_image, reference_mask)
+        pixel_img = torch_imgs_to_pils(reference_image, reference_mask)[0]
         pixel_img = CRMSampler.process_pixel_img(pixel_img)
         
         multiview_CCMs = CRMSampler.stage2_sample(
@@ -2152,7 +2287,7 @@ class Zero123Plus_Diffusion_Model:
         num_inference_steps,
     ):
         
-        single_image = torch_img_to_pil_rgba(reference_image, reference_mask)
+        single_image = torch_imgs_to_pils(reference_image, reference_mask)[0]
 
         seed = int(seed)
         generator = torch.Generator(device=zero123plus_pipe.unet.device).manual_seed(seed)
@@ -2330,7 +2465,7 @@ class Era3D_Diffusion_Model:
         config_path = os.path.join(ROOT_PATH, self.era3d_config_path)
         cfg = load_config_era3d(config_path)
         
-        single_image = torch_img_to_pil_rgba(reference_image, reference_mask)
+        single_image = torch_imgs_to_pils(reference_image, reference_mask)[0]
 
         # Get the dataset
         cfg.dataset.prompt_embeds_path = os.path.join(ROOT_PATH, cfg.dataset.prompt_embeds_path)
@@ -2368,8 +2503,8 @@ class Era3D_Diffusion_Model:
         images_pred = out[bsz:] 
         
         # [N, 3, H, W] -> [N, H, W, 3]
-        multiview_images = images_pred.permute(0, 2, 3, 1)   
-        multiview_normals = normals_pred.permute(0, 2, 3, 1)
+        multiview_images = images_pred.permute(0, 2, 3, 1).to(reference_image.dtype)   
+        multiview_normals = normals_pred.permute(0, 2, 3, 1).to(reference_image.dtype)   
 
         azimuths = [0, 45, 90, 180, -90, -45]
         elevations = [0.0] * 6
@@ -2528,3 +2663,265 @@ class FlexiCubes_MVS:
             mesh = fc_trainer.get_mesh()
             
             return (mesh, )
+
+class Load_Unique3D_Custom_UNet:
+    checkpoints_dir = "checkpoints/Wuvin/Unique3D"
+    config_root_dir = "configs/Unique3D_configs"
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "pipe": ("DIFFUSERS_PIPE",),
+                "config_name": (["image2mvimage", "image2normal"],),
+            },
+        }
+    
+    RETURN_TYPES = (
+        "DIFFUSERS_PIPE",
+    )
+    RETURN_NAMES = (
+        "pipe",
+    )
+    FUNCTION = "load_diffusers_unet"
+    CATEGORY = "Comfy3D/Import|Export"
+    
+    def load_diffusers_unet(self, pipe, config_name):
+
+        from Unique3D.custum_3d_diffusion.trainings.config_classes import ExprimentConfig
+        from Unique3D.custum_3d_diffusion.custum_modules.unifield_processor import AttnConfig, ConfigurableUNet2DConditionModel
+        from Unique3D.custum_3d_diffusion.trainings.utils import load_config
+
+        cfg_path = os.path.join(ROOT_PATH, self.config_root_dir, config_name + ".yaml")
+        checkpoint_dir_path = os.path.join(ROOT_PATH, self.checkpoints_dir, config_name)
+        checkpoint_path = os.path.join(checkpoint_dir_path, "unet_state_dict.pth")
+
+        cfg: ExprimentConfig = load_config(ExprimentConfig, cfg_path)
+        if cfg.init_config.init_unet_path == "":
+            cfg.init_config.init_unet_path = checkpoint_dir_path
+        init_config: AttnConfig = load_config(AttnConfig, cfg.init_config)
+        configurable_unet = ConfigurableUNet2DConditionModel(init_config, WEIGHT_DTYPE)
+        configurable_unet.enable_xformers_memory_efficient_attention()
+
+        state_dict = torch.load(checkpoint_path)
+        configurable_unet.unet.load_state_dict(state_dict, strict=False)
+        # Move unet, vae and text_encoder to device and cast to weight_dtype
+        configurable_unet.unet.to(DEVICE, dtype=WEIGHT_DTYPE)
+
+        pipe.unet = configurable_unet.unet
+        return (pipe, )
+    
+class Unique3D_Diffusion_Model:
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "unique3d_pipe": ("DIFFUSERS_PIPE",),
+                "reference_image": ("IMAGE",),
+                "seed": ("INT", {"default": 1145, "min": 0, "max": 0xffffffffffffffff}),
+                "guidance_scale": ("FLOAT", {"default": 1.5, "min": 0.0, "step": 0.01}),
+                "num_inference_steps": ("INT", {"default": 30, "min": 1}),
+                "image_resolution": ([256, 512],),
+                "radius": ("FLOAT", {"default": 4.0, "min": 0.1, "step": 0.01}),
+                "preprocess_images":  ("BOOLEAN", {"default": True},),
+            },
+        }
+    
+    RETURN_TYPES = (
+        "IMAGE",
+        "ORBIT_CAMPOSES",   # [orbit radius, elevation, azimuth, orbit center X, orbit center Y, orbit center Z]
+    )
+    RETURN_NAMES = (
+        "multiviews",
+        "orbit_camposes",
+    )
+    FUNCTION = "run_model"
+    CATEGORY = "Comfy3D/Algorithm"
+    
+    @torch.no_grad()
+    def run_model(
+        self,
+        unique3d_pipe,
+        reference_image,    # Need to have white background
+        seed,
+        guidance_scale,
+        num_inference_steps,
+        image_resolution,
+        radius,
+        preprocess_images,
+    ):
+        from Unique3D.scripts.utils import simple_image_preprocess
+
+        pil_image_list = torch_imgs_to_pils(reference_image)
+        for i in range(len(pil_image_list)):
+            if preprocess_images:
+                pil_image_list[i] = simple_image_preprocess(pil_image_list[i])
+
+        pil_image_list = pils_rgba_to_rgb(pil_image_list, bkgd="WHITE")
+
+        generator = torch.Generator(device=unique3d_pipe.unet.device).manual_seed(seed)
+
+        image_pils = unique3d_pipe(
+            image=pil_image_list,
+            generator=generator,
+            guidance_scale=guidance_scale,
+            num_inference_steps=num_inference_steps,
+            width=image_resolution,
+            height=image_resolution,
+            height_cond=image_resolution,
+            width_cond=image_resolution,
+        ).images
+
+        # [N, H, W, 3]
+        multiview_images = pils_to_torch_imgs(image_pils, reference_image.device)
+
+        azimuths = [0, 90, 180, -90]
+        elevations = [0.0] * 4
+        radius = [radius] * 4
+        center = [0.0] * 4
+
+        orbit_camposes = [azimuths, elevations, radius, center, center, center]
+
+        return (multiview_images, orbit_camposes)
+
+class Fast_Normal_Maps_To_Mesh:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "front_side_back_normal_maps": ("IMAGE",),
+                "front_side_back_normal_masks": ("MASK",),
+            },
+        }
+
+    RETURN_TYPES = (
+        "MESH",
+    )
+    RETURN_NAMES = (
+        "mesh",
+    )
+    FUNCTION = "run_fast_recon"
+    CATEGORY = "Comfy3D/Algorithm"
+
+    def run_fast_recon(self, front_side_back_normal_maps, front_side_back_normal_masks):
+        pil_normal_list = torch_imgs_to_pils(front_side_back_normal_maps, front_side_back_normal_masks)
+        meshes = fast_geo(pil_normal_list[0], pil_normal_list[2], pil_normal_list[1])
+        vertices, faces, _ = from_py3d_mesh(meshes)
+
+        mesh = Mesh(v=vertices, f=faces, device=DEVICE)
+        return (mesh,)
+
+class ExplicitTarget_Mesh_Optimization:
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "mesh": ("MESH",),
+                "normal_maps": ("IMAGE",),
+                "normal_masks": ("MASK",),
+                "reconstruction_steps": ("INT", {"default": 200, "min": 1, "max": 0xffffffffffffffff}),
+                "coarse_reconstruct_resolution": ("INT", {"default": 512, "min": 128, "max": 8192}),
+                "loss_expansion_weight": ("FLOAT", {"default": 0.1, "min": 0.01, "step": 0.01}),
+                "refinement_steps": ("INT", {"default": 100, "min": 1, "max": 0xffffffffffffffff}),
+                "target_warmup_update_num": ("INT", {"default": 5, "min": 1, "max": 0xffffffffffffffff}),
+                "target_update_interval": ("INT", {"default": 20, "min": 1, "max": 0xffffffffffffffff}),
+            },
+            "optional": {
+                "normal_orbit_camera_poses": ("ORBIT_CAMPOSES",),    # [orbit radius, elevation, azimuth, orbit center X,  orbit center Y,  orbit center Z]
+            }
+        }
+
+    RETURN_TYPES = (
+        "MESH",
+    )
+    RETURN_NAMES = (
+        "mesh",
+    )
+    FUNCTION = "run_ET_mesh_optimization"
+    CATEGORY = "Comfy3D/Algorithm"
+
+    def run_ET_mesh_optimization(
+        self, 
+        mesh,
+        normal_maps, 
+        normal_masks,  
+        reconstruction_steps,
+        coarse_reconstruct_resolution,
+        loss_expansion_weight,
+        refinement_steps, 
+        target_warmup_update_num,
+        target_update_interval,
+        normal_orbit_camera_poses=None,
+    ):
+        #TODO For now only support four orthographic view with elevation equals zero
+        #azimuths, elevations, radius = normal_orbit_camera_poses[0], normal_orbit_camera_poses[1], normal_orbit_camera_poses[2]
+        pil_normal_list = torch_imgs_to_pils(normal_maps, normal_masks)
+        normal_stg1 = [img.resize((coarse_reconstruct_resolution, coarse_reconstruct_resolution)) for img in pil_normal_list]
+        with torch.inference_mode(False):
+            vertices, faces = reconstruct_stage1(normal_stg1, steps=reconstruction_steps, vertices=mesh.v, faces=mesh.f, loss_expansion_weight=loss_expansion_weight)
+
+            vertices, faces = run_mesh_refine(vertices, faces, pil_normal_list, steps=refinement_steps, update_normal_interval=target_update_interval, update_warmup=target_warmup_update_num, )
+
+            mesh = Mesh(v=vertices, f=faces, device=DEVICE)
+            return (mesh,)
+
+class ExplicitTarget_Color_Projection:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "mesh": ("MESH",),
+                "reference_images": ("IMAGE",), 
+                "reference_masks": ("MASK",),
+                "projection_resolution": ("INT", {"default": 1024, "min": 128, "max": 8192}),
+                "complete_unseen_rgb":  ("BOOLEAN", {"default": True},),
+            },
+            "optional": {
+                "reference_orbit_camera_poses": ("ORBIT_CAMPOSES",),    # [orbit radius, elevation, azimuth, orbit center X,  orbit center Y,  orbit center Z]
+            }
+        }
+
+    RETURN_TYPES = (
+        "MESH",
+    )
+    RETURN_NAMES = (
+        "mesh",
+    )
+    FUNCTION = "run_color_projection"
+    CATEGORY = "Comfy3D/Algorithm"
+
+    def run_color_projection(
+        self, 
+        mesh, 
+        reference_images, 
+        reference_masks,  
+        projection_resolution, 
+        complete_unseen_rgb,
+        reference_orbit_camera_poses=None,
+    ):
+        pil_image_list = torch_imgs_to_pils(reference_images, reference_masks)
+
+        meshes = to_py3d_mesh(mesh.v, mesh.f)
+
+        #TODO Convert camera format, currently only support elevation equal to zero
+        if reference_orbit_camera_poses is None:
+            img_num = len(reference_images)
+            interval = 360 / img_num
+            angle = 0
+            azimuths = []
+            for i in range(0, img_num):
+                azimuths.append(angle)
+                angle += interval
+        else:
+            azimuths = [360 + angle if angle < 0 else angle for angle in reference_orbit_camera_poses[0]]
+        cam_list = get_cameras_list(azimuths, DEVICE, focal=1)
+        
+        new_meshes = multiview_color_projection(meshes, pil_image_list, resolution=projection_resolution, device=DEVICE, complete_unseen=complete_unseen_rgb, confidence_threshold=0.2, cameras_list=cam_list)
+        vertices, faces, vertex_colors = from_py3d_mesh(new_meshes)
+        vertices = vertices / 2 * 1.35
+
+        mesh = Mesh(v=vertices, f=faces, vc=vertex_colors, device=DEVICE)
+        mesh.auto_normal()
+        return (mesh,)

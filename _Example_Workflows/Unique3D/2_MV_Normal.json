@@ -1,0 +1,560 @@
+{
+  "last_node_id": 30,
+  "last_link_id": 46,
+  "nodes": [
+    {
+      "id": 17,
+      "type": "[Comfy3D] Load Unique3D Custom UNet",
+      "pos": [
+        534,
+        161
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "pipe",
+          "type": "DIFFUSERS_PIPE",
+          "link": 21
+        }
+      ],
+      "outputs": [
+        {
+          "name": "pipe",
+          "type": "DIFFUSERS_PIPE",
+          "links": [
+            22
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Load Unique3D Custom UNet"
+      },
+      "widgets_values": [
+        "image2normal"
+      ]
+    },
+    {
+      "id": 1,
+      "type": "[Comfy3D] Load Diffusers Pipeline",
+      "pos": [
+        56,
+        161
+      ],
+      "size": {
+        "0": 430.03009033203125,
+        "1": 130
+      },
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "pipe",
+          "type": "DIFFUSERS_PIPE",
+          "links": [
+            21
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Load Diffusers Pipeline"
+      },
+      "widgets_values": [
+        "Unique3DImageCustomPipeline",
+        "Wuvin/Unique3D/image2normal",
+        "",
+        false
+      ]
+    },
+    {
+      "id": 3,
+      "type": "[Comfy3D] Set Diffusers Pipeline Scheduler",
+      "pos": [
+        892,
+        161
+      ],
+      "size": {
+        "0": 412.3726501464844,
+        "1": 58
+      },
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "pipe",
+          "type": "DIFFUSERS_PIPE",
+          "link": 22
+        }
+      ],
+      "outputs": [
+        {
+          "name": "pipe",
+          "type": "DIFFUSERS_PIPE",
+          "links": [
+            31
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Set Diffusers Pipeline Scheduler"
+      },
+      "widgets_values": [
+        "EulerAncestralDiscreteScheduler"
+      ]
+    },
+    {
+      "id": 20,
+      "type": "VHS_LoadImagesPath",
+      "pos": [
+        736,
+        322
+      ],
+      "size": [
+        226.8000030517578,
+        194
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            32
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [],
+          "shape": 3,
+          "slot_index": 1
+        },
+        {
+          "name": "INT",
+          "type": "INT",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VHS_LoadImagesPath"
+      },
+      "widgets_values": {
+        "directory": "C:\\Users\\reall\\Softwares\\ComfyUI_windows_portable\\ComfyUI\\output\\Unique3D\\Normal_Inputs",
+        "image_load_cap": 0,
+        "skip_first_images": 0,
+        "select_every_nth": 1,
+        "choose folder to upload": "image",
+        "videopreview": {
+          "hidden": false,
+          "paused": false,
+          "params": {
+            "frame_load_cap": 0,
+            "skip_first_images": 0,
+            "filename": "C:\\Users\\reall\\Softwares\\ComfyUI_windows_portable\\ComfyUI\\output\\Unique3D\\Normal_Inputs",
+            "type": "path",
+            "format": "folder",
+            "select_every_nth": 1
+          }
+        }
+      }
+    },
+    {
+      "id": 23,
+      "type": "ImageScale",
+      "pos": [
+        1022,
+        322
+      ],
+      "size": {
+        "0": 315,
+        "1": 130
+      },
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 32
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            33
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ImageScale"
+      },
+      "widgets_values": [
+        "lanczos",
+        512,
+        512,
+        "disabled"
+      ]
+    },
+    {
+      "id": 21,
+      "type": "[Comfy3D] Unique3D Diffusion Model",
+      "pos": [
+        1397,
+        254
+      ],
+      "size": {
+        "0": 380.4000244140625,
+        "1": 222
+      },
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "unique3d_pipe",
+          "type": "DIFFUSERS_PIPE",
+          "link": 31
+        },
+        {
+          "name": "reference_image",
+          "type": "IMAGE",
+          "link": 33
+        }
+      ],
+      "outputs": [
+        {
+          "name": "multiviews",
+          "type": "IMAGE",
+          "links": [
+            35
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "orbit_camposes",
+          "type": "ORBIT_CAMPOSES",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Unique3D Diffusion Model"
+      },
+      "widgets_values": [
+        1145,
+        "fixed",
+        1.5,
+        30,
+        512,
+        4,
+        false
+      ]
+    },
+    {
+      "id": 24,
+      "type": "UpscaleModelLoader",
+      "pos": [
+        1433,
+        105
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "UPSCALE_MODEL",
+          "type": "UPSCALE_MODEL",
+          "links": [
+            34
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "UpscaleModelLoader"
+      },
+      "widgets_values": [
+        "realesrganX4plus_v1.pt"
+      ]
+    },
+    {
+      "id": 26,
+      "type": "[Comfy3D] Rotate Normal Maps Horizontally",
+      "pos": [
+        2427,
+        230
+      ],
+      "size": {
+        "0": 315,
+        "1": 78
+      },
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "normal_maps",
+          "type": "IMAGE",
+          "link": 44
+        },
+        {
+          "name": "normal_masks",
+          "type": "MASK",
+          "link": 46
+        }
+      ],
+      "outputs": [
+        {
+          "name": "normal_maps",
+          "type": "IMAGE",
+          "links": [
+            38
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Rotate Normal Maps Horizontally"
+      },
+      "widgets_values": [
+        true
+      ]
+    },
+    {
+      "id": 19,
+      "type": "SaveImage",
+      "pos": [
+        2770,
+        230
+      ],
+      "size": {
+        "0": 315,
+        "1": 270
+      },
+      "flags": {},
+      "order": 10,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 38
+        }
+      ],
+      "properties": {},
+      "widgets_values": [
+        "Unique3D/Normals/normal"
+      ]
+    },
+    {
+      "id": 25,
+      "type": "ImageUpscaleWithModel",
+      "pos": [
+        1821,
+        232
+      ],
+      "size": {
+        "0": 241.79998779296875,
+        "1": 46
+      },
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "upscale_model",
+          "type": "UPSCALE_MODEL",
+          "link": 34
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 35
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            44,
+            45
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ImageUpscaleWithModel"
+      }
+    },
+    {
+      "id": 30,
+      "type": "[Comfy3D] Get Masks From Normal Maps",
+      "pos": [
+        2093,
+        299
+      ],
+      "size": {
+        "0": 304.79998779296875,
+        "1": 26
+      },
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "normal_maps",
+          "type": "IMAGE",
+          "link": 45
+        }
+      ],
+      "outputs": [
+        {
+          "name": "normal_masks",
+          "type": "MASK",
+          "links": [
+            46
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Get Masks From Normal Maps"
+      }
+    }
+  ],
+  "links": [
+    [
+      21,
+      1,
+      0,
+      17,
+      0,
+      "DIFFUSERS_PIPE"
+    ],
+    [
+      22,
+      17,
+      0,
+      3,
+      0,
+      "DIFFUSERS_PIPE"
+    ],
+    [
+      31,
+      3,
+      0,
+      21,
+      0,
+      "DIFFUSERS_PIPE"
+    ],
+    [
+      32,
+      20,
+      0,
+      23,
+      0,
+      "IMAGE"
+    ],
+    [
+      33,
+      23,
+      0,
+      21,
+      1,
+      "IMAGE"
+    ],
+    [
+      34,
+      24,
+      0,
+      25,
+      0,
+      "UPSCALE_MODEL"
+    ],
+    [
+      35,
+      21,
+      0,
+      25,
+      1,
+      "IMAGE"
+    ],
+    [
+      38,
+      26,
+      0,
+      19,
+      0,
+      "IMAGE"
+    ],
+    [
+      44,
+      25,
+      0,
+      26,
+      0,
+      "IMAGE"
+    ],
+    [
+      45,
+      25,
+      0,
+      30,
+      0,
+      "IMAGE"
+    ],
+    [
+      46,
+      30,
+      0,
+      26,
+      1,
+      "MASK"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.8264462809917356,
+      "offset": [
+        -1532.094207035033,
+        229.55273653768023
+      ]
+    }
+  },
+  "version": 0.4
+}

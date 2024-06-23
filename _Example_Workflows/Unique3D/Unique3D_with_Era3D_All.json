@@ -1,0 +1,1479 @@
+{
+  "last_node_id": 345,
+  "last_link_id": 694,
+  "nodes": [
+    {
+      "id": 330,
+      "type": "Reroute",
+      "pos": [
+        4580,
+        -570
+      ],
+      "size": [
+        75,
+        26
+      ],
+      "flags": {},
+      "order": 19,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "",
+          "type": "*",
+          "link": 653
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "MASK",
+          "links": [
+            654
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "showOutputText": false,
+        "horizontal": false
+      }
+    },
+    {
+      "id": 291,
+      "type": "[Comfy3D] ExplicitTarget Color Projection",
+      "pos": [
+        4830,
+        -1060
+      ],
+      "size": {
+        "0": 418.1999816894531,
+        "1": 142
+      },
+      "flags": {},
+      "order": 24,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 601
+        },
+        {
+          "name": "reference_images",
+          "type": "IMAGE",
+          "link": 684
+        },
+        {
+          "name": "reference_masks",
+          "type": "MASK",
+          "link": 654
+        },
+        {
+          "name": "reference_orbit_camera_poses",
+          "type": "ORBIT_CAMPOSES",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "links": [
+            608
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] ExplicitTarget Color Projection"
+      },
+      "widgets_values": [
+        1024,
+        true
+      ]
+    },
+    {
+      "id": 297,
+      "type": "[Comfy3D] Preview 3DMesh",
+      "pos": [
+        5670,
+        -1060
+      ],
+      "size": [
+        600,
+        500
+      ],
+      "flags": {},
+      "order": 28,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh_file_path",
+          "type": "STRING",
+          "link": 609,
+          "widget": {
+            "name": "mesh_file_path"
+          }
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Preview 3DMesh"
+      },
+      "widgets_values": [
+        "",
+        null
+      ]
+    },
+    {
+      "id": 270,
+      "type": "LoadImage",
+      "pos": [
+        -1820.81851174679,
+        -584.0096719221132
+      ],
+      "size": {
+        "0": 315,
+        "1": 314.0000305175781
+      },
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            676
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            579
+          ],
+          "shape": 3,
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "PriestCat.png",
+        "image"
+      ]
+    },
+    {
+      "id": 335,
+      "type": "[Comfy3D] Load Diffusers Pipeline",
+      "pos": [
+        -1063.2975797406154,
+        -730.8013992433897
+      ],
+      "size": {
+        "0": 383.9324645996094,
+        "1": 130
+      },
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "pipe",
+          "type": "DIFFUSERS_PIPE",
+          "links": [
+            660
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Load Diffusers Pipeline"
+      },
+      "widgets_values": [
+        "Era3DPipeline",
+        "pengHTYX/MacLab-Era3D-512-6view",
+        "",
+        true
+      ]
+    },
+    {
+      "id": 272,
+      "type": "InvertMask",
+      "pos": [
+        -1432.76903183373,
+        -344.23133437720605
+      ],
+      "size": {
+        "0": 210,
+        "1": 26
+      },
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mask",
+          "type": "MASK",
+          "link": 579
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            677
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "InvertMask"
+      }
+    },
+    {
+      "id": 336,
+      "type": "[Comfy3D] Era3D Diffusion Model",
+      "pos": [
+        -643.2975797406153,
+        -610.8013992433897
+      ],
+      "size": {
+        "0": 418.1999816894531,
+        "1": 242
+      },
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "era3d_pipe",
+          "type": "DIFFUSERS_PIPE",
+          "link": 660
+        },
+        {
+          "name": "reference_image",
+          "type": "IMAGE",
+          "link": 676
+        },
+        {
+          "name": "reference_mask",
+          "type": "MASK",
+          "link": 677
+        }
+      ],
+      "outputs": [
+        {
+          "name": "multiviews",
+          "type": "IMAGE",
+          "links": [
+            661
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "multiview_normals",
+          "type": "IMAGE",
+          "links": [
+            679
+          ],
+          "shape": 3,
+          "slot_index": 1
+        },
+        {
+          "name": "orbit_camposes",
+          "type": "ORBIT_CAMPOSES",
+          "links": [],
+          "shape": 3,
+          "slot_index": 2
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Era3D Diffusion Model"
+      },
+      "widgets_values": [
+        420,
+        600,
+        "fixed",
+        3,
+        40,
+        1,
+        4
+      ]
+    },
+    {
+      "id": 295,
+      "type": "Reroute",
+      "pos": [
+        3509,
+        -574
+      ],
+      "size": [
+        75,
+        26
+      ],
+      "flags": {},
+      "order": 16,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "",
+          "type": "*",
+          "link": 691
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "MASK",
+          "links": [
+            600,
+            653
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "showOutputText": false,
+        "horizontal": false
+      }
+    },
+    {
+      "id": 274,
+      "type": "[Comfy3D] Fast Normal Maps To Mesh",
+      "pos": [
+        3219,
+        -779
+      ],
+      "size": {
+        "0": 284.5090026855469,
+        "1": 46
+      },
+      "flags": {},
+      "order": 15,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "front_side_back_normal_maps",
+          "type": "IMAGE",
+          "link": 648
+        },
+        {
+          "name": "front_side_back_normal_masks",
+          "type": "MASK",
+          "link": 689
+        }
+      ],
+      "outputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "links": [
+            593,
+            598
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Fast Normal Maps To Mesh"
+      }
+    },
+    {
+      "id": 286,
+      "type": "[Comfy3D] Preview 3DMesh",
+      "pos": [
+        3169,
+        -287
+      ],
+      "size": [
+        600,
+        500
+      ],
+      "flags": {},
+      "order": 20,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh_file_path",
+          "type": "STRING",
+          "link": 594,
+          "widget": {
+            "name": "mesh_file_path"
+          }
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Preview 3DMesh"
+      },
+      "widgets_values": [
+        "",
+        null
+      ]
+    },
+    {
+      "id": 298,
+      "type": "[Comfy3D] Fast Clean Mesh",
+      "pos": [
+        4233,
+        -919
+      ],
+      "size": {
+        "0": 315,
+        "1": 130
+      },
+      "flags": {},
+      "order": 22,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 610
+        }
+      ],
+      "outputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "links": [
+            601,
+            611
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Fast Clean Mesh"
+      },
+      "widgets_values": [
+        true,
+        1,
+        true,
+        0.25
+      ]
+    },
+    {
+      "id": 290,
+      "type": "[Comfy3D] ExplicitTarget Mesh Optimization",
+      "pos": [
+        3652,
+        -920
+      ],
+      "size": {
+        "0": 380.4000244140625,
+        "1": 238
+      },
+      "flags": {},
+      "order": 18,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 598
+        },
+        {
+          "name": "normal_maps",
+          "type": "IMAGE",
+          "link": 649
+        },
+        {
+          "name": "normal_masks",
+          "type": "MASK",
+          "link": 600
+        },
+        {
+          "name": "normal_orbit_camera_poses",
+          "type": "ORBIT_CAMPOSES",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "links": [
+            596,
+            610
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] ExplicitTarget Mesh Optimization"
+      },
+      "widgets_values": [
+        200,
+        512,
+        0.1,
+        100,
+        5,
+        20
+      ]
+    },
+    {
+      "id": 327,
+      "type": "Reroute",
+      "pos": [
+        2387,
+        -900
+      ],
+      "size": [
+        75,
+        26
+      ],
+      "flags": {},
+      "order": 13,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "",
+          "type": "*",
+          "link": 694
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "IMAGE",
+          "links": [
+            648,
+            649,
+            690
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "showOutputText": false,
+        "horizontal": false
+      }
+    },
+    {
+      "id": 276,
+      "type": "[Comfy3D] Get Masks From Normal Maps",
+      "pos": [
+        2856,
+        -701
+      ],
+      "size": {
+        "0": 304.79998779296875,
+        "1": 26
+      },
+      "flags": {},
+      "order": 14,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "normal_maps",
+          "type": "IMAGE",
+          "link": 690
+        }
+      ],
+      "outputs": [
+        {
+          "name": "normal_masks",
+          "type": "MASK",
+          "links": [
+            689,
+            691
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Get Masks From Normal Maps"
+      }
+    },
+    {
+      "id": 306,
+      "type": "SaveImage",
+      "pos": [
+        203,
+        -980
+      ],
+      "size": {
+        "0": 303.7020263671875,
+        "1": 270
+      },
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 665
+        }
+      ],
+      "properties": {},
+      "widgets_values": [
+        "Unique3D_Era3D\\RGB\\rgb"
+      ]
+    },
+    {
+      "id": 337,
+      "type": "GetImagesFromBatchIndexed",
+      "pos": [
+        -122,
+        -623
+      ],
+      "size": {
+        "0": 266.3033447265625,
+        "1": 79.16864776611328
+      },
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 661
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            665,
+            666
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "GetImagesFromBatchIndexed"
+      },
+      "widgets_values": [
+        "0, 2, 3, 4"
+      ]
+    },
+    {
+      "id": 344,
+      "type": "GetImagesFromBatchIndexed",
+      "pos": [
+        -123,
+        -480
+      ],
+      "size": {
+        "0": 266.3033447265625,
+        "1": 79.16864776611328
+      },
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 679
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            680
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "GetImagesFromBatchIndexed"
+      },
+      "widgets_values": [
+        "0, 2, 3, 4"
+      ]
+    },
+    {
+      "id": 194,
+      "type": "UpscaleModelLoader",
+      "pos": [
+        704,
+        -946
+      ],
+      "size": {
+        "0": 394.51678466796875,
+        "1": 58
+      },
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "UPSCALE_MODEL",
+          "type": "UPSCALE_MODEL",
+          "links": [
+            547,
+            672
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "title": "Load Upscale Model [Var]",
+      "properties": {
+        "Node name for S&R": "UpscaleModelLoader"
+      },
+      "widgets_values": [
+        "realesrganX4plus_v1.pt"
+      ]
+    },
+    {
+      "id": 324,
+      "type": "Reroute",
+      "pos": [
+        2384,
+        -952
+      ],
+      "size": [
+        75,
+        26
+      ],
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "",
+          "type": "*",
+          "link": 640
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "IMAGE",
+          "links": [
+            684
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "showOutputText": false,
+        "horizontal": false
+      }
+    },
+    {
+      "id": 289,
+      "type": "[Comfy3D] Preview 3DMesh",
+      "pos": [
+        3856,
+        -286
+      ],
+      "size": [
+        600,
+        500
+      ],
+      "flags": {},
+      "order": 23,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh_file_path",
+          "type": "STRING",
+          "link": 597,
+          "widget": {
+            "name": "mesh_file_path"
+          }
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Preview 3DMesh"
+      },
+      "widgets_values": [
+        "",
+        null
+      ]
+    },
+    {
+      "id": 300,
+      "type": "[Comfy3D] Preview 3DMesh",
+      "pos": [
+        4551,
+        -295
+      ],
+      "size": [
+        600,
+        500
+      ],
+      "flags": {},
+      "order": 27,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh_file_path",
+          "type": "STRING",
+          "link": 612,
+          "widget": {
+            "name": "mesh_file_path"
+          }
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Preview 3DMesh"
+      },
+      "widgets_values": [
+        "",
+        null
+      ]
+    },
+    {
+      "id": 285,
+      "type": "[Comfy3D] Save 3D Mesh",
+      "pos": [
+        3211,
+        -418
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 17,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 593
+        }
+      ],
+      "outputs": [
+        {
+          "name": "save_path",
+          "type": "STRING",
+          "links": [
+            594
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Save 3D Mesh"
+      },
+      "widgets_values": [
+        "Unique3D_Era3D\\Mesh_Gen_0\\mesh.obj"
+      ]
+    },
+    {
+      "id": 288,
+      "type": "[Comfy3D] Save 3D Mesh",
+      "pos": [
+        3869,
+        -425
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 21,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 596
+        }
+      ],
+      "outputs": [
+        {
+          "name": "save_path",
+          "type": "STRING",
+          "links": [
+            597
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Save 3D Mesh"
+      },
+      "widgets_values": [
+        "Unique3D_Era3D\\Mesh_Gen_1\\mesh.obj"
+      ]
+    },
+    {
+      "id": 299,
+      "type": "[Comfy3D] Save 3D Mesh",
+      "pos": [
+        4557,
+        -430
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 25,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 611
+        }
+      ],
+      "outputs": [
+        {
+          "name": "save_path",
+          "type": "STRING",
+          "links": [
+            612
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Save 3D Mesh"
+      },
+      "widgets_values": [
+        "Unique3D_Era3D\\Mesh_Gen_2\\mesh.obj"
+      ]
+    },
+    {
+      "id": 296,
+      "type": "[Comfy3D] Save 3D Mesh",
+      "pos": [
+        5310,
+        -1060
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 26,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 608
+        }
+      ],
+      "outputs": [
+        {
+          "name": "save_path",
+          "type": "STRING",
+          "links": [
+            609
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Save 3D Mesh"
+      },
+      "widgets_values": [
+        "Unique3D_Era3D\\Mesh_Gen_3\\mesh.obj"
+      ]
+    },
+    {
+      "id": 340,
+      "type": "ImageUpscaleWithModel",
+      "pos": [
+        1189,
+        -515
+      ],
+      "size": {
+        "0": 241.79998779296875,
+        "1": 46
+      },
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "upscale_model",
+          "type": "UPSCALE_MODEL",
+          "link": 672
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 680
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            693,
+            694
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ImageUpscaleWithModel"
+      }
+    },
+    {
+      "id": 338,
+      "type": "SaveImage",
+      "pos": [
+        1870,
+        -518
+      ],
+      "size": {
+        "0": 410.9214172363281,
+        "1": 270
+      },
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 693
+        }
+      ],
+      "properties": {},
+      "widgets_values": [
+        "Unique3D_Era3D/Normals/normal"
+      ]
+    },
+    {
+      "id": 257,
+      "type": "ImageUpscaleWithModel",
+      "pos": [
+        1192,
+        -927
+      ],
+      "size": {
+        "0": 226.8000030517578,
+        "1": 46
+      },
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "upscale_model",
+          "type": "UPSCALE_MODEL",
+          "link": 547
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 666
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            549,
+            640
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ImageUpscaleWithModel"
+      }
+    },
+    {
+      "id": 195,
+      "type": "SaveImage",
+      "pos": [
+        1467,
+        -857
+      ],
+      "size": [
+        307.4297732548023,
+        270
+      ],
+      "flags": {},
+      "order": 10,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 549
+        }
+      ],
+      "title": "Save Image [Sys] [Imgs_Out]",
+      "properties": {
+        "ttNbgOverride": {
+          "color": "#223",
+          "bgcolor": "#335",
+          "groupcolor": "#88A"
+        }
+      },
+      "widgets_values": [
+        "_Era3D\\Upscales\\rgb_highres"
+      ]
+    }
+  ],
+  "links": [
+    [
+      547,
+      194,
+      0,
+      257,
+      0,
+      "UPSCALE_MODEL"
+    ],
+    [
+      549,
+      257,
+      0,
+      195,
+      0,
+      "IMAGE"
+    ],
+    [
+      579,
+      270,
+      1,
+      272,
+      0,
+      "MASK"
+    ],
+    [
+      593,
+      274,
+      0,
+      285,
+      0,
+      "MESH"
+    ],
+    [
+      594,
+      285,
+      0,
+      286,
+      0,
+      "STRING"
+    ],
+    [
+      596,
+      290,
+      0,
+      288,
+      0,
+      "MESH"
+    ],
+    [
+      597,
+      288,
+      0,
+      289,
+      0,
+      "STRING"
+    ],
+    [
+      598,
+      274,
+      0,
+      290,
+      0,
+      "MESH"
+    ],
+    [
+      600,
+      295,
+      0,
+      290,
+      2,
+      "MASK"
+    ],
+    [
+      601,
+      298,
+      0,
+      291,
+      0,
+      "MESH"
+    ],
+    [
+      608,
+      291,
+      0,
+      296,
+      0,
+      "MESH"
+    ],
+    [
+      609,
+      296,
+      0,
+      297,
+      0,
+      "STRING"
+    ],
+    [
+      610,
+      290,
+      0,
+      298,
+      0,
+      "MESH"
+    ],
+    [
+      611,
+      298,
+      0,
+      299,
+      0,
+      "MESH"
+    ],
+    [
+      612,
+      299,
+      0,
+      300,
+      0,
+      "STRING"
+    ],
+    [
+      640,
+      257,
+      0,
+      324,
+      0,
+      "*"
+    ],
+    [
+      648,
+      327,
+      0,
+      274,
+      0,
+      "IMAGE"
+    ],
+    [
+      649,
+      327,
+      0,
+      290,
+      1,
+      "IMAGE"
+    ],
+    [
+      653,
+      295,
+      0,
+      330,
+      0,
+      "*"
+    ],
+    [
+      654,
+      330,
+      0,
+      291,
+      2,
+      "MASK"
+    ],
+    [
+      660,
+      335,
+      0,
+      336,
+      0,
+      "DIFFUSERS_PIPE"
+    ],
+    [
+      661,
+      336,
+      0,
+      337,
+      0,
+      "IMAGE"
+    ],
+    [
+      665,
+      337,
+      0,
+      306,
+      0,
+      "IMAGE"
+    ],
+    [
+      666,
+      337,
+      0,
+      257,
+      1,
+      "IMAGE"
+    ],
+    [
+      672,
+      194,
+      0,
+      340,
+      0,
+      "UPSCALE_MODEL"
+    ],
+    [
+      676,
+      270,
+      0,
+      336,
+      1,
+      "IMAGE"
+    ],
+    [
+      677,
+      272,
+      0,
+      336,
+      2,
+      "MASK"
+    ],
+    [
+      679,
+      336,
+      1,
+      344,
+      0,
+      "IMAGE"
+    ],
+    [
+      680,
+      344,
+      0,
+      340,
+      1,
+      "IMAGE"
+    ],
+    [
+      684,
+      324,
+      0,
+      291,
+      1,
+      "IMAGE"
+    ],
+    [
+      689,
+      276,
+      0,
+      274,
+      1,
+      "MASK"
+    ],
+    [
+      690,
+      327,
+      0,
+      276,
+      0,
+      "IMAGE"
+    ],
+    [
+      691,
+      276,
+      0,
+      295,
+      0,
+      "*"
+    ],
+    [
+      693,
+      340,
+      0,
+      338,
+      0,
+      "IMAGE"
+    ],
+    [
+      694,
+      340,
+      0,
+      327,
+      0,
+      "*"
+    ]
+  ],
+  "groups": [
+    {
+      "title": "Stage_2: Upscale",
+      "bounding": [
+        628,
+        -1071,
+        2027,
+        965
+      ],
+      "color": "#3f789e",
+      "font_size": 48
+    },
+    {
+      "title": "Stage_1: Multi-Views Images & Normal Maps Generation From Single Image",
+      "bounding": [
+        -1107,
+        -1078,
+        1685,
+        881
+      ],
+      "color": "#3f789e",
+      "font_size": 48
+    },
+    {
+      "title": "Stage_3: Mesh & RGB Texture Reconstruction from Multi-View Images & Normal Maps",
+      "bounding": [
+        2753,
+        -1233,
+        3588,
+        1541
+      ],
+      "color": "#3f789e",
+      "font_size": 48
+    },
+    {
+      "title": "Single RGBA Input Image",
+      "bounding": [
+        -1874,
+        -798,
+        719,
+        581
+      ],
+      "color": "#8AA",
+      "font_size": 48
+    }
+  ],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.5054470284993436,
+      "offset": [
+        -3322.963725661908,
+        1577.7134425968748
+      ]
+    }
+  },
+  "version": 0.4
+}
