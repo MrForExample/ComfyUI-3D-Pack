@@ -51,9 +51,11 @@ window.onresize = function () {
 
 };
 
+const clock = new THREE.Clock();
 
 var lastTimestamp = "";
 var needUpdate = false;
+let mixer;
 
 function frameUpdate() {
     
@@ -62,6 +64,10 @@ function frameUpdate() {
     if (timestamp == lastTimestamp){
         if (needUpdate){
             controls.update();
+            if (mixer !== undefined) {
+                const delta = clock.getDelta();
+                mixer.update(delta);
+            }
             renderer.render( scene, camera );
         }
         requestAnimationFrame( frameUpdate );
@@ -138,6 +144,10 @@ async function main(filepath="") {
                 model.scale.set( 5, 5, 5 );
 
                 scene.add( model );
+                mixer = new THREE.AnimationMixer(model);
+                gltf.animations.forEach((clip) => {
+                    mixer.clipAction(clip).play();
+                });
             
             }, onProgress, onError );
 
