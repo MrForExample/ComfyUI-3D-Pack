@@ -5,4 +5,3 @@ _Pre_Builds/_Wheels_win_py312_cu121/pointnet2_ops-3.0.0-cp312-cp312-win_amd64.wh
 _Pre_Builds/_Wheels_win_py312_cu121/pytorch3d-0.7.6-cp312-cp312-win_amd64.whl
 _Pre_Builds/_Wheels_win_py312_cu121/simple_knn-0.0.0-cp312-cp312-win_amd64.whl
 _Pre_Builds/_Wheels_win_py312_cu121/torch_scatter-2.1.2-cp312-cp312-win_amd64.whl
-_Pre_Builds/_Wheels_win_py312_cu121/torchmcubes-0.1.0-cp312-cp312-win_amd64.whl

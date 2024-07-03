@@ -173,7 +173,7 @@ class TSR(BaseModule):
                 )["density_act"]
             v_pos, t_pos_idx = self.isosurface_helper(-(density - threshold))
             v_pos = scale_tensor(
-                v_pos,
+                torch.from_numpy(v_pos).float().to(scene_codes.device),
                 self.isosurface_helper.points_range,
                 (-self.renderer.cfg.radius, self.renderer.cfg.radius),
             )
@@ -185,7 +185,7 @@ class TSR(BaseModule):
                 )["color"]
             mesh = trimesh.Trimesh(
                 vertices=v_pos.cpu().numpy(),
-                faces=t_pos_idx.cpu().numpy(),
+                faces=t_pos_idx,
                 vertex_colors=color.cpu().numpy(),
             )
             meshes.append(mesh)

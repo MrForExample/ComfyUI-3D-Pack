@@ -1,9 +1,10 @@
 from typing import Callable, Optional, Tuple
 
-import numpy as np
 import torch
 import torch.nn as nn
-from torchmcubes import marching_cubes
+from mcubes import marching_cubes
+
+from mesh_processer.mesh_utils import switch_vector_axis
 
 
 class IsosurfaceHelper(nn.Module):
@@ -42,7 +43,8 @@ class MarchingCubeHelper(IsosurfaceHelper):
         level: torch.FloatTensor,
     ) -> Tuple[torch.FloatTensor, torch.LongTensor]:
         level = -level.view(self.resolution, self.resolution, self.resolution)
-        v_pos, t_pos_idx = self.mc_func(level.detach(), 0.0)
+        v_pos, t_pos_idx = self.mc_func(level.detach().cpu().numpy(), 0.0)
+        v_pos = switch_vector_axis(v_pos, (2, 1, 0))
         v_pos = v_pos[..., [2, 1, 0]]
         v_pos = v_pos / (self.resolution - 1.0)
         return v_pos, t_pos_idx

@@ -15,7 +15,7 @@
 import numpy as np
 import torch
 import torch.nn as nn
-import mcubes
+from mcubes import marching_cubes
 import nvdiffrast.torch as dr
 from einops import rearrange, repeat
 
@@ -175,7 +175,7 @@ class InstantNeRF(nn.Module):
             grid_size=mesh_resolution,
         )
         
-        vertices, faces = mcubes.marching_cubes(
+        vertices, faces = marching_cubes(
             grid_out['sigma'].squeeze(0).squeeze(-1).cpu().numpy(), 
             mesh_threshold,
         )

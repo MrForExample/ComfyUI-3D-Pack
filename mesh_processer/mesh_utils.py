@@ -406,18 +406,18 @@ def get_target_axis_and_scale(axis_string, scale_value=1.0):
         
     return target_axis, target_scale, coordinate_invert_count
 
-def switch_vector_axis(vector3_tensor, target_axis):
+def switch_vector_axis(vector3s, target_axis):
     """
     Example:
-        vector3_tensor = torch.tensor([[1, 2, 3], [3, 2, 1], [2, 3, 1]])  # shape (N, 3)
+        vector3s = torch.tensor([[1, 2, 3], [3, 2, 1], [2, 3, 1]])  # shape (N, 3)
 
         target_axis = (2, 0, 1) # or [2, 0, 1]
-        vector3_tensor[:, [0, 1, 2]] = vector3_tensor[:, target_axis]
+        vector3s[:, [0, 1, 2]] = vector3s[:, target_axis]
         
         # Result: tensor([[3, 1, 2], [1, 3, 2], [1, 2, 3]])
     """
-    vector3_tensor[:, [0, 1, 2]] = vector3_tensor[:, target_axis]
-    return vector3_tensor
+    vector3s[:, [0, 1, 2]] = vector3s[:, target_axis]
+    return vector3s
 
 def switch_ply_axis_and_scale(plydata, target_axis, target_scale, coordinate_invert_count):
     """
@@ -462,7 +462,7 @@ def switch_mesh_axis_and_scale(mesh, target_axis, target_scale, flip_normal=Fals
 
 
 def marching_cubes_density_to_mesh(get_density_func, grid_size=256, S=128, density_thresh=10, decimate_target=5e4):
-    import mcubes
+    from mcubes import marching_cubes
     from kiui.mesh_utils import clean_mesh, decimate_mesh
     
     
@@ -482,7 +482,7 @@ def marching_cubes_density_to_mesh(get_density_func, grid_size=256, S=128, densi
 
     print(f'[INFO] marching cubes thresh: {density_thresh} ({sigmas.min()} ~ {sigmas.max()})')
 
-    vertices, triangles = mcubes.marching_cubes(sigmas, density_thresh)
+    vertices, triangles = marching_cubes(sigmas, density_thresh)
     vertices = vertices / (grid_size - 1.0) * 2 - 1
     
     # clean
