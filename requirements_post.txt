@@ -1,5 +1,5 @@
 # local
-./tgs/models/snowflake/pointnet2_ops_lib
+./Gen_3D_Modules/TriplaneGaussian/models/snowflake/pointnet2_ops_lib
 ./simple-knn
 
 # remote

@@ -780,7 +780,7 @@
     },
     {
       "id": 47,
-      "type": "[Comfy3D] Gaussian Splatting",
+      "type": "[Comfy3D] Gaussian Splatting 3D",
       "pos": [
         1415,
         52
@@ -838,7 +838,7 @@
         }
       ],
       "properties": {
-        "Node name for S&R": "[Comfy3D] Gaussian Splatting"
+        "Node name for S&R": "[Comfy3D] Gaussian Splatting 3D"
       },
       "widgets_values": [
         49.1,

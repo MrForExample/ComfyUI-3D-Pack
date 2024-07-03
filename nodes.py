@@ -1,6 +1,4 @@
 import os
-import sys
-import re
 import math
 import copy
 from enum import Enum
@@ -45,35 +43,36 @@ from .mesh_processer.mesh_utils import (
     marching_cubes_density_to_mesh,
     color_func_to_albedo,
 )
-from .algorithms.main_3DGS import GaussianSplatting, GaussianSplattingCameraController, GSParams
-from .algorithms.main_3DGS_renderer import GaussianSplattingRenderer
-from .algorithms.diff_mesh import DiffMesh, DiffMeshCameraController
-from .algorithms.diff_mesh import DiffRastRenderer
-from .algorithms.dmtet import DMTetMesh
-from .algorithms.triplane_gaussian_transformers import TGS
-from .algorithms.large_multiview_gaussian_model import LGM
 from .algorithms.nerf_marching_cubes_converter import GSConverterNeRFMarchingCubes
+# TODO remove: NeuS, DMTet
 from .algorithms.NeuS_runner import NeuSParams, NeuSRunner
-from .algorithms.convolutional_reconstruction_model import CRMSampler
-from .algorithms.Instant_NGP import InstantNGP
-from .algorithms.flexicubes_trainer import FlexiCubesTrainer
+from .algorithms.dmtet import DMTetMesh
 
-from .tgs.utils.config import ExperimentConfig, load_config as load_config_tgs
-from .tgs.data import CustomImageOrbitDataset
-from .tgs.utils.misc import todevice, get_device
-from .lgm.core.options import config_defaults
-from .lgm.mvdream.pipeline_mvdream import MVDreamPipeline
-from .mvdiffusion.pipelines.pipeline_mvdiffusion_image import MVDiffusionImagePipeline
-from .mvdiffusion.data.single_image_dataset import SingleImageDataset as MVSingleImageDataset
-from .mvdiffusion.utils.misc import load_config as load_config_wonder3d
-from .tsr.system import TSR
-from .crm.model.crm.model import CRM
-from .zero123plus.pipeline import Zero123PlusPipeline
-from .instant_mesh.utils.camera_util import oribt_camera_poses_to_input_cameras
-from .era3d.mvdiffusion.pipelines.pipeline_mvdiffusion_unclip import StableUnCLIPImg2ImgPipeline
-from .era3d.mvdiffusion.data.single_image_dataset import SingleImageDataset as Era3DSingleImageDataset
-from .era3d.utils.misc import load_config as load_config_era3d
+from FlexiCubes.flexicubes_trainer import FlexiCubesTrainer
+from DiffRastMesh.diff_mesh import DiffMesh, DiffMeshCameraController
+from DiffRastMesh.diff_mesh import DiffRastRenderer
+from GaussianSplatting.main_3DGS import GaussianSplatting3D, GaussianSplattingCameraController, GSParams
+from GaussianSplatting.main_3DGS_renderer import GaussianSplattingRenderer
+from NeRF.Instant_NGP import InstantNGP
 
+from TriplaneGaussian.triplane_gaussian_transformers import TGS
+from TriplaneGaussian.utils.config import ExperimentConfig, load_config as load_config_tgs
+from TriplaneGaussian.data import CustomImageOrbitDataset
+from TriplaneGaussian.utils.misc import todevice, get_device
+from LGM.core.options import config_defaults
+from LGM.mvdream.pipeline_mvdream import MVDreamPipeline
+from LGM.large_multiview_gaussian_model import LargeMultiviewGaussianModel
+from TripoSR.system import TSR
+from InstantMesh.utils.camera_util import oribt_camera_poses_to_input_cameras
+from CRM.model.crm.model import ConvolutionalReconstructionModel
+from CRM.model.crm.sampler import CRMSampler
+from Wonder3D.pipelines.pipeline_mvdiffusion_image import MVDiffusionImagePipeline
+from Wonder3D.data.single_image_dataset import SingleImageDataset as MVSingleImageDataset
+from Wonder3D.utils.misc import load_config as load_config_wonder3d
+from Zero123Plus.pipeline import Zero123PlusPipeline
+from Era3D.mvdiffusion.pipelines.pipeline_mvdiffusion_unclip import StableUnCLIPImg2ImgPipeline
+from Era3D.mvdiffusion.data.single_image_dataset import SingleImageDataset as Era3DSingleImageDataset
+from Era3D.utils.misc import load_config as load_config_era3d
 from Unique3D.custum_3d_diffusion.custum_pipeline.unifield_pipeline_img2mvimg import StableDiffusionImage2MVCustomPipeline
 from Unique3D.custum_3d_diffusion.custum_pipeline.unifield_pipeline_img2img import StableDiffusionImageCustomPipeline
 from Unique3D.scripts.mesh_init import fast_geo
@@ -111,6 +110,10 @@ DIFFUSERS_SCHEDULER_DICT = OrderedDict([
 ])
 
 ROOT_PATH = os.path.join(comfy_paths.get_folder_paths("custom_nodes")[0], "ComfyUI-3D-Pack")
+CKPT_ROOT_PATH = os.path.join(ROOT_PATH, "Checkpoints")
+CKPT_DIFFUSERS_PATH = os.path.join(CKPT_ROOT_PATH, "Diffusers")
+CONFIG_ROOT_PATH = os.path.join(ROOT_PATH, "Configs")
+MODULE_ROOT_PATH = os.path.join(ROOT_PATH, "Gen_3D_Modules")
 
 MANIFEST = {
     "name": "ComfyUI-3D-Pack",
@@ -294,7 +297,7 @@ class Save_3D_Mesh:
         return {
             "required": {
                 "mesh": ("MESH",),
-                "save_path": ("STRING", {"default": 'Mesh_%Y-%m-%d-%M-%S-%f.obj', "multiline": False}),
+                "save_path": ("STRING", {"default": 'Mesh_%Y-%m-%d-%M-%S-%f.glb', "multiline": False}),
             },
         }
 
@@ -443,19 +446,21 @@ class Split_Image_Grid:
     CATEGORY = "Comfy3D/Preprocessor"
     
     def split_image_grid(self, image, grid_side_num, use_rows):
-        image_pil = torch_imgs_to_pils(image)[0]
+        images = []
+        for image_pil in torch_imgs_to_pils(image):
 
-        if use_rows:
-            rows = grid_side_num
-            clos = None
-        else:
-            clos = grid_side_num
-            rows = None
+            if use_rows:
+                rows = grid_side_num
+                clos = None
+            else:
+                clos = grid_side_num
+                rows = None
 
-        image_pils = pil_split_image(image_pil, rows, clos)
+            image_pils = pil_split_image(image_pil, rows, clos)
 
-        images = pils_to_torch_imgs(image_pils, image.device)
-
+            images.append(pils_to_torch_imgs(image_pils, image.device))
+            
+        images = torch.cat(images, dim=0)
         return (images,)
 
 class Get_Masks_From_Normal_Maps:
@@ -892,16 +897,27 @@ class Mesh_Orbit_Renderer:
                 "render_background_color_g": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001}),
                 "render_background_color_b": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001}),
                 "force_cuda_rasterize": ("BOOLEAN", {"default": False},),
+            },
+            
+            "optional": {
+                "render_depth": ("BOOLEAN", {"default": False},),
+                "render_normal": ("BOOLEAN", {"default": False},),
             }
         }
         
     RETURN_TYPES = (
         "IMAGE",
         "MASK",
+        "IMAGE",
+        "IMAGE",
+        "IMAGE",
     )
     RETURN_NAMES = (
-        "rendered_mesh_images",    # [Number of Poses, H, W, 3]
+        "rendered_mesh_images",   # [Number of Poses, H, W, 3]
         "rendered_mesh_masks",    # [Number of Poses, H, W, 1]
+        "all_rendered_depths",    # [Number of Poses, H, W, 3]
+        "all_rendered_normals",   # [Number of Poses, H, W, 3]
+        "all_rendered_viewcos",   # [Number of Poses, H, W, 3]
     )
     
     FUNCTION = "render_mesh"
@@ -918,9 +934,17 @@ class Mesh_Orbit_Renderer:
         render_background_color_g, 
         render_background_color_b,
         force_cuda_rasterize,
+        render_depth=False,
+        render_normal=False,
     ):
         
         renderer = DiffRastRenderer(mesh, force_cuda_rasterize)
+        
+        optional_render_types = []
+        if render_depth:
+            optional_render_types.append('depth')
+        if render_normal:
+            optional_render_types.append('normal')
         
         cam_controller = DiffMeshCameraController(
             renderer, 
@@ -930,10 +954,22 @@ class Mesh_Orbit_Renderer:
             static_bg=[render_background_color_r, render_background_color_g, render_background_color_b]
         )
         
-        all_rendered_images, all_rendered_masks = cam_controller.render_all_pose(render_orbit_camera_poses)
+        extra_kwargs = {"optional_render_types": optional_render_types}
+        all_rendered_images, all_rendered_masks, extra_outputs = cam_controller.render_all_pose(render_orbit_camera_poses, **extra_kwargs)
         all_rendered_masks = all_rendered_masks.squeeze(-1)  # [N, H, W, 1] -> [N, H, W]
+        if 'depth' in extra_outputs:
+            all_rendered_depths = extra_outputs['depth'].repeat(1, 1, 1, 3)   # [N, H, W, 1] -> [N, H, W, 3]
+        else:
+            all_rendered_depths = None
         
-        return (all_rendered_images, all_rendered_masks)    # [N, H, W, 3], [N, H, W]
+        if 'normal' in extra_outputs:
+            all_rendered_normals = extra_outputs['normal']
+            all_rendered_viewcos = extra_outputs['viewcos'].repeat(1, 1, 1, 3)
+        else:
+            all_rendered_normals = None
+            all_rendered_viewcos = None
+        
+        return (all_rendered_images, all_rendered_masks, all_rendered_depths, all_rendered_normals, all_rendered_viewcos)
         
    
 class Gaussian_Splatting_Orbit_Renderer:
@@ -955,10 +991,12 @@ class Gaussian_Splatting_Orbit_Renderer:
     RETURN_TYPES = (
         "IMAGE",
         "MASK",
+        "IMAGE",
     )
     RETURN_NAMES = (
         "rendered_gs_images",    # [Number of Poses, H, W, 3]
-        "rendered_gs_masks",    # [Number of Poses, H, W, 1]
+        "rendered_gs_masks",     # [Number of Poses, H, W, 1]
+        "rendered_gs_depths",   # [Number of Poses, H, W, 3]
     )
     
     FUNCTION = "render_gs"
@@ -988,13 +1026,18 @@ class Gaussian_Splatting_Orbit_Renderer:
             static_bg=[render_background_color_r, render_background_color_g, render_background_color_b]
         )
         
-        all_rendered_images, all_rendered_masks = cam_controller.render_all_pose(render_orbit_camera_poses)
+        all_rendered_images, all_rendered_masks, extra_outputs = cam_controller.render_all_pose(render_orbit_camera_poses)
         all_rendered_images = all_rendered_images.permute(0, 2, 3, 1)   # [N, 3, H, W] -> [N, H, W, 3]
         all_rendered_masks = all_rendered_masks.squeeze(1)  # [N, 1, H, W] -> [N, H, W]
         
-        return (all_rendered_images, all_rendered_masks)
+        if 'depth' in extra_outputs:
+            all_rendered_depths = extra_outputs['depth'].permute(0, 2, 3, 1).repeat(1, 1, 1, 3)   # [N, 1, H, W] -> [N, H, W, 3]
+        else:
+            all_rendered_depths = None
+        
+        return (all_rendered_images, all_rendered_masks, all_rendered_depths)
     
-class Gaussian_Splatting:
+class Gaussian_Splatting_3D:
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -1131,7 +1174,7 @@ class Gaussian_Splatting:
                     else:
                         gs_init_input = mesh_to_initialize_gaussian
                     
-                    gs = GaussianSplatting(gs_params, gs_init_input)
+                    gs = GaussianSplatting3D(gs_params, gs_init_input)
                     gs.prepare_training(reference_images, reference_masks, reference_orbit_camera_poses, reference_orbit_camera_fovy)
                     gs.training()
 
@@ -1167,6 +1210,7 @@ class Fitting_Mesh_With_Multiview_Images:
                 "geometry_learning_rate": ("FLOAT", {"default": 0.0001, "min": 0.00001, "step": 0.00001}),
                 "ms_ssim_loss_weight": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.01}),
                 "remesh_after_n_iteration": ("INT", {"default": 512, "min": 128, "max": 100000}),
+                "invert_background_probability": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.1}),
                 "force_cuda_rasterize": ("BOOLEAN", {"default": False},),
             },
         }
@@ -1198,7 +1242,8 @@ class Fitting_Mesh_With_Multiview_Images:
         geometry_learning_rate, 
         ms_ssim_loss_weight, 
         remesh_after_n_iteration,
-        force_cuda_rasterize
+        invert_background_probability,
+        force_cuda_rasterize,
     ):
         
         mesh.set_new_albedo(mesh_albedo_width, mesh_albedo_height)
@@ -1219,7 +1264,18 @@ class Fitting_Mesh_With_Multiview_Images:
                     
                 with torch.inference_mode(False):
                 
-                    mesh_fitter = DiffMesh(mesh, training_iterations, batch_size, texture_learning_rate, train_mesh_geometry, geometry_learning_rate, ms_ssim_loss_weight, remesh_after_n_iteration, force_cuda_rasterize)
+                    mesh_fitter = DiffMesh(
+                        mesh, 
+                        training_iterations, 
+                        batch_size, 
+                        texture_learning_rate, 
+                        train_mesh_geometry, 
+                        geometry_learning_rate, 
+                        ms_ssim_loss_weight, 
+                        remesh_after_n_iteration, 
+                        invert_background_probability, 
+                        force_cuda_rasterize
+                    )
                     
                     mesh_fitter.prepare_training(reference_images, reference_masks, reference_orbit_camera_poses, reference_orbit_camera_fovy)
                     mesh_fitter.training()
@@ -1295,14 +1351,15 @@ class Deep_Marching_Tetrahedrons:
 
 class Load_Triplane_Gaussian_Transformers:
     
-    checkpoints_dir = "checkpoints/tgs"
+    checkpoints_dir = "TriplaneGaussian"
     default_ckpt_name = "model_lvis_rel.ckpt"
     default_repo_id = "VAST-AI/TriplaneGaussian"
-    tgs_config_path = "configs/tgs_config.yaml"
+    tgs_config_path = "TriplaneGaussian_config.yaml"
     
     @classmethod
     def INPUT_TYPES(cls):
-        cls.checkpoints_dir_abs = os.path.join(ROOT_PATH, cls.checkpoints_dir)
+        cls.checkpoints_dir_abs = os.path.join(CKPT_ROOT_PATH, cls.checkpoints_dir)
+        cls.config_path_abs = os.path.join(CONFIG_ROOT_PATH, cls.tgs_config_path)
         all_models_names = get_list_filenames(cls.checkpoints_dir_abs, SUPPORTED_CHECKPOINTS_EXTENSIONS)
         if cls.default_ckpt_name not in all_models_names:
             all_models_names += [cls.default_ckpt_name]
@@ -1325,17 +1382,13 @@ class Load_Triplane_Gaussian_Transformers:
     def load_TGS(self, model_name):
 
         device = get_device()
-        
-        config_path = os.path.join(ROOT_PATH, self.tgs_config_path)
-        cfg: ExperimentConfig = load_config_tgs(config_path)
+
+        cfg: ExperimentConfig = load_config_tgs(self.config_path_abs)
 
         ckpt_path = resume_or_download_model_from_hf(self.checkpoints_dir_abs, self.default_repo_id, model_name, self.__class__.__name__)
             
         cfg.system.weights=ckpt_path
         tgs_model = TGS(cfg=cfg.system).to(device)
-        
-        save_path = os.path.join(ROOT_PATH, "outputs")
-        tgs_model.set_save_dir(save_path)
         
         cstr(f"[{self.__class__.__name__}] loaded model ckpt from {ckpt_path}").msg.print()
 
@@ -1343,10 +1396,11 @@ class Load_Triplane_Gaussian_Transformers:
     
 class Triplane_Gaussian_Transformers:
     
-    tgs_config_path = "configs/tgs_config.yaml"
+    tgs_config_path = "TriplaneGaussian_config.yaml"
     
     @classmethod
     def INPUT_TYPES(cls):
+        cls.config_path_abs = os.path.join(CONFIG_ROOT_PATH, cls.tgs_config_path)
         return {
             "required": {
                 "reference_image": ("IMAGE", ),
@@ -1366,11 +1420,7 @@ class Triplane_Gaussian_Transformers:
     CATEGORY = "Comfy3D/Algorithm"
     
     def run_TGS(self, reference_image, reference_mask, tgs_model, cam_dist):        
-        config_path = os.path.join(ROOT_PATH, self.tgs_config_path)
-        cfg: ExperimentConfig = load_config_tgs(config_path)
-        
-        #save_path = os.path.join(ROOT_PATH, "outputs")
-        #tgs_model.set_save_dir(save_path)
+        cfg: ExperimentConfig = load_config_tgs(self.config_path_abs)
 
         cfg.data.cond_camera_distance = cam_dist
         cfg.data.eval_camera_distance = cam_dist
@@ -1382,22 +1432,10 @@ class Triplane_Gaussian_Transformers:
             collate_fn=dataset.collate
         )
 
-
         gs_ply = []
         for batch in dataloader:
             batch = todevice(batch)
             gs_ply.extend(tgs_model(batch))
-            
-        """
-        # Output rendered video, for testing this node only
-        tgs_model.save_img_sequences(
-            "video",
-            "(\d+)\.png",
-            save_format="mp4",
-            fps=30,
-            delete=True,
-        )
-        """
         
         return (gs_ply[0], )
     
@@ -1426,11 +1464,11 @@ class Load_Diffusers_Pipeline:
     def load_diffusers_pipe(self, diffusers_pipeline_name, model_name, custom_pipeline, download_from_remote):
         
         # resume pretrained checkpoint
-        ckpt_path = os.path.join(ROOT_PATH, "checkpoints", model_name)
+        ckpt_path = os.path.join(CKPT_DIFFUSERS_PATH, model_name)
             
         if download_from_remote:
             from huggingface_hub import snapshot_download
-            snapshot_download(repo_id=model_name, local_dir=ckpt_path, repo_type="model", ignore_patterns=["*.json"])
+            snapshot_download(repo_id=model_name, local_dir=ckpt_path, repo_type="model", ignore_patterns=["*.json", "*.py"])
         
         diffusers_pipeline_class = DIFFUSERS_PIPE_DICT[diffusers_pipeline_name]
         
@@ -1477,12 +1515,9 @@ class Set_Diffusers_Pipeline_Scheduler:
         return (pipe, )
 
 class Set_Diffusers_Pipeline_State_Dict:
-    
-    checkpoints_dir = "checkpoints"
 
     @classmethod
     def INPUT_TYPES(cls):
-        cls.checkpoints_base_dir_abs = os.path.join(ROOT_PATH, cls.checkpoints_dir)
         return {
             "required": {
                 "pipe": ("DIFFUSERS_PIPE",),
@@ -1502,7 +1537,7 @@ class Set_Diffusers_Pipeline_State_Dict:
 
     def set_pipe_state_dict(self, pipe, repo_id, model_name):
 
-        checkpoints_dir_abs = os.path.join(self.checkpoints_base_dir_abs, repo_id)
+        checkpoints_dir_abs = os.path.join(CKPT_DIFFUSERS_PATH, repo_id)
         ckpt_path = resume_or_download_model_from_hf(checkpoints_dir_abs, repo_id, model_name, self.__class__.__name__)
 
         state_dict = torch.load(ckpt_path, map_location='cpu')
@@ -1514,11 +1549,13 @@ class Set_Diffusers_Pipeline_State_Dict:
 
 class Wonder3D_MVDiffusion_Model:
     
-    wonder3d_config_path = "configs/wonder3d_config.yaml"
-    fix_cam_pose_dir = "mvdiffusion/data/fixed_poses/nine_views"
+    wonder3d_config_path = "Wonder3D_config.yaml"
+    fix_cam_pose_dir = "Wonder3D/data/fixed_poses/nine_views"
     
     @classmethod
     def INPUT_TYPES(cls):
+        cls.config_path_abs = os.path.join(CONFIG_ROOT_PATH, cls.wonder3d_config_path)
+        cls.fix_cam_pose_dir_abs = os.path.join(MODULE_ROOT_PATH, cls.fix_cam_pose_dir)
         return {
             "required": {
                 "mvdiffusion_pipe": ("DIFFUSERS_PIPE",),
@@ -1551,8 +1588,7 @@ class Wonder3D_MVDiffusion_Model:
         num_inference_steps, 
     ):
 
-        config_path = os.path.join(ROOT_PATH, self.wonder3d_config_path)
-        cfg = load_config_wonder3d(config_path)
+        cfg = load_config_wonder3d(self.config_path_abs)
 
         batch = self.prepare_data(reference_image, reference_mask)
 
@@ -1595,8 +1631,7 @@ class Wonder3D_MVDiffusion_Model:
     
     def prepare_data(self, ref_image, ref_mask):
         single_image = torch_imgs_to_pils(ref_image, ref_mask)[0]
-        abs_fix_cam_pose_dir = os.path.join(ROOT_PATH, self.fix_cam_pose_dir)
-        dataset = MVSingleImageDataset(fix_cam_pose_dir=abs_fix_cam_pose_dir, num_views=6, img_wh=[256, 256], bg_color='white', single_image=single_image)
+        dataset = MVSingleImageDataset(fix_cam_pose_dir=self.fix_cam_pose_dir_abs, num_views=6, img_wh=[256, 256], bg_color='white', single_image=single_image)
         return dataset[0]
 
 class MVDream_Model:
@@ -1672,13 +1707,13 @@ class MVDream_Model:
     
 class Load_Large_Multiview_Gaussian_Model:
     
-    checkpoints_dir = "checkpoints/lgm"
+    checkpoints_dir = "LGM"
     default_ckpt_name = "model_fp16.safetensors"
     default_repo_id = "ashawkey/LGM"
     
     @classmethod
     def INPUT_TYPES(cls):
-        cls.checkpoints_dir_abs = os.path.join(ROOT_PATH, cls.checkpoints_dir)
+        cls.checkpoints_dir_abs = os.path.join(CKPT_ROOT_PATH, cls.checkpoints_dir)
         all_models_names = get_list_filenames(cls.checkpoints_dir_abs, SUPPORTED_CHECKPOINTS_EXTENSIONS)
         if cls.default_ckpt_name not in all_models_names:
             all_models_names += [cls.default_ckpt_name]
@@ -1701,7 +1736,7 @@ class Load_Large_Multiview_Gaussian_Model:
     
     def load_LGM(self, model_name, lgb_config):
 
-        lgm_model = LGM(config_defaults[lgb_config])
+        lgm_model = LargeMultiviewGaussianModel(config_defaults[lgb_config])
         
         ckpt_path = resume_or_download_model_from_hf(self.checkpoints_dir_abs, self.default_repo_id, model_name, self.__class__.__name__)
             
@@ -1795,11 +1830,12 @@ class Convert_3DGS_to_Mesh_with_NeRF_and_Marching_Cubes:
             return(converter.get_mesh(), imgs, alphas)
     
 class NeuS:
-    NeuS_config_path = "configs/NeuS.conf"
+    NeuS_config_path = "NeuS.conf"
     fix_cam_pose_dir = "NeuS/models/fixed_poses"
     
     @classmethod
     def INPUT_TYPES(cls):
+        cls.config_path_abs = os.path.join(CONFIG_ROOT_PATH, cls.NeuS_config_path)
         return {
             "required": {
                 "reference_image": ("IMAGE",),
@@ -1855,7 +1891,6 @@ class NeuS:
         num_views = reference_image.shape[0]
         
         if num_views in [6, 5, 4]:
-            config_path = os.path.join(ROOT_PATH, self.NeuS_config_path)
             abs_fix_cam_pose_dir = os.path.join(ROOT_PATH, self.fix_cam_pose_dir)
             
             with torch.inference_mode(False):
@@ -1878,7 +1913,7 @@ class NeuS:
                     reference_image,
                     reference_mask,
                     reference_normals,
-                    config_path,
+                    self.config_path_abs,
                     abs_fix_cam_pose_dir,
                     num_views,
                     NeuS_params
@@ -1895,18 +1930,19 @@ class NeuS:
         return(mesh, )
     
 class Load_TripoSR_Model:
-    checkpoints_dir = "checkpoints/tsr"
+    checkpoints_dir = "TripoSR"
     default_ckpt_name = "model.ckpt"
     default_repo_id = "stabilityai/TripoSR"
-    tsr_config_path = "configs/tsr_config.yaml"
+    tsr_config_path = "TripoSR_config.yaml"
     
     @classmethod
     def INPUT_TYPES(cls):
-        cls.checkpoints_dir_abs = os.path.join(ROOT_PATH, cls.checkpoints_dir)
+        cls.checkpoints_dir_abs = os.path.join(CKPT_ROOT_PATH, cls.checkpoints_dir)
         all_models_names = get_list_filenames(cls.checkpoints_dir_abs, SUPPORTED_CHECKPOINTS_EXTENSIONS)
         if cls.default_ckpt_name not in all_models_names:
             all_models_names += [cls.default_ckpt_name]
             
+        cls.config_path_abs = os.path.join(CONFIG_ROOT_PATH, cls.tsr_config_path)
         return {
             "required": {
                 "model_name": (all_models_names, ),
@@ -1926,11 +1962,10 @@ class Load_TripoSR_Model:
     def load_TSR(self, model_name, chunk_size):
         
         ckpt_path = resume_or_download_model_from_hf(self.checkpoints_dir_abs, self.default_repo_id, model_name, self.__class__.__name__)
-        config_path = os.path.join(ROOT_PATH, self.tsr_config_path)
 
         tsr_model = TSR.from_pretrained(
             weight_path=ckpt_path,
-            config_path=config_path
+            config_path=self.config_path_abs
         )
         
         tsr_model.renderer.set_chunk_size(chunk_size)
@@ -1992,19 +2027,21 @@ class TripoSR:
         return image
     
 class Load_CRM_MVDiffusion_Model:
-    checkpoints_dir = "checkpoints/crm"
+    checkpoints_dir = "CRM"
     default_ckpt_name = ["pixel-diffusion.pth", "ccm-diffusion.pth"]
-    default_conf_name = ["configs/crm_configs/sd_v2_base_ipmv_zero_SNR.yaml", "configs/crm_configs/sd_v2_base_ipmv_chin8_zero_snr.yaml"]
+    default_conf_name = ["sd_v2_base_ipmv_zero_SNR.yaml", "sd_v2_base_ipmv_chin8_zero_snr.yaml"]
     default_repo_id = "Zhengyi/CRM"
+    crm_config_path = "CRM_configs"
     
     @classmethod
     def INPUT_TYPES(cls):
-        cls.checkpoints_dir_abs = os.path.join(ROOT_PATH, cls.checkpoints_dir)
+        cls.checkpoints_dir_abs = os.path.join(CKPT_ROOT_PATH, cls.checkpoints_dir)
         all_models_names = get_list_filenames(cls.checkpoints_dir_abs, SUPPORTED_CHECKPOINTS_EXTENSIONS)
         for ckpt_name in cls.default_ckpt_name:
             if ckpt_name not in all_models_names:
                 all_models_names += [ckpt_name]
             
+        cls.config_root_path_abs = os.path.join(CONFIG_ROOT_PATH, cls.crm_config_path)
         return {
             "required": {
                 "model_name": (all_models_names, ),
@@ -2023,13 +2060,12 @@ class Load_CRM_MVDiffusion_Model:
     
     def load_CRM(self, model_name, crm_config_path):
         
-        from .crm.imagedream.ldm.util import (
+        from CRM.imagedream.ldm.util import (
             instantiate_from_config,
             get_obj_from_str,
         )
-        
-        if not os.path.isabs(crm_config_path):
-            crm_config_path = os.path.join(ROOT_PATH, crm_config_path)
+
+        crm_config_path = os.path.join(self.config_root_path_abs, crm_config_path)
         
         ckpt_path = resume_or_download_model_from_hf(self.checkpoints_dir_abs, self.default_repo_id, model_name, self.__class__.__name__)
             
@@ -2179,18 +2215,19 @@ class CRM_CCMs_MVDiffusion_Model:
         return(multiview_CCMs, )
     
 class Load_Convolutional_Reconstruction_Model:
-    checkpoints_dir = "checkpoints/crm"
+    checkpoints_dir = "CRM"
     default_ckpt_name = "CRM.pth"
     default_repo_id = "Zhengyi/CRM"
-    config_path = "configs/crm_configs/specs_objaverse_total.json"
+    config_path = "CRM_configs/specs_objaverse_total.json"
     
     @classmethod
     def INPUT_TYPES(cls):
-        cls.checkpoints_dir_abs = os.path.join(ROOT_PATH, cls.checkpoints_dir)
+        cls.checkpoints_dir_abs = os.path.join(CKPT_ROOT_PATH, cls.checkpoints_dir)
         all_models_names = get_list_filenames(cls.checkpoints_dir_abs, SUPPORTED_CHECKPOINTS_EXTENSIONS)
         if cls.default_ckpt_name not in all_models_names:
             all_models_names += [cls.default_ckpt_name]
             
+        cls.config_path_abs = os.path.join(CONFIG_ROOT_PATH, cls.config_path)
         return {
             "required": {
                 "model_name": (all_models_names, ),
@@ -2210,8 +2247,8 @@ class Load_Convolutional_Reconstruction_Model:
         
         ckpt_path = resume_or_download_model_from_hf(self.checkpoints_dir_abs, self.default_repo_id, model_name, self.__class__.__name__)
         
-        crm_conf = json.load(open(os.path.join(ROOT_PATH, self.config_path)))
-        crm_model = CRM(crm_conf).to(DEVICE)
+        crm_conf = json.load(open(self.config_path_abs))
+        crm_model = ConvolutionalReconstructionModel(crm_conf).to(DEVICE)
         crm_model.load_state_dict(torch.load(ckpt_path, map_location="cpu"), strict=False)
         
         cstr(f"[{self.__class__.__name__}] loaded model ckpt from {ckpt_path}").msg.print()
@@ -2314,19 +2351,20 @@ class Zero123Plus_Diffusion_Model:
         return (multiview_images, orbit_camposes)
     
 class Load_InstantMesh_Reconstruction_Model:
-    checkpoints_dir = "checkpoints/crm"
+    checkpoints_dir = "InstantMesh"
     default_ckpt_names = ["instant_mesh_large.ckpt", "instant_mesh_base.ckpt", "instant_nerf_large.ckpt", "instant_nerf_base.ckpt"]
     default_repo_id = "TencentARC/InstantMesh"
-    config_root_dir = "configs/InstantMesh_configs"
+    config_root_dir = "InstantMesh_configs"
     
     @classmethod
     def INPUT_TYPES(cls):
-        cls.checkpoints_dir_abs = os.path.join(ROOT_PATH, cls.checkpoints_dir)
+        cls.checkpoints_dir_abs = os.path.join(CKPT_ROOT_PATH, cls.checkpoints_dir)
         all_models_names = get_list_filenames(cls.checkpoints_dir_abs, SUPPORTED_CHECKPOINTS_EXTENSIONS)
         for ckpt_name in cls.default_ckpt_names:
             if ckpt_name not in all_models_names:
                 all_models_names += [ckpt_name]
-            
+                
+        cls.config_root_path_abs = os.path.join(CONFIG_ROOT_PATH, cls.config_root_dir)
         return {
             "required": {
                 "model_name": (all_models_names, ),
@@ -2344,12 +2382,12 @@ class Load_InstantMesh_Reconstruction_Model:
     
     def load_LRM(self, model_name):
 
-        from .instant_mesh.utils.train_util import instantiate_from_config
+        from InstantMesh.utils.train_util import instantiate_from_config
 
         is_flexicubes = True if model_name.startswith('instant_mesh') else False
         
         config_name = model_name.split(".")[0] + ".yaml"
-        config_path = os.path.join(ROOT_PATH, self.config_root_dir, config_name)
+        config_path = os.path.join(self.config_root_path_abs, config_name)
         config = OmegaConf.load(config_path)
 
         lrm_model = instantiate_from_config(config.model_config)
@@ -2419,9 +2457,10 @@ class InstantMesh_Reconstruction_Model:
 
 class Era3D_Diffusion_Model:
     
-    era3d_config_path = "configs/era3d_config.yaml"
+    era3d_config_path = "Era3D_config.yaml"
     @classmethod
     def INPUT_TYPES(cls):
+        cls.config_path_abs = os.path.join(CONFIG_ROOT_PATH, cls.era3d_config_path)
         return {
             "required": {
                 "era3d_pipe": ("DIFFUSERS_PIPE",),
@@ -2462,8 +2501,7 @@ class Era3D_Diffusion_Model:
         eta,
         radius,
     ):
-        config_path = os.path.join(ROOT_PATH, self.era3d_config_path)
-        cfg = load_config_era3d(config_path)
+        cfg = load_config_era3d(self.config_path_abs)
         
         single_image = torch_imgs_to_pils(reference_image, reference_mask)[0]
 
@@ -2531,6 +2569,7 @@ class Instant_NGP:
                 "marching_cude_grids_batch_size": ("INT", {"default": 128, "min": 1, "max": 0xffffffffffffffff}),
                 "marching_cude_threshold": ("FLOAT", {"default": 10.0, "min": 0.0, "step": 0.01}),
                 "texture_resolution": ("INT", {"default": 1024, "min": 128, "max": 8192}),
+                "background_color": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 1.0, "step": 0.001}),
                 "force_cuda_rast": ("BOOLEAN", {"default": False}),
             },
         }
@@ -2556,13 +2595,14 @@ class Instant_NGP:
         marching_cude_grids_batch_size,
         marching_cude_threshold,
         texture_resolution,
+        background_color,
         force_cuda_rast
     ):
         with torch.inference_mode(False):
             
             ngp = InstantNGP(training_resolution).to(DEVICE)
             ngp.prepare_training(reference_image, reference_mask, reference_orbit_camera_poses, reference_orbit_camera_fovy)
-            ngp.fit_nerf(training_iterations)
+            ngp.fit_nerf(training_iterations, background_color)
             
             vertices, triangles = marching_cubes_density_to_mesh(ngp.get_density, marching_cude_grids_resolution, marching_cude_grids_batch_size, marching_cude_threshold)
 
@@ -2665,11 +2705,12 @@ class FlexiCubes_MVS:
             return (mesh, )
 
 class Load_Unique3D_Custom_UNet:
-    checkpoints_dir = "checkpoints/Wuvin/Unique3D"
-    config_root_dir = "configs/Unique3D_configs"
+    checkpoints_dir = "Wuvin/Unique3D"
+    config_root_dir = "Unique3D_configs"
 
     @classmethod
     def INPUT_TYPES(cls):
+        cls.config_path_abs = os.path.join(CONFIG_ROOT_PATH, cls.config_root_dir)
         return {
             "required": {
                 "pipe": ("DIFFUSERS_PIPE",),
@@ -2692,8 +2733,8 @@ class Load_Unique3D_Custom_UNet:
         from Unique3D.custum_3d_diffusion.custum_modules.unifield_processor import AttnConfig, ConfigurableUNet2DConditionModel
         from Unique3D.custum_3d_diffusion.trainings.utils import load_config
 
-        cfg_path = os.path.join(ROOT_PATH, self.config_root_dir, config_name + ".yaml")
-        checkpoint_dir_path = os.path.join(ROOT_PATH, self.checkpoints_dir, config_name)
+        cfg_path = os.path.join(self.config_path_abs, config_name + ".yaml")
+        checkpoint_dir_path = os.path.join(CKPT_DIFFUSERS_PATH, self.checkpoints_dir, config_name)
         checkpoint_path = os.path.join(checkpoint_dir_path, "unet_state_dict.pth")
 
         cfg: ExprimentConfig = load_config(ExprimentConfig, cfg_path)

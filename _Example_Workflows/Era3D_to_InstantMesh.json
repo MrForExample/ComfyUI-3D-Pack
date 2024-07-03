@@ -201,45 +201,6 @@
       ]
     },
     {
-      "id": 26,
-      "type": "[Comfy3D] Save 3D Mesh",
-      "pos": [
-        2354.019611278979,
-        107.94257514767159
-      ],
-      "size": {
-        "0": 315,
-        "1": 58
-      },
-      "flags": {},
-      "order": 9,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "mesh",
-          "type": "MESH",
-          "link": 44
-        }
-      ],
-      "outputs": [
-        {
-          "name": "save_path",
-          "type": "STRING",
-          "links": [
-            45
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "[Comfy3D] Save 3D Mesh"
-      },
-      "widgets_values": [
-        "InstantMesh_test\\Priest_Cat.obj"
-      ]
-    },
-    {
       "id": 1,
       "type": "[Comfy3D] Load Diffusers Pipeline",
       "pos": [
@@ -248,7 +209,7 @@
       ],
       "size": {
         "0": 383.9324645996094,
-        "1": 109.8599853515625
+        "1": 130
       },
       "flags": {},
       "order": 1,
@@ -270,7 +231,8 @@
       "widgets_values": [
         "Era3DPipeline",
         "pengHTYX/MacLab-Era3D-512-6view",
-        ""
+        "",
+        true
       ]
     },
     {
@@ -359,8 +321,8 @@
         109
       ],
       "size": [
-        627.5795474783936,
-        527.5795474783936
+        600,
+        500
       ],
       "flags": {},
       "order": 10,
@@ -432,6 +394,45 @@
       "properties": {
         "Node name for S&R": "PreviewImage"
       }
+    },
+    {
+      "id": 26,
+      "type": "[Comfy3D] Save 3D Mesh",
+      "pos": [
+        2354.019611278979,
+        107.94257514767159
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 44
+        }
+      ],
+      "outputs": [
+        {
+          "name": "save_path",
+          "type": "STRING",
+          "links": [
+            45
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Save 3D Mesh"
+      },
+      "widgets_values": [
+        "InstantMesh_test\\Priest_Cat.glb"
+      ]
     }
   ],
   "links": [
@@ -536,10 +537,10 @@
   "config": {},
   "extra": {
     "ds": {
-      "scale": 0.620921323059155,
+      "scale": 0.751314800901578,
       "offset": [
-        -581.8092565730503,
-        135.36562552877655
+        -963.3190573317725,
+        219.52911008737303
       ]
     }
   },

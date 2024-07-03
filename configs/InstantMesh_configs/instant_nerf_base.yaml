@@ -1,5 +1,5 @@
 model_config:
-  target: instant_mesh.models.lrm.InstantNeRF
+  target: InstantMesh.models.lrm.InstantNeRF
   params:
     encoder_feat_dim: 768
     encoder_freeze: false

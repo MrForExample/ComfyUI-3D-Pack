@@ -1,0 +1,6 @@
+{
+  "_class_name": "StableUnCLIPImageNormalizer",
+  "_diffusers_version": "0.26.0.dev0",
+  "_name_or_path": "stabilityai/stable-diffusion-2-1-unclip",
+  "embedding_dim": 1024
+}

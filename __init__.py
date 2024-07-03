@@ -5,16 +5,19 @@ from pyhocon import ConfigFactory
 import logging
 
 ROOT_PATH = os.path.join(comfy_paths.get_folder_paths("custom_nodes")[0], "ComfyUI-3D-Pack")
-MODULE_PATH = os.path.join(ROOT_PATH, "gen_3d_modules")
+MODULE_PATH = os.path.join(ROOT_PATH, "Gen_3D_Modules")
+MV_ALGO_PATH = os.path.join(ROOT_PATH, "MVs_Algorithms")
+
 sys.path.append(ROOT_PATH)
 sys.path.append(MODULE_PATH)
+sys.path.append(MV_ALGO_PATH)
 
 import shutil
 import __main__
 import importlib
 import inspect
 from .webserver.server import server, set_web_conf
-from .utils import setup_logger
+from .shared_utils.log_utils import setup_logger
 
 # Common formatter for simplicity, adjust as needed
 common_formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')

@@ -1,6 +1,6 @@
 {
-  "last_node_id": 22,
-  "last_link_id": 41,
+  "last_node_id": 27,
+  "last_link_id": 46,
   "nodes": [
     {
       "id": 6,
@@ -36,60 +36,6 @@
       ],
       "properties": {
         "Node name for S&R": "MaskToImage"
-      }
-    },
-    {
-      "id": 7,
-      "type": "PreviewImage",
-      "pos": [
-        1740,
-        740
-      ],
-      "size": {
-        "0": 215.39028930664062,
-        "1": 246
-      },
-      "flags": {
-        "collapsed": false
-      },
-      "order": 12,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "images",
-          "type": "IMAGE",
-          "link": 4
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "PreviewImage"
-      }
-    },
-    {
-      "id": 13,
-      "type": "PreviewImage",
-      "pos": [
-        1485,
-        -69
-      ],
-      "size": {
-        "0": 215.39028930664062,
-        "1": 246
-      },
-      "flags": {
-        "collapsed": false
-      },
-      "order": 7,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "images",
-          "type": "IMAGE",
-          "link": 17
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "PreviewImage"
       }
     },
     {
@@ -160,68 +106,6 @@
         "showOutputText": false,
         "horizontal": false
       }
-    },
-    {
-      "id": 2,
-      "type": "[Comfy3D] Gaussian Splatting Orbit Renderer",
-      "pos": [
-        807,
-        289
-      ],
-      "size": {
-        "0": 556.800048828125,
-        "1": 198
-      },
-      "flags": {},
-      "order": 5,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "gs_ply",
-          "type": "GS_PLY",
-          "link": 16
-        },
-        {
-          "name": "render_orbit_camera_poses",
-          "type": "ORBIT_CAMPOSES",
-          "link": 5
-        }
-      ],
-      "outputs": [
-        {
-          "name": "rendered_gs_images",
-          "type": "IMAGE",
-          "links": [
-            17,
-            21,
-            32
-          ],
-          "shape": 3,
-          "slot_index": 0
-        },
-        {
-          "name": "rendered_gs_masks",
-          "type": "MASK",
-          "links": [
-            6,
-            23,
-            33
-          ],
-          "shape": 3,
-          "slot_index": 1
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "[Comfy3D] Gaussian Splatting Orbit Renderer"
-      },
-      "widgets_values": [
-        1024,
-        1024,
-        49.1,
-        1,
-        1,
-        1
-      ]
     },
     {
       "id": 5,
@@ -307,79 +191,6 @@
         0,
         0,
         0.1
-      ]
-    },
-    {
-      "id": 12,
-      "type": "[Comfy3D] Switch 3DGS Axis",
-      "pos": [
-        466,
-        219
-      ],
-      "size": {
-        "0": 210,
-        "1": 106
-      },
-      "flags": {},
-      "order": 3,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "gs_ply",
-          "type": "GS_PLY",
-          "link": 15
-        }
-      ],
-      "outputs": [
-        {
-          "name": "switched_gs_ply",
-          "type": "GS_PLY",
-          "links": [
-            16
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "[Comfy3D] Switch 3DGS Axis"
-      },
-      "widgets_values": [
-        "+x",
-        "-y",
-        "-z"
-      ]
-    },
-    {
-      "id": 1,
-      "type": "[Comfy3D] Load 3DGS",
-      "pos": [
-        104,
-        218
-      ],
-      "size": {
-        "0": 315,
-        "1": 58
-      },
-      "flags": {},
-      "order": 1,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "gs_ply",
-          "type": "GS_PLY",
-          "links": [
-            15
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "[Comfy3D] Load 3DGS"
-      },
-      "widgets_values": [
-        "C:\\Users\\reall\\Softwares\\ComfyUI_windows_portable\\ComfyUI\\output\\LGMTest\\CatCoffee.ply"
       ]
     },
     {
@@ -527,45 +338,6 @@
       }
     },
     {
-      "id": 19,
-      "type": "[Comfy3D] Save 3D Mesh",
-      "pos": [
-        2945,
-        188
-      ],
-      "size": {
-        "0": 315,
-        "1": 58
-      },
-      "flags": {},
-      "order": 16,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "mesh",
-          "type": "MESH",
-          "link": 41
-        }
-      ],
-      "outputs": [
-        {
-          "name": "save_path",
-          "type": "STRING",
-          "links": [
-            25
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "[Comfy3D] Save 3D Mesh"
-      },
-      "widgets_values": [
-        "Instant_NGP_Test/CatCoffee_1.obj"
-      ]
-    },
-    {
       "id": 11,
       "type": "[Comfy3D] Save 3D Mesh",
       "pos": [
@@ -605,6 +377,79 @@
       ]
     },
     {
+      "id": 1,
+      "type": "[Comfy3D] Load 3DGS",
+      "pos": [
+        104,
+        218
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "gs_ply",
+          "type": "GS_PLY",
+          "links": [
+            15
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Load 3DGS"
+      },
+      "widgets_values": [
+        "C:\\Users\\reall\\Softwares\\ComfyUI_windows_portable\\ComfyUI\\custom_nodes\\ComfyUI-3D-Pack\\_Example_Workflows\\_Example_Inputs_Files\\Meshes\\CatCoffee.ply"
+      ]
+    },
+    {
+      "id": 12,
+      "type": "[Comfy3D] Switch 3DGS Axis",
+      "pos": [
+        466,
+        219
+      ],
+      "size": {
+        "0": 210,
+        "1": 106
+      },
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "gs_ply",
+          "type": "GS_PLY",
+          "link": 15
+        }
+      ],
+      "outputs": [
+        {
+          "name": "switched_gs_ply",
+          "type": "GS_PLY",
+          "links": [
+            16
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Switch 3DGS Axis"
+      },
+      "widgets_values": [
+        "+x",
+        "-y",
+        "-z"
+      ]
+    },
+    {
       "id": 18,
       "type": "[Comfy3D] Preview 3DMesh",
       "pos": [
@@ -637,60 +482,42 @@
       ]
     },
     {
-      "id": 21,
-      "type": "[Comfy3D] Instant NGP",
+      "id": 19,
+      "type": "[Comfy3D] Save 3D Mesh",
       "pos": [
-        1570,
-        288
+        2945,
+        188
       ],
       "size": {
-        "0": 418.1999816894531,
-        "1": 266
+        "0": 315,
+        "1": 58
       },
       "flags": {},
-      "order": 11,
+      "order": 16,
       "mode": 0,
       "inputs": [
         {
-          "name": "reference_image",
-          "type": "IMAGE",
-          "link": 32
-        },
-        {
-          "name": "reference_mask",
-          "type": "MASK",
-          "link": 33
-        },
-        {
-          "name": "reference_orbit_camera_poses",
-          "type": "ORBIT_CAMPOSES",
-          "link": 34
+          "name": "mesh",
+          "type": "MESH",
+          "link": 41
         }
       ],
       "outputs": [
         {
-          "name": "mesh",
-          "type": "MESH",
+          "name": "save_path",
+          "type": "STRING",
           "links": [
-            36,
-            39
+            25
           ],
           "shape": 3,
           "slot_index": 0
         }
       ],
       "properties": {
-        "Node name for S&R": "[Comfy3D] Instant NGP"
+        "Node name for S&R": "[Comfy3D] Save 3D Mesh"
       },
       "widgets_values": [
-        49.1,
-        1024,
-        128,
-        256,
-        128,
-        10,
-        1024,
-        false
+        "Instant_NGP_Test/CatCoffee_1.obj"
       ]
     },
     {
@@ -702,7 +529,7 @@
       ],
       "size": {
         "0": 531.5999755859375,
-        "1": 358
+        "1": 406
       },
       "flags": {},
       "order": 14,
@@ -760,7 +587,182 @@
         0.0001,
         0.5,
         512,
+        0,
         false
+      ]
+    },
+    {
+      "id": 13,
+      "type": "PreviewImage",
+      "pos": [
+        1506,
+        -109
+      ],
+      "size": {
+        "0": 215.39028930664062,
+        "1": 246
+      },
+      "flags": {
+        "collapsed": false
+      },
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 17
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 7,
+      "type": "PreviewImage",
+      "pos": [
+        1742,
+        740
+      ],
+      "size": {
+        "0": 215.39028930664062,
+        "1": 246
+      },
+      "flags": {
+        "collapsed": false
+      },
+      "order": 12,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 4
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 21,
+      "type": "[Comfy3D] Instant NGP",
+      "pos": [
+        1570,
+        288
+      ],
+      "size": {
+        "0": 418.1999816894531,
+        "1": 290
+      },
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "reference_image",
+          "type": "IMAGE",
+          "link": 32
+        },
+        {
+          "name": "reference_mask",
+          "type": "MASK",
+          "link": 33
+        },
+        {
+          "name": "reference_orbit_camera_poses",
+          "type": "ORBIT_CAMPOSES",
+          "link": 34
+        }
+      ],
+      "outputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "links": [
+            36,
+            39
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Instant NGP"
+      },
+      "widgets_values": [
+        49.1,
+        1024,
+        128,
+        256,
+        128,
+        10,
+        1024,
+        1,
+        false
+      ]
+    },
+    {
+      "id": 2,
+      "type": "[Comfy3D] Gaussian Splatting Orbit Renderer",
+      "pos": [
+        807,
+        289
+      ],
+      "size": {
+        "0": 556.800048828125,
+        "1": 198
+      },
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "gs_ply",
+          "type": "GS_PLY",
+          "link": 16
+        },
+        {
+          "name": "render_orbit_camera_poses",
+          "type": "ORBIT_CAMPOSES",
+          "link": 5
+        }
+      ],
+      "outputs": [
+        {
+          "name": "rendered_gs_images",
+          "type": "IMAGE",
+          "links": [
+            17,
+            21,
+            32
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "rendered_gs_masks",
+          "type": "MASK",
+          "links": [
+            6,
+            23,
+            33
+          ],
+          "shape": 3,
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Gaussian Splatting Orbit Renderer"
+      },
+      "widgets_values": [
+        1024,
+        1024,
+        49.1,
+        1,
+        1,
+        1
       ]
     }
   ],
@@ -944,6 +946,14 @@
   ],
   "groups": [],
   "config": {},
-  "extra": {},
+  "extra": {
+    "ds": {
+      "scale": 0.6934334949441353,
+      "offset": [
+        -1086.556448784114,
+        243.62758422318373
+      ]
+    }
+  },
   "version": 0.4
 }

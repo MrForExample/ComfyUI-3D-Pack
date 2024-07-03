@@ -366,6 +366,7 @@ class Mesh:
             print(f"[load_trimesh] failed to load mesh, either path or given_mesh must be given")
             return None
         
+        should_create_empty_albedo = False
         if _mesh.visual.kind == 'vertex':
             vertex_colors = _mesh.visual.vertex_colors
             vertex_colors = np.array(vertex_colors[..., :3]).astype(np.float32) / 255
@@ -383,11 +384,18 @@ class Mesh:
                 texture = np.array(_material.to_pbr().baseColorTexture).astype(np.float32) / 255
             else:
                 raise NotImplementedError(f"material type {type(_material)} not supported!")
-            mesh.albedo = torch.tensor(texture[..., :3], dtype=torch.float32, device=device).contiguous()
-            print(f"[load_trimesh] load texture: {texture.shape}")
+            
+            if texture.ndim ==3:
+                mesh.albedo = torch.tensor(texture[..., :3], dtype=torch.float32, device=device).contiguous()
+                print(f"[load_trimesh] loaded albedo texture: {texture.shape}")
+            else:
+                should_create_empty_albedo = True
         else:
+            should_create_empty_albedo = True
+            
+        if should_create_empty_albedo:
             mesh.set_new_albedo(1024, 1024)
-            print(f"[load_trimesh] failed to load texture.")
+            print(f"[load_trimesh] failed to load albedo texture, create empty abbedo texture with shape: {mesh.albedo.shape}")
 
         vertices = _mesh.vertices
 

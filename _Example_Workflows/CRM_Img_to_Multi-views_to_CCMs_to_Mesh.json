@@ -261,39 +261,6 @@
       }
     },
     {
-      "id": 5,
-      "type": "[Comfy3D] Load CRM MVDiffusion Model",
-      "pos": [
-        820,
-        60
-      ],
-      "size": {
-        "0": 515.006103515625,
-        "1": 88.70651245117188
-      },
-      "flags": {},
-      "order": 1,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "crm_mvdiffusion_sampler",
-          "type": "CRM_MVDIFFUSION_SAMPLER",
-          "links": [
-            4
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "[Comfy3D] Load CRM MVDiffusion Model"
-      },
-      "widgets_values": [
-        "ccm-diffusion.pth",
-        "configs/crm_configs/sd_v2_base_ipmv_chin8_zero_snr.yaml"
-      ]
-    },
-    {
       "id": 3,
       "type": "[Comfy3D] CRM Images MVDiffusion Model",
       "pos": [
@@ -336,6 +303,12 @@
           ],
           "shape": 3,
           "slot_index": 0
+        },
+        {
+          "name": "orbit_camposes",
+          "type": "ORBIT_CAMPOSES",
+          "links": null,
+          "shape": 3
         }
       ],
       "properties": {
@@ -464,39 +437,6 @@
       ]
     },
     {
-      "id": 2,
-      "type": "[Comfy3D] Load CRM MVDiffusion Model",
-      "pos": [
-        -102,
-        131
-      ],
-      "size": {
-        "0": 489.21466064453125,
-        "1": 95.50737762451172
-      },
-      "flags": {},
-      "order": 2,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "crm_mvdiffusion_sampler",
-          "type": "CRM_MVDIFFUSION_SAMPLER",
-          "links": [
-            1
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "[Comfy3D] Load CRM MVDiffusion Model"
-      },
-      "widgets_values": [
-        "pixel-diffusion.pth",
-        "configs/crm_configs/sd_v2_base_ipmv_zero_SNR.yaml"
-      ]
-    },
-    {
       "id": 20,
       "type": "InvertMask",
       "pos": [
@@ -581,7 +521,7 @@
         "1": 545.7767944335938
       },
       "flags": {},
-      "order": 3,
+      "order": 1,
       "mode": 0,
       "outputs": [
         {
@@ -737,6 +677,72 @@
         "+y",
         "-z",
         false
+      ]
+    },
+    {
+      "id": 2,
+      "type": "[Comfy3D] Load CRM MVDiffusion Model",
+      "pos": [
+        -102,
+        131
+      ],
+      "size": {
+        "0": 489.21466064453125,
+        "1": 95.50737762451172
+      },
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "crm_mvdiffusion_sampler",
+          "type": "CRM_MVDIFFUSION_SAMPLER",
+          "links": [
+            1
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Load CRM MVDiffusion Model"
+      },
+      "widgets_values": [
+        "pixel-diffusion.pth",
+        "sd_v2_base_ipmv_zero_SNR.yaml"
+      ]
+    },
+    {
+      "id": 5,
+      "type": "[Comfy3D] Load CRM MVDiffusion Model",
+      "pos": [
+        820,
+        60
+      ],
+      "size": {
+        "0": 515.006103515625,
+        "1": 88.70651245117188
+      },
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "crm_mvdiffusion_sampler",
+          "type": "CRM_MVDIFFUSION_SAMPLER",
+          "links": [
+            4
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Load CRM MVDiffusion Model"
+      },
+      "widgets_values": [
+        "ccm-diffusion.pth",
+        "sd_v2_base_ipmv_chin8_zero_snr.yaml"
       ]
     }
   ],
@@ -928,6 +934,14 @@
   ],
   "groups": [],
   "config": {},
-  "extra": {},
+  "extra": {
+    "ds": {
+      "scale": 0.6830134553650706,
+      "offset": [
+        -848.1038004423184,
+        33.36692580651105
+      ]
+    }
+  },
   "version": 0.4
 }

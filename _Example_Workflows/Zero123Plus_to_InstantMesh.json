@@ -168,7 +168,7 @@
       ],
       "size": {
         "0": 383.9324645996094,
-        "1": 109.8599853515625
+        "1": 130
       },
       "flags": {},
       "order": 1,
@@ -190,7 +190,8 @@
       "widgets_values": [
         "Zero123PlusPipeline",
         "sudo-ai/zero123plus-v1.2",
-        ""
+        "",
+        true
       ]
     },
     {
@@ -338,45 +339,6 @@
       ]
     },
     {
-      "id": 9,
-      "type": "[Comfy3D] Save 3D Mesh",
-      "pos": [
-        2534,
-        158
-      ],
-      "size": {
-        "0": 315,
-        "1": 58
-      },
-      "flags": {},
-      "order": 10,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "mesh",
-          "type": "MESH",
-          "link": 14
-        }
-      ],
-      "outputs": [
-        {
-          "name": "save_path",
-          "type": "STRING",
-          "links": [
-            11
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "[Comfy3D] Save 3D Mesh"
-      },
-      "widgets_values": [
-        "InstantMesh_test\\Mesh_Cat.obj"
-      ]
-    },
-    {
       "id": 10,
       "type": "[Comfy3D] Preview 3DMesh",
       "pos": [
@@ -474,6 +436,45 @@
       "properties": {
         "Node name for S&R": "PreviewImage"
       }
+    },
+    {
+      "id": 9,
+      "type": "[Comfy3D] Save 3D Mesh",
+      "pos": [
+        2534,
+        158
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 10,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 14
+        }
+      ],
+      "outputs": [
+        {
+          "name": "save_path",
+          "type": "STRING",
+          "links": [
+            11
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Save 3D Mesh"
+      },
+      "widgets_values": [
+        "InstantMesh_test\\Mesh_Cat.glb"
+      ]
     }
   ],
   "links": [
@@ -586,10 +587,10 @@
   "config": {},
   "extra": {
     "ds": {
-      "scale": 0.8264462809917354,
+      "scale": 0.6830134553650709,
       "offset": [
-        -788.9517631212848,
-        67.47620178525084
+        -1395.2063656748421,
+        247.10279463694602
       ]
     }
   },

@@ -209,19 +209,19 @@ class BaseCameraController(ABC):
         self.white_bg = torch.tensor([1, 1, 1], dtype=torch.float32, device=self.device)
         self.static_bg = None if static_bg is None else torch.tensor(static_bg, dtype=torch.float32, device=self.device)
 
-        self.pose_init()
+        self.post_init()
 
         super().__init__()
     
-    def pose_init(self):
+    def post_init(self):
         # Calls after default initialize at the end of __init__()
         pass
 
     @abstractmethod
-    def get_render_result(self, render_pose, bg_color):
+    def get_render_result(self, render_pose, bg_color, **kwargs):
         pass
         
-    def render_at_pose(self, cam_pose):
+    def render_at_pose(self, cam_pose, **kwargs):
         radius, elevation, azimuth, center_X, center_Y, center_Z = cam_pose
         
         orbit_target = np.array([center_X, center_Y, center_Z], dtype=np.float32)
@@ -232,12 +232,13 @@ class BaseCameraController(ABC):
         else:
             bg_color = self.static_bg
             
-        return self.get_render_result(render_pose, bg_color)
+        return self.get_render_result(render_pose, bg_color, **kwargs)
     
-    def render_all_pose(self, all_cam_poses):
+    def render_all_pose(self, all_cam_poses, **kwargs):
         all_rendered_images, all_rendered_masks = [], []
+        extra_outputs = {}
         for cam_pose in all_cam_poses:
-            out = self.render_at_pose(cam_pose)
+            out = self.render_at_pose(cam_pose, **kwargs)
             
             image = out["image"] # [3, H, W] in [0, 1]
             mask = out["alpha"] # [1, H, W] in [0, 1]
@@ -245,5 +246,13 @@ class BaseCameraController(ABC):
             all_rendered_images.append(image)
             all_rendered_masks.append(mask)
             
+            for k in out:
+                if k not in extra_outputs:
+                    extra_outputs[k] = []
+                extra_outputs[k].append(out[k])
+                
+        for k in extra_outputs:
+            extra_outputs[k] = torch.stack(extra_outputs[k], dim=0)
+            
         # [Number of Poses, 3, H, W], [Number of Poses, 1, H, W] both in [0, 1]
-        return torch.stack(all_rendered_images, dim=0), torch.stack(all_rendered_masks, dim=0)
+        return torch.stack(all_rendered_images, dim=0), torch.stack(all_rendered_masks, dim=0), extra_outputs

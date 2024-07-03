@@ -1,0 +1,150 @@
+data:
+  background_color: [1.0, 1.0, 1.0]
+  cond_width: 252 # multiply of 14
+  cond_height: 252
+
+  relative_pose: true
+
+  num_workers: 16
+  eval_batch_size: 1
+  eval_height: 512
+  eval_width: 512
+
+system:
+  camera_embedder_cls: TriplaneGaussian.models.networks.MLP
+  camera_embedder:
+    dim_in: 25  # c2w + [fx, fy, cx, cy]
+    dim_out: 768
+    n_neurons: 768
+    n_hidden_layers: 1
+    activation: silu
+
+  image_feature:
+    out_dim: 773
+
+  image_tokenizer_cls: TriplaneGaussian.models.tokenizers.image.DINOV2SingleImageTokenizer
+  image_tokenizer:
+    pretrained_model_name_or_path: "facebook/dinov2-base"
+    width: ${data.cond_width}
+    height: ${data.cond_height}
+
+    modulation: true
+    modulation_zero_init: true
+    modulation_single_layer: true
+    modulation_cond_dim: ${system.camera_embedder.dim_out} # c2w + intrinsic
+
+    freeze_backbone_params: false
+    enable_memory_efficient_attention: ${system.backbone.enable_memory_efficient_attention}
+    enable_gradient_checkpointing: ${system.backbone.gradient_checkpointing}
+
+  tokenizer_cls: TriplaneGaussian.models.tokenizers.triplane.TriplaneLearnablePositionalEmbedding
+  tokenizer:
+    plane_size: 32
+    num_channels: 512
+
+  backbone_cls: TriplaneGaussian.models.transformers.Transformer1D
+  backbone:
+    in_channels: ${system.tokenizer.num_channels}
+    num_attention_heads: 8
+    attention_head_dim: 64
+    num_layers: 10
+    cross_attention_dim: 768 # hard-code, =DINO feature dim
+
+    norm_type: "layer_norm"
+
+    enable_memory_efficient_attention: false
+    gradient_checkpointing: false
+
+  post_processor_cls: TriplaneGaussian.models.networks.TriplaneUpsampleNetwork
+  post_processor:
+    in_channels: ${system.tokenizer.num_channels}
+    out_channels: 80
+
+  pointcloud_generator_cls: TriplaneGaussian.models.pointclouds.simplepoint.SimplePointGenerator
+  pointcloud_generator:
+    camera_embedder_cls: TriplaneGaussian.models.networks.MLP
+    camera_embedder:
+      dim_in: 25  # c2w + [fx, fy, cx, cy]
+      dim_out: 768
+      n_neurons: 768
+      n_hidden_layers: 1
+      activation: silu
+
+    image_tokenizer_cls: TriplaneGaussian.models.tokenizers.image.DINOV2SingleImageTokenizer
+    image_tokenizer:
+      pretrained_model_name_or_path: "facebook/dinov2-base"
+      width: ${data.cond_width}
+      height: ${data.cond_height}
+
+      modulation: true
+      modulation_zero_init: true
+      modulation_single_layer: true
+      modulation_cond_dim: ${system.camera_embedder.dim_out} # c2w + intrinsic
+
+      freeze_backbone_params: true
+      enable_memory_efficient_attention: ${system.backbone.enable_memory_efficient_attention}
+      enable_gradient_checkpointing: false
+
+    tokenizer_cls: TriplaneGaussian.models.tokenizers.point.PointLearnablePositionalEmbedding
+    tokenizer:
+      num_pcl: 2048
+      num_channels: 512
+
+    backbone_cls: TriplaneGaussian.models.transformers.Transformer1D
+    backbone:
+      in_channels: ${system.pointcloud_generator.tokenizer.num_channels}
+      num_attention_heads: 8
+      attention_head_dim: 64
+      num_layers: 10
+      cross_attention_dim: 768 # hard-code, =DINO feature dim
+
+      norm_type: "layer_norm"
+
+      enable_memory_efficient_attention: ${system.backbone.enable_memory_efficient_attention}
+      gradient_checkpointing: ${system.backbone.gradient_checkpointing}
+
+    post_processor_cls: TriplaneGaussian.models.networks.PointOutLayer
+    post_processor:
+      in_channels: 512
+      out_channels: 3
+
+    pointcloud_upsampling_cls: TriplaneGaussian.models.snowflake.model_spdpp.SnowflakeModelSPDPP
+    pointcloud_upsampling:
+      input_channels: 768
+      dim_feat: 128
+      num_p0: 2048
+      radius: 1
+      bounding: true
+      use_fps: true
+      up_factors: [2,4]
+      token_type: "image_token"
+
+  pointcloud_encoder_cls: TriplaneGaussian.models.pointclouds.pointnet.LocalPoolPointnet
+  pointcloud_encoder:
+    input_channels: 776 # 3 + 3 + 768 + 1 + 1 [xyz, local features]
+    c_dim: ${system.tokenizer.num_channels}
+    hidden_dim: 128
+    plane_size: ${system.tokenizer.plane_size}
+    n_blocks: 5
+    radius: ${system.renderer.radius}
+
+  renderer_cls: TriplaneGaussian.models.renderer.GS3DRenderer
+  renderer:
+    sh_degree: 3
+    radius: 0.6
+    mlp_network_config:
+      n_neurons: ${system.renderer.gs_out.in_channels}
+      n_hidden_layers: 2
+      activation: silu
+    gs_out:
+      in_channels: 128
+      xyz_offset: true
+      restrict_offset: true
+      use_rgb: false
+      feature_channels:
+        xyz: 3
+        scaling: 3
+        rotation: 4
+        opacity: 1
+        shs: ${shsdim:${system.renderer.sh_degree}}
+      clip_scaling: 0.2

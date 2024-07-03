@@ -1,0 +1,29 @@
+{
+  "_class_name": "MVDiffusionImagePipeline",
+  "_diffusers_version": "0.19.3",
+  "feature_extractor": [
+    "transformers",
+    "CLIPImageProcessor"
+  ],
+  "image_encoder": [
+    "transformers",
+    "CLIPVisionModelWithProjection"
+  ],
+  "requires_safety_checker": true,
+  "safety_checker": [
+    null,
+    null
+  ],
+  "scheduler": [
+    "diffusers",
+    "DDIMScheduler"
+  ],
+  "unet": [
+    "Wonder3D.models.unet_mv2d_condition",
+    "UNetMV2DConditionModel"
+  ],
+  "vae": [
+    "diffusers",
+    "AutoencoderKL"
+  ]
+}

@@ -1,7 +1,7 @@
 num_views: 6
 
 dataset:
-  prompt_embeds_path: era3d/mvdiffusion/data/fixed_prompt_embeds_6view
+  prompt_embeds_path: Gen_3D_Modules/Era3D/mvdiffusion/data/fixed_prompt_embeds_6view
   num_views: ${num_views}
   bg_color: 'white'
   img_wh:  [512, 512]

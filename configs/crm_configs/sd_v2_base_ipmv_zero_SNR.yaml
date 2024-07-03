@@ -1,5 +1,5 @@
 model:
-  target: crm.imagedream.ldm.interface.LatentDiffusionInterface
+  target: CRM.imagedream.ldm.interface.LatentDiffusionInterface
   params:
     linear_start: 0.00085
     linear_end: 0.0120
@@ -9,7 +9,7 @@ model:
     zero_snr: true
 
     unet_config:
-      target: crm.imagedream.ldm.modules.diffusionmodules.openaimodel.MultiViewUNetModel
+      target: CRM.imagedream.ldm.modules.diffusionmodules.openaimodel.MultiViewUNetModel
       params:
         image_size: 32 # unused
         in_channels: 4
@@ -31,7 +31,7 @@ model:
         ip_mode: "local_resample"
 
     vae_config:
-      target: crm.imagedream.ldm.models.autoencoder.AutoencoderKL
+      target: CRM.imagedream.ldm.models.autoencoder.AutoencoderKL
       params:
         embed_dim: 4
         monitor: val/rec_loss
@@ -55,14 +55,14 @@ model:
           target: torch.nn.Identity
 
     clip_config:
-      target: crm.imagedream.ldm.modules.encoders.modules.FrozenOpenCLIPEmbedder
+      target: CRM.imagedream.ldm.modules.encoders.modules.FrozenOpenCLIPEmbedder
       params:
         freeze: True
         layer: "penultimate"
         ip_mode: "local_resample"
 
 sampler:
-    target: crm.libs.sample.ImageDreamDiffusion
+    target: CRM.libs.sample.ImageDreamDiffusion
     params:
         mode: pixel
         num_frames: 7

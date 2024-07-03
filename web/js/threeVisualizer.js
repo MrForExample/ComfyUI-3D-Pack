@@ -25,7 +25,7 @@ const pmremGenerator = new THREE.PMREMGenerator( renderer );
 
 // scene
 const scene = new THREE.Scene();
-scene.background = new THREE.Color( 0xffffff );
+scene.background = new THREE.Color( 0x000000 );
 scene.environment = pmremGenerator.fromScene( new RoomEnvironment( renderer ), 0.04 ).texture;
 
 const ambientLight = new THREE.AmbientLight( 0xffffff , 3.0 );
@@ -124,7 +124,6 @@ async function main(filepath="") {
                 
             }, onProgress, onError );
 
-
         } else if (fileExt == "glb") {
             const dracoLoader = new DRACOLoader();
             dracoLoader.setDecoderPath( 'https://unpkg.com/three@latest/examples/jsm/libs/draco/gltf/' );
@@ -134,8 +133,7 @@ async function main(filepath="") {
             loader.load( url, function ( gltf ) {
                 const model = gltf.scene;
                 //model.position.set( 1, 1, 0 );
-                //model.scale.set( 0.01, 0.01, 0.01 );
-                model.scale.set( 5, 5, 5 );
+                model.scale.set( 3, 3, 3 );
 
                 scene.add( model );
             

@@ -15,9 +15,9 @@ from kiui.cam import orbit_camera, get_perspective
 from kiui.nn import MLP, trunc_exp
 
 from ..mesh_processer.mesh import Mesh
-from ..lgm.core.options import Options
-from ..lgm.core.gs import GaussianRenderer
-from ..lgm.core.utils import get_rays
+from LGM.core.options import Options
+from LGM.core.gs import GaussianRenderer
+from LGM.core.utils import get_rays
 
 # Triple renderer of gaussians, gaussian, and diso mesh.
 # gaussian --> nerf --> mesh
