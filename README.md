@@ -132,13 +132,6 @@ This is an extensive node suite that enables ComfyUI to process 3D inputs (Mesh 
   - Bake Multi-View images into UVTexture of given 3D mesh using [Nvdiffrast](https://github.com/NVlabs/nvdiffrast), supports:
   - Export to .obj, .ply, .glb
 
-- **NeuS**
-  - Fit a coarse mesh from sparse multi-view images & normal maps, as little as 4 to 6 views, pretty good at reconstruct the shape from reference images but texture lacking details.
-
-- **Deep Marching Tetrahedrons**
-  - Allow convert 3DGS .ply file to 3D mesh <br>
-  *Note: I didn't spent time to turn the hyperprameters yet, the result will be improved in the future!*
-
 - **Save & Load 3D file**
   - .obj, .ply, .glb for 3D Mesh
   - .ply for 3DGS

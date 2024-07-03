@@ -41,7 +41,7 @@ class ConvolutionalReconstructionModel(nn.Module):
         self.dec.c_dim = specs["DecoderSpecs"]["c_dim"]
         self.dec.plane_resolution = specs["DecoderSpecs"]["plane_resolution"]
 
-        self.geo_type = specs["Train"].get("geo_type", "flex") # "dmtet" or "flex"
+        self.geo_type = specs["Train"].get("geo_type", "flex") # only support "flex"
 
         self.unet2 = UNetPP(in_channels=self.dec.c_dim)
 

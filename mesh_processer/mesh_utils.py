@@ -494,14 +494,15 @@ def marching_cubes_density_to_mesh(get_density_func, grid_size=256, S=128, densi
     
     return vertices, triangles
 
-def color_func_to_albedo(mesh, get_rgb_func, texture_resolution=1024, padding=2, batch_size=640000, device="cuda", force_cuda_rast=False):
+def color_func_to_albedo(mesh, get_rgb_func, texture_resolution=1024, padding=2, batch_size=640000, device="cuda", force_cuda_rast=False, glctx=None):
     import nvdiffrast.torch as dr
     from kiui.op import uv_padding
     
-    if force_cuda_rast:
-        glctx = dr.RasterizeCudaContext()
-    else:
-        glctx = dr.RasterizeGLContext()
+    if glctx is None:
+        if force_cuda_rast:
+            glctx = dr.RasterizeCudaContext()
+        else:
+            glctx = dr.RasterizeGLContext()
     
     # render uv maps
     h = w = texture_resolution

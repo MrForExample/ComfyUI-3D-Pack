@@ -8,7 +8,6 @@
 
 import torch
 from FlexiCubes.flexicubes import FlexiCubes
-# from dmtet import sdf_reg_loss_batch
 import torch.nn.functional as F
 
 def get_center_boundary_index(grid_res, device):

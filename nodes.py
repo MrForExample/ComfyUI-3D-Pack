@@ -43,10 +43,6 @@ from .mesh_processer.mesh_utils import (
     marching_cubes_density_to_mesh,
     color_func_to_albedo,
 )
-from .algorithms.nerf_marching_cubes_converter import GSConverterNeRFMarchingCubes
-# TODO remove: NeuS, DMTet
-from .algorithms.NeuS_runner import NeuSParams, NeuSRunner
-from .algorithms.dmtet import DMTetMesh
 
 from FlexiCubes.flexicubes_trainer import FlexiCubesTrainer
 from DiffRastMesh.diff_mesh import DiffMesh, DiffMeshCameraController
@@ -62,6 +58,7 @@ from TriplaneGaussian.utils.misc import todevice, get_device
 from LGM.core.options import config_defaults
 from LGM.mvdream.pipeline_mvdream import MVDreamPipeline
 from LGM.large_multiview_gaussian_model import LargeMultiviewGaussianModel
+from LGM.nerf_marching_cubes_converter import GSConverterNeRFMarchingCubes
 from TripoSR.system import TSR
 from InstantMesh.utils.camera_util import oribt_camera_poses_to_input_cameras
 from CRM.model.crm.model import ConvolutionalReconstructionModel
@@ -1288,66 +1285,6 @@ class Fitting_Mesh_With_Multiview_Images:
             cstr(f"[{self.__class__.__name__}] Number of reference images {ref_imgs_num} does not equal to number of masks {ref_masks_num}").error.print()
         
         return (trained_mesh, baked_texture, )
-    
-class Deep_Marching_Tetrahedrons:
-    
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "training_iterations": ("INT", {"default": 5000, "min": 1, "max": 100000}),
-                "points_cloud_fitting_weight": ("FLOAT", {"default": 1.0, "min": 0.0, "step": 0.01}),
-                "mesh_smoothing_weight": ("FLOAT", {"default": 0.1, "min": 0.0, "step": 0.01}),
-                "chamfer_faces_sample_scale": ("FLOAT", {"default": 1.0, "min": 0.01, "step": 0.01}),
-                "mesh_scale": ("FLOAT", {"default": 1.0, "min": 0.01, "step": 0.01}),
-                "grid_resolution": ([128, 64, 32], ),
-                "geometry_learning_rate": ("FLOAT", {"default": 0.0001, "min": 0.00001, "step": 0.00001}),
-                "positional_encoding_multires": ("INT", {"default": 2, "min": 2}),
-                "mlp_internal_dims": ("INT", {"default": 128, "min": 8}),
-                "mlp_hidden_layer_num": ("INT", {"default": 5, "min": 1}),
-            },
-            
-            "optional": {
-                "reference_points_cloud": ("POINTCLOUD",),
-                "reference_images": ("IMAGE",), 
-                "reference_masks": ("MASK",),
-            }
-        }
-    
-    RETURN_TYPES = (
-        "MESH",
-    )
-    RETURN_NAMES = (
-        "trained_mesh",
-    )
-    FUNCTION = "run_dmtet"
-    CATEGORY = "Comfy3D/Algorithm"
-    
-    def run_dmtet(self, training_iterations, points_cloud_fitting_weight, mesh_smoothing_weight, chamfer_faces_sample_scale, mesh_scale, grid_resolution, geometry_learning_rate,
-                  positional_encoding_multires, mlp_internal_dims, mlp_hidden_layer_num, 
-                  reference_points_cloud=None, reference_images=None, reference_masks=None):
-        
-        with torch.inference_mode(False):
-            dmtet_mesh = DMTetMesh(
-                training_iterations, 
-                points_cloud_fitting_weight, 
-                mesh_smoothing_weight, 
-                chamfer_faces_sample_scale, 
-                mesh_scale, 
-                grid_resolution, 
-                geometry_learning_rate, 
-                positional_encoding_multires, 
-                mlp_internal_dims, 
-                mlp_hidden_layer_num
-            )
-            
-            if reference_points_cloud is None and reference_images is None:
-                cstr(f"[{self.__class__.__name__}] reference_points_cloud and reference_images cannot both be None, you need at least provide one of them!").error.print()
-                raise Exception("User didn't provide necessary inputs, stop executing the code!")
-            
-            dmtet_mesh.training(reference_points_cloud, reference_images, reference_masks)
-            mesh = dmtet_mesh.get_mesh()
-            return (mesh, )
 
 class Load_Triplane_Gaussian_Transformers:
     
@@ -1801,6 +1738,17 @@ class Convert_3DGS_to_Mesh_with_NeRF_and_Marching_Cubes:
             "required": {
                 "gs_ply": ("GS_PLY",),
                 "gs_config": (['big', 'default', 'small', 'tiny'], ),
+                "training_nerf_iterations": ("INT", {"default": 512, "min": 1, "max": 0xffffffffffffffff}),
+                "training_nerf_resolution": ("INT", {"default": 128, "min": 1, "max": 0xffffffffffffffff}),
+                "marching_cude_grids_resolution": ("INT", {"default": 256, "min": 1, "max": 0xffffffffffffffff}),
+                "marching_cude_grids_batch_size": ("INT", {"default": 128, "min": 1, "max": 0xffffffffffffffff}),
+                "marching_cude_threshold": ("FLOAT", {"default": 10.0, "min": 0.0, "step": 0.01}),
+                "training_mesh_iterations": ("INT", {"default": 2048, "min": 1, "max": 0xffffffffffffffff}),
+                "training_mesh_resolution": ("INT", {"default": 512, "min": 1, "max": 0xffffffffffffffff}),
+                "remesh_after_n_iteration": ("INT", {"default": 512, "min": 128, "max": 100000}),
+                "training_albedo_iterations": ("INT", {"default": 512, "min": 1, "max": 0xffffffffffffffff}),
+                "training_albedo_resolution": ("INT", {"default": 512, "min": 1, "max": 0xffffffffffffffff}),
+                "texture_resolution": ("INT", {"default": 1024, "min": 128, "max": 8192}),
                 "force_cuda_rast": ("BOOLEAN", {"default": False}),
             },
         }
@@ -1818,116 +1766,35 @@ class Convert_3DGS_to_Mesh_with_NeRF_and_Marching_Cubes:
     FUNCTION = "convert_gs_ply"
     CATEGORY = "Comfy3D/Algorithm"
     
-    def convert_gs_ply(self, gs_ply, gs_config, force_cuda_rast):
+    def convert_gs_ply(
+        self, 
+        gs_ply, 
+        gs_config, 
+        training_nerf_iterations,
+        training_nerf_resolution,
+        marching_cude_grids_resolution,
+        marching_cude_grids_batch_size,
+        marching_cude_threshold,
+        training_mesh_iterations,
+        training_mesh_resolution,
+        remesh_after_n_iteration,
+        training_albedo_iterations,
+        training_albedo_resolution,
+        texture_resolution,
+        force_cuda_rast,
+    ):
         with torch.inference_mode(False):
             chosen_config = config_defaults[gs_config]
             chosen_config.force_cuda_rast = force_cuda_rast
             converter = GSConverterNeRFMarchingCubes(config_defaults[gs_config], gs_ply).cuda()
-            imgs, alphas = converter.fit_nerf()
-            converter.fit_mesh()
-            converter.fit_mesh_uv()
+            imgs, alphas = converter.fit_nerf(training_nerf_iterations, training_nerf_resolution)
+            converter.fit_mesh(
+                training_mesh_iterations, remesh_after_n_iteration, training_mesh_resolution, 
+                marching_cude_grids_resolution, marching_cude_grids_batch_size, marching_cude_threshold
+            )
+            converter.fit_mesh_uv(training_albedo_iterations, training_albedo_resolution, texture_resolution)
         
             return(converter.get_mesh(), imgs, alphas)
-    
-class NeuS:
-    NeuS_config_path = "NeuS.conf"
-    fix_cam_pose_dir = "NeuS/models/fixed_poses"
-    
-    @classmethod
-    def INPUT_TYPES(cls):
-        cls.config_path_abs = os.path.join(CONFIG_ROOT_PATH, cls.NeuS_config_path)
-        return {
-            "required": {
-                "reference_image": ("IMAGE",),
-                "reference_mask": ("MASK",),
-                "reference_normals": ("IMAGE",),
-                "training_iterations": ("INT", {"default": 1000, "min": 1, "max": 100000}), # longer time, better result. 1w will be ok for most cases
-                "batch_size": ("INT", {"default": 512, "min": 1, "max": 0xffffffffffffffff}),
-                "learning_rate": ("FLOAT", {"default": 5e-4, "min": 0.00001, "step": 0.00001}),
-                "learning_rate_alpha": ("FLOAT", {"default": 5e-4, "min": 0.00001, "step": 0.00001}),
-                "color_loss_weight": ("FLOAT", {"default": 1.0, "min": 0.0, "step": 0.01}),
-                "mesh_smoothing_weight": ("FLOAT", {"default": 0.1, "min": 0.0, "step": 0.01}),
-                "mask_loss_weight": ("FLOAT", {"default": 1.0, "min": 0.0, "step": 0.01}),
-                "normal_loss_weight": ("FLOAT", {"default": 1.0, "min": 0.0, "step": 0.01}),
-                "sparse_loss_weight": ("FLOAT", {"default": 0.1, "min": 0.0, "step": 0.01}),
-                "warm_up_end": ("INT", {"default": 500, "min": 0, "max": 0xffffffffffffffff}),
-                "anneal_end": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
-                "use_white_background":  ("BOOLEAN", {"default": True},),
-                "geometry_extract_resolution": ("INT", {"default": 512, "min": 1, "max": 0xffffffffffffffff}),
-                "marching_cude_threshold": ("FLOAT", {"default": 0.0, "min": 0.0, "step": 0.01}),
-            },
-        }
-
-    RETURN_TYPES = (
-        "MESH",
-    )
-    RETURN_NAMES = (
-        "mesh",
-    )
-    FUNCTION = "run_NeuS"
-    CATEGORY = "Comfy3D/Algorithm"
-    
-    def run_NeuS(
-        self, 
-        reference_image,    # [num_views, H, W, 3]
-        reference_mask,     # [num_views, H, W]
-        reference_normals,  # [num_views, H, W, 3]
-        training_iterations,
-        batch_size,
-        learning_rate,
-        learning_rate_alpha,
-        color_loss_weight,
-        mesh_smoothing_weight,
-        mask_loss_weight,
-        normal_loss_weight,
-        sparse_loss_weight,
-        warm_up_end,
-        anneal_end,
-        use_white_background,
-        geometry_extract_resolution,
-        marching_cude_threshold
-    ):
-        mesh = None
-        num_views = reference_image.shape[0]
-        
-        if num_views in [6, 5, 4]:
-            abs_fix_cam_pose_dir = os.path.join(ROOT_PATH, self.fix_cam_pose_dir)
-            
-            with torch.inference_mode(False):
-                NeuS_params = NeuSParams(
-                    training_iterations,
-                    batch_size,
-                    learning_rate,
-                    learning_rate_alpha,
-                    color_loss_weight,
-                    mesh_smoothing_weight,
-                    mask_loss_weight,
-                    normal_loss_weight,
-                    sparse_loss_weight,
-                    warm_up_end,
-                    anneal_end,
-                    use_white_background
-                )
-                
-                runner = NeuSRunner(
-                    reference_image,
-                    reference_mask,
-                    reference_normals,
-                    self.config_path_abs,
-                    abs_fix_cam_pose_dir,
-                    num_views,
-                    NeuS_params
-                )
-                
-                cstr(f"[{self.__class__.__name__}] Training NeuS...").msg.print()
-                runner.train()
-                
-                cstr(f"[{self.__class__.__name__}] Extracting Mesh...").msg.print()
-                mesh = runner.extract_mesh(resolution=geometry_extract_resolution, threshold=marching_cude_threshold)
-        else:
-            cstr(f"[{self.__class__.__name__}] Number of views must be one of the following: 6, 5, 4. But got {num_views}").error.print()
-            
-        return(mesh, )
     
 class Load_TripoSR_Model:
     checkpoints_dir = "TripoSR"

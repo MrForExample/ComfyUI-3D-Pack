@@ -70,40 +70,6 @@
       ]
     },
     {
-      "id": 12,
-      "type": "[Comfy3D] Preview 3DGS",
-      "pos": [
-        1590,
-        800
-      ],
-      "size": [
-        600,
-        500
-      ],
-      "flags": {
-        "collapsed": false
-      },
-      "order": 9,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "gs_file_path",
-          "type": "STRING",
-          "link": 13,
-          "widget": {
-            "name": "gs_file_path"
-          }
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "[Comfy3D] Preview 3DGS"
-      },
-      "widgets_values": [
-        "",
-        null
-      ]
-    },
-    {
       "id": 14,
       "type": "[Comfy3D] Triplane Gaussian Transformers",
       "pos": [
@@ -150,38 +116,6 @@
       },
       "widgets_values": [
         1.9000000000000001
-      ]
-    },
-    {
-      "id": 26,
-      "type": "[Comfy3D] Preview 3DMesh",
-      "pos": [
-        2328,
-        796
-      ],
-      "size": [
-        600,
-        500
-      ],
-      "flags": {},
-      "order": 12,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "mesh_file_path",
-          "type": "STRING",
-          "link": 32,
-          "widget": {
-            "name": "mesh_file_path"
-          }
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "[Comfy3D] Preview 3DMesh"
-      },
-      "widgets_values": [
-        "",
-        null
       ]
     },
     {
@@ -251,45 +185,6 @@
       ]
     },
     {
-      "id": 10,
-      "type": "[Comfy3D] Save 3DGS",
-      "pos": [
-        1288,
-        800
-      ],
-      "size": {
-        "0": 275.57391357421875,
-        "1": 58
-      },
-      "flags": {},
-      "order": 7,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "gs_ply",
-          "type": "GS_PLY",
-          "link": 12
-        }
-      ],
-      "outputs": [
-        {
-          "name": "save_path",
-          "type": "STRING",
-          "links": [
-            13
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "[Comfy3D] Save 3DGS"
-      },
-      "widgets_values": [
-        "MeshTest\\3DGS_Picacho.ply"
-      ]
-    },
-    {
       "id": 34,
       "type": "[Comfy3D] Switch 3DGS Axis",
       "pos": [
@@ -339,7 +234,7 @@
       ],
       "size": {
         "0": 411.6000061035156,
-        "1": 58
+        "1": 386
       },
       "flags": {},
       "order": 10,
@@ -360,13 +255,37 @@
           ],
           "shape": 3,
           "slot_index": 0
+        },
+        {
+          "name": "imgs",
+          "type": "IMAGE",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "alphas",
+          "type": "MASK",
+          "links": null,
+          "shape": 3
         }
       ],
       "properties": {
         "Node name for S&R": "[Comfy3D] Convert 3DGS to Mesh with NeRF and Marching Cubes"
       },
       "widgets_values": [
-        "big"
+        "big",
+        512,
+        128,
+        256,
+        128,
+        10,
+        2048,
+        512,
+        512,
+        512,
+        512,
+        1024,
+        false
       ]
     },
     {
@@ -481,6 +400,111 @@
         "a_pikachu_with_smily_face-removebg.png",
         "image"
       ]
+    },
+    {
+      "id": 10,
+      "type": "[Comfy3D] Save 3DGS",
+      "pos": [
+        1226,
+        1084
+      ],
+      "size": {
+        "0": 275.57391357421875,
+        "1": 58
+      },
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "gs_ply",
+          "type": "GS_PLY",
+          "link": 12
+        }
+      ],
+      "outputs": [
+        {
+          "name": "save_path",
+          "type": "STRING",
+          "links": [
+            13
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Save 3DGS"
+      },
+      "widgets_values": [
+        "MeshTest\\3DGS_Picacho.ply"
+      ]
+    },
+    {
+      "id": 12,
+      "type": "[Comfy3D] Preview 3DGS",
+      "pos": [
+        1529,
+        1083
+      ],
+      "size": [
+        600,
+        500
+      ],
+      "flags": {
+        "collapsed": false
+      },
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "gs_file_path",
+          "type": "STRING",
+          "link": 13,
+          "widget": {
+            "name": "gs_file_path"
+          }
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Preview 3DGS"
+      },
+      "widgets_values": [
+        "",
+        null
+      ]
+    },
+    {
+      "id": 26,
+      "type": "[Comfy3D] Preview 3DMesh",
+      "pos": [
+        2327,
+        628
+      ],
+      "size": [
+        600,
+        500
+      ],
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh_file_path",
+          "type": "STRING",
+          "link": 32,
+          "widget": {
+            "name": "mesh_file_path"
+          }
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Preview 3DMesh"
+      },
+      "widgets_values": [
+        "",
+        null
+      ]
     }
   ],
   "links": [
@@ -575,6 +599,14 @@
   ],
   "groups": [],
   "config": {},
-  "extra": {},
+  "extra": {
+    "ds": {
+      "scale": 0.6209213230591553,
+      "offset": [
+        -672.2404394535945,
+        -402.3689017930591
+      ]
+    }
+  },
   "version": 0.4
 }
