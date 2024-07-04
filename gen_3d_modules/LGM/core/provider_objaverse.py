@@ -1,17 +1,14 @@
 import os
 import cv2
-import random
 import numpy as np
 
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.transforms.functional as TF
 from torch.utils.data import Dataset
 
-import kiui
 from LGM.core.options import Options
-from LGM.core.utils import get_rays, grid_distortion, orbit_camera_jitter
+from LGM.core.utils import get_rays
 
 IMAGENET_DEFAULT_MEAN = (0.485, 0.456, 0.406)
 IMAGENET_DEFAULT_STD = (0.229, 0.224, 0.225)
@@ -129,15 +126,6 @@ class ObjaverseDataset(Dataset):
 
         images_input = F.interpolate(images[:self.opt.num_input_views].clone(), size=(self.opt.input_size, self.opt.input_size), mode='bilinear', align_corners=False) # [V, C, H, W]
         cam_poses_input = cam_poses[:self.opt.num_input_views].clone()
-
-        # data augmentation
-        if self.training:
-            # apply random grid distortion to simulate 3D inconsistency
-            if random.random() < self.opt.prob_grid_distortion:
-                images_input[1:] = grid_distortion(images_input[1:])
-            # apply camera jittering (only to input!)
-            if random.random() < self.opt.prob_cam_jitter:
-                cam_poses_input[1:] = orbit_camera_jitter(cam_poses_input[1:])
 
         images_input = TF.normalize(images_input, IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD)
 

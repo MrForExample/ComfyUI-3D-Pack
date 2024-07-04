@@ -62,53 +62,6 @@ def orbit_camera_jitter(poses, strength=0.1):
     
     return new_poses
 
-def grid_distortion(images, strength=0.5):
-    # images: [B, C, H, W]
-    # num_steps: int, grid resolution for distortion
-    # strength: float in [0, 1], strength of distortion
-
-    B, C, H, W = images.shape
-
-    num_steps = np.random.randint(8, 17)
-    grid_steps = torch.linspace(-1, 1, num_steps)
-
-    # have to loop batch...
-    grids = []
-    for b in range(B):
-        # construct displacement
-        x_steps = torch.linspace(0, 1, num_steps) # [num_steps], inclusive
-        x_steps = (x_steps + strength * (torch.rand_like(x_steps) - 0.5) / (num_steps - 1)).clamp(0, 1) # perturb
-        x_steps = (x_steps * W).long() # [num_steps]
-        x_steps[0] = 0
-        x_steps[-1] = W
-        xs = []
-        for i in range(num_steps - 1):
-            xs.append(torch.linspace(grid_steps[i], grid_steps[i + 1], x_steps[i + 1] - x_steps[i]))
-        xs = torch.cat(xs, dim=0) # [W]
-
-        y_steps = torch.linspace(0, 1, num_steps) # [num_steps], inclusive
-        y_steps = (y_steps + strength * (torch.rand_like(y_steps) - 0.5) / (num_steps - 1)).clamp(0, 1) # perturb
-        y_steps = (y_steps * H).long() # [num_steps]
-        y_steps[0] = 0
-        y_steps[-1] = H
-        ys = []
-        for i in range(num_steps - 1):
-            ys.append(torch.linspace(grid_steps[i], grid_steps[i + 1], y_steps[i + 1] - y_steps[i]))
-        ys = torch.cat(ys, dim=0) # [H]
-
-        # construct grid
-        grid_x, grid_y = torch.meshgrid(xs, ys, indexing='xy') # [H, W]
-        grid = torch.stack([grid_x, grid_y], dim=-1) # [H, W, 2]
-
-        grids.append(grid)
-    
-    grids = torch.stack(grids, dim=0).to(images.device) # [B, H, W, 2]
-
-    # grid sample
-    images = F.grid_sample(images, grids, align_corners=False)
-
-    return images
-
 class WarningFilter(logging.Filter):
     def filter(self, record):
         if record.levelno == logging.WARNING:
