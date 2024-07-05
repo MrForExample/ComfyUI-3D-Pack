@@ -62,8 +62,7 @@ RUN pip install --no-cache -r requirements.txt
 
 WORKDIR /app/custom_nodes/ComfyUI-3D-Pack/
 COPY --chown=user:user requirements.txt requirements_post.txt ./
-COPY --chown=user:user Libs/simple-knn/ Libs/simple-knn/
-COPY --chown=user:user Gen_3D_Modules/TriplaneGaussian/ Gen_3D_Modules/TriplaneGaussian/
+COPY --chown=user:user _Pre_Builds/_Libs _Pre_Builds/_Libs
 RUN pip install --no-cache -r requirements.txt \
     # post requirements installation require gpu, setup
     # `nvidia-container-runtime`, for docker, see

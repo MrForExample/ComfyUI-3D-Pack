@@ -1,6 +1,6 @@
 # local
-./Gen_3D_Modules/TriplaneGaussian/models/snowflake/pointnet2_ops_lib
-./Libs/simple-knn
+./_Pre_Builds/_Libs/pointnet2_ops
+./_Pre_Builds/_Libs/simple-knn
 
 # remote
 git+https://github.com/ashawkey/diff-gaussian-rasterization

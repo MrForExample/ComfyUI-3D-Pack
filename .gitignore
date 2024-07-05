@@ -165,3 +165,6 @@ nvdiffrast/
 
 # Ignore test outputs
 outputs/
+
+# Ignore git cloned project only for build dependencies
+_Pre_Builds/_Build_Dependencies 
