@@ -52,24 +52,20 @@ ENV NVIDIA_DRIVER_CAPABILITIES compute,utility,graphics
 # Default pyopengl to EGL for good headless rendering support
 ENV PYOPENGL_PLATFORM egl
 
-RUN pip install --no-cache --index-url https://download.pytorch.org/whl/cu121 \
-    torch==2.2.0 torchvision==0.17.0 xformers==0.0.24
-
 WORKDIR /app
 RUN git clone "https://github.com/comfyanonymous/ComfyUI.git" ./ && \
     git reset --hard 05cd00695a84cebd5603a31f665eb7301fba2beb
 RUN pip install --no-cache -r requirements.txt
 
 WORKDIR /app/custom_nodes/ComfyUI-3D-Pack/
-COPY --chown=user:user requirements.txt requirements_post.txt ./
-COPY --chown=user:user _Pre_Builds/_Libs _Pre_Builds/_Libs
+COPY --chown=user:user requirements.txt ./
 RUN pip install --no-cache -r requirements.txt \
     # post requirements installation require gpu, setup
     # `nvidia-container-runtime`, for docker, see
     # https://stackoverflow.com/a/61737404
-    -r requirements_post.txt \
     # those seem to be missed
-    ninja scikit-learn rembg[gpu] open_clip_torch
+    ninja rembg[gpu] open_clip_torch \
+    python install.py
 
 WORKDIR /app/custom_nodes/
 RUN git clone "https://github.com/ltdrdata/ComfyUI-Impact-Pack" && \

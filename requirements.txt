@@ -1,6 +1,10 @@
-# base
+# build tools
 cmake
 ninja
+
+# web tools
+PyGithub
+requests
 
 # computational libraries
 numpy

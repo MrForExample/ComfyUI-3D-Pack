@@ -4,16 +4,28 @@
 This is an extensive node suite that enables ComfyUI to process 3D inputs (Mesh & UV Texture, etc.) using cutting edge algorithms (3DGS, NeRF, etc.) and models (InstantMesh, CRM, TripoSR, etc.)
 
 <span style="font-size:1.5em;">
-<a href=#currently-support>Features</a> &mdash;
-<a href=#roadmap>Roadmap</a> &mdash;
+<a href=#Features>Features</a> &mdash;
 <a href=#install>Install</a> &mdash;
-<a href=#run>Run</a> &mdash;
+<a href=#roadmap>Roadmap</a> &mdash;
+<a href=#development>Development</a> &mdash;
 <a href=#tips>Tips</a> &mdash;
 <a href=#supporters>Supporters</a>
 </span>
 
-## Currently support:
-- For use case please check [Example Workflows](./_Example_Workflows/). [**Last update: 07/06/2024**]
+## Install:
+**Can be installed directly from [ComfyUI-Manager](https://github.com/ltdrdata/ComfyUI-Manager)🚀**
+
+- [Pre-builds](https://github.com/MrForExample/Comfy3D_Pre_Builds) are available for:
+  - Windows 10/11, Ubuntu 22.04
+  - Python 3.10/3.11/3.12
+  - CUDA 12.1/11.8
+  - torch 2.3.0+cu121/cu118, torchvision 0.18.0+cu121/cu118
+- [install.py](install.py) will download & install Pre-builds automatically according to your runtime environment, if it couldn't find corresponding Pre-builds, then [build script](_Pre_Builds/_Build_Scripts/auto_build_all.py) will start automatically, if automatic build doesn't work for you, then please check out [Semi-Automatic Build Guide](_Pre_Builds/README.md#build-required-packages-semi-automatically)
+- If you have any missing node in any open Comfy3D workflow, try simply click [Install Missing Custom Nodes](https://github.com/ltdrdata/ComfyUI-Manager?tab=readme-ov-file#support-of-missing-nodes-installation) in ComfyUI-Manager
+- **Note:** at this moment, you'll still need to install [Visual Studio Build Tools for windows](_Pre_Builds/README.md#build-for-windows) and [install `gcc g++` for Linux](_Pre_Builds/README.md#build-for-linux) in order for `InstantNGP & Convert 3DGS to Mesh with NeRF and Marching_Cubes` nodes to work, since those two nodes used JIT torch cpp extension that builds in runtime, but I plan to replace those nodes soon
+
+## Features:
+- For use cases please check out [Example Workflows](./_Example_Workflows/). [**Last update: 04/July/2024**]
   - **Note:** you need to put [Example Inputs Files & Folders](_Example_Workflows/_Example_Inputs_Files/) under ComfyUI Root Directory\ComfyUI\input folder before you can run the example workflow
   - [tripoSR-layered-diffusion workflow](https://github.com/C0nsumption/Consume-ComfyUI-Workflows/tree/main/assets/tripo_sr/00) by [@Consumption](https://twitter.com/c0nsumption_)
 
@@ -143,178 +155,70 @@ This is an extensive node suite that enables ComfyUI to process 3D inputs (Mesh 
   - Custom clients IP address 
 
 ## Roadmap:
-- [x] Add DMTet algorithm to allow conversion from points cloud(Gaussian/.ply) to mesh (.obj, .ply, .glb)
+- [ ] Integrate [CharacterGen](https://github.com/zjp-shadow/CharacterGen)
 
-- [x] Integrate [Triplane Meets Gaussian Splatting: Fast and Generalizable Single-View 3D Reconstruction with Transformers](https://zouzx.github.io/TriplaneGaussian/)
+- [ ] Improve 3DGS/Nerf to Mesh conversion algorithms:
+  -  Find better methods to converts 3DGS or Points Cloud to Mesh (Normal maps reconstruction maybe?)
 
-- [x] Add interactive 3D UI inside ComfuUI to visulaize training and generated results for 3D representations
-
-- [x] Add a new node to generate renderer image sequence given a 3D gaussians and orbit camera poses (So we can later feed it to the differentiable renderer to bake it onto a given mesh)
-
-- [x] Integrate [LGM: Large Multi-View Gaussian Model for High-Resolution 3D Content Creation](https://me.kiui.moe/lgm/)
+- [ ] Add & Improve a few best MVS algorithms (e.g 2DGS, etc.)
 
 - [ ] Add camera pose estimation from raw multi-views images
 
-- [ ] Add & Improve a few best MVS algorithms (e.g instant-ngp, NeuS2, GaussianPro, etc.)
+## Development
+#### How to Contribute
+1. Fork the project
+2. Make Improvements/Add New Features
+3. Creating a Pull Request
 
-- [ ] Improve 3DGS/Nerf to Mesh conversion algorithms:
-  -  Support to training DMTet with images(RGB, Alpha, Normal Map)
-  -  Find better methods to converts 3DGS or Points Cloud to Mesh (Normal maps reconstruction maybe?)
+#### Project Structure 
+- **[nodes.py](nodes.py)**: 
+<br>Contains the interface code for all Comfy3D nodes (i.e. the nodes you can actually seen & use inside ComfyUI), you can add your new nodes here
 
-- Add a general SDS/ISM Optimization algorithm to allow training 3D representations with diffusion model
-  - Need to do some in-depth research on Interval Score Matching (ISM), since math behind it makes perfect sense and also there are so many ways we could improve upon the result obtained from [LucidDreamer](https://github.com/EnVision-Research/LucidDreamer)
-  - On Hold since runtime cost to generate an is too big (3+hours for an average RTX GPU like 3080)
+- **[Gen_3D_Modules](Gen_3D_Modules)**:
+<br>A folder that contains the code for all generative models/systems (e.g. multi-view diffusion models, 3D reconstruction models). New 3D generative modules should be added here
 
-## Install:
+- **[MVs_Algorithms](MVs_Algorithms)**:
+<br>A folder that contains the code for all multi-view stereo algorithms, i.e. algorighms (e.g. Gaussian Splatting, NeRF and FlexiCubes) that takes multi-view images and convert it to 3D representation (e.g. Gaussians, MLP or Mesh). New MVS algorithms should be added here
 
-**[IMPORTANT!!!]** <br> Currently this package is only been tested in following setups:
-- Windows 10/11 (Tested on my laptop)
-- Ubuntu 23.10 [(Tested by @watsieboi)](https://github.com/MrForExample/ComfyUI-3D-Pack/issues/16)
-- ComfyUI python_embed/Miniconda/Conda Python 3.11.x
-- Torch version >= 2.1.2+cu121
+- **[web](web)**:
+<br>A folder that contains the files & code (html, js, css) for all browser UI related things (e.g. the html layout, style and the core logics for preview 3D Mesh & Gaussians). New web UI should be added here
 
-<br>
+- **[webserver](webserver)**:
+<br>A folder that contains the code for communicate with browser, i.e. deal with web client requests (e.g. Sending 3D Mesh to client when requested with certain url routes). New web server related functions should be added here
 
-Assume you have already downloaded [ComfyUI](https://github.com/comfyanonymous/ComfyUI) & Configed your [CUDA](https://developer.nvidia.com/cuda-12-1-0-download-archive) environment.
+- **[Configs](Configs)**:
+<br>A folder that contains different config files for different modules, new config should be added here, use a sub folder if there are more than one config to a single module (e.g. [Unique3D](Configs/Unique3D_configs), [CRM](Configs/CRM_configs))
 
-### Install Method 0: Directly inside ComfyUI Windows Python Embeded Environment 
-***Currently support: (python3.10/3.11/3.12 cuda12.1)***
+- **[Checkpoints](Checkpoints)**:
+<br>A folder that contains all the pre-trained model and some of the model architecture config files required by diffusers, New checkpoints if could be downloaded automatically by `Load_Diffusers Pipeline` node, then it should be added here
 
-First install [Visual Studio Build Tools 2022/2019](https://visualstudio.microsoft.com/downloads/?q=build+tools) with Workloads: Desktop development with C++ (There are a few JIT torch cpp extension that builds in runtime)
-- Alternatively, according to [@doctorpangloss](https://github.com/MrForExample/ComfyUI-3D-Pack/issues/5), you can setup the c++/cuda build environments in windows by using [chocolatey](https://chocolatey.org/)
+- **[install.py](install.py)**: 
+<br>Main install script, will download & install [Pre-builds](https://github.com/MrForExample/Comfy3D_Pre_Builds) automatically according to your runtime environment, if it couldn't find corresponding Pre-builds, then [build script](_Pre_Builds/_Build_Scripts/auto_build_all.py) will start automatically, called by ComfyUI-Manager right after it installed the dependencies listed in [requirements.txt](requirements.txt) using pip
+<br>If the new modules your are trying to add needs some additional packages that cannot be simplly added into [requirements.txt](requirements.txt) and [build_config.remote_packages](_Pre_Builds/_Build_Scripts/build_config.yaml), then you can try to add it by modify this script
 
-Go to the Comfy3D root directory: *ComfyUI Root Directory\ComfyUI\custom_nodes\ComfyUI-3D-Pack* and run:
-
-```bash
-# Run .bat with python version corresponding to the version of your ComfyUI python environment
-
-# install_windows_portable_win_py310_cu121.bat
-install_windows_portable_win_py311_cu121.bat
-# install_windows_portable_win_py312_cu121.bat
-```
-
-### Install Method 1: Using Miniconda(Works on Windows & Linux & Mac)
-***Note: [In some edge cases Miniconda fails but Anaconda could fix the issue](https://github.com/MrForExample/ComfyUI-3D-Pack/issues/49)***
-
-#### Setup with Miniconda:
-First download [Miniconda](https://docs.conda.io/projects/miniconda/en/latest/) (*One of the best way to manage a clean and separated python envirments*)
-
-Then running following commands to setup the Miniconda environment for ComfyUI:
-
-```bash
-# Go to your Your ComfyUI root directory, for my example:
-cd C:\Users\reall\Softwares\ComfyUI_windows_portable 
-
-conda create -p ./python_miniconda_env/ComfyUI python=3.11
-
-# conda will tell what command to use to activate the env
-conda activate C:\Users\reall\Softwares\ComfyUI_windows_portable\python_miniconda_env\ComfyUI
-
-# update pip
-python -m pip install --upgrade pip
-
-# You can using following command to installing CUDA only in the miniconda environment you just created if you don't want to donwload and install it manually & globally:
-# conda install -c "nvidia/label/cuda-12.1.0" cuda-toolkit
-
-# Install the main packahes
-pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
-
-pip install -r ./ComfyUI/requirements.txt
-
-# Then go to ComfyUI-3D-Pack directory under the ComfyUI Root Directory\ComfyUI\custom_nodes for my example is:
-cd C:\Users\reall\Softwares\ComfyUI_windows_portable\ComfyUI\custom_nodes\ComfyUI-3D-Pack
-```
-
-   - Alternatively you can check this tutorial: [Installing ComfyUI with Miniconda On Windows and Mac](https://www.comflowy.com/preparation-for-study/install#step-two-download-comfyui)
-  
-#### Install with Miniconda:
-Go to the Comfy3D root directory: *ComfyUI Root Directory\ComfyUI\custom_nodes\ComfyUI-3D-Pack* and run:
-
-```bash
-install_miniconda.bat
-```
-Just in case `install_miniconda.bat` may not working in your OS, you could also run the following commands under the same directory: (Works with Linux & macOS)
-
-```bash
-pip install -r requirements.txt
-
-pip install -r requirements_post.txt
-```
-<br>
-
-**Plus:**<br>
-- For those who want to run it inside Google Colab, you can check the [install instruction from @lovisdotio](https://github.com/MrForExample/ComfyUI-3D-Pack/issues/13)
-- You can find some of the pre-build wheels for Linux here: [remsky/ComfyUI3D-Assorted-Wheels](https://github.com/remsky/ComfyUI3D-Assorted-Wheels)
-
-#### Install and run with docker:
-
-Gpu support during Docker build time is required to install all requirenents. 
-On Linux host you could setup `nvidia-container-runtime`. On Windows
-it is quite different and not checked at moment.
-
-##### Linux setup:
-
-1. Install nvidia-container-runtime:
-    ```bash
-    sudo apt-get install nvidia-container-runtime
-    ```
-
-1. Edit/create the /etc/docker/daemon.json with content:
-    ```json
-    {
-        "runtimes": {
-            "nvidia": {
-                "path": "/usr/bin/nvidia-container-runtime",
-                "runtimeArgs": []
-            } 
-        },
-        "default-runtime": "nvidia" 
-    }
-    ```
-    
-1. Restart docker daemon:
-    ```bash
-    sudo systemctl restart docker
-    ```
-
-Finally build and run docker container with:
-```bash
-docker build -t comfy3d . && docker run --rm -it -p 8188:8188 --gpus all comfy3d
-```
-
-## Run:
-Copy the files inside folder [__New_ComfyUI_Bats](./_New_ComfyUI_Bats/) to your ComfyUI root directory, and double click run_nvidia_gpu_miniconda.bat to start ComfyUI!
-- Alternatively you can just activate the Conda env: `python_miniconda_env\ComfyUI`, and go to your ComfyUI root directory then run command `python ./ComfyUI/main.py`
+- **[_Pre_Builds](_Pre_Builds)**:
+<br>A folder that contains the files & code for build all required dependencies, if you want to pre-build some additional dependencies, then please check [_Pre_Builds/README.md](_Pre_Builds/README.md) for more informations
 
 ## Tips
-* OpenGL world & camera coordinate system:
-```
-    World            Camera        
-  
-     +y              up  target                                              
-     |               |  /                                            
-     |               | /                                                
-     |______+x       |/______right                                      
-    /                /         
-   /                /          
-  /                /           
- +z               forward           
+* OpenGL (Three.js, Blender) world & camera coordinate system:
+  ```
+      World            Camera        
+    
+      +y              up  target                                              
+      |                |  /                                           
+      |                | /                                           
+      |______+x        |/______right                                      
+      /                /         
+     /                /          
+    /                /           
+  +z               forward           
 
-elevation: in (-90, 90), from +y to -y is (-90, 90)
-azimuth: in (-180, 180), from +z to +x is (0, 90)
-```
-
-* Wonder3D world & camera coordinate system:
-
-![wonder3d_coordinate](_Example_Workflows/_Example_Outputs/wonder3d_coordinate.png)
-
-* Three.js coordinate system: (z-axis is pointing towards you and is coming out of the screen)
-
-![right_hand_coordinate_system](_Example_Workflows/_Example_Outputs/right_hand_coordinate_system.png)
-
+  z-axis is pointing towards you and is coming out of the screen
+  elevation: in (-90, 90), from +y to +x is (-90, 0)
+  azimuth: in (-180, 180), from +z to +x is (0, 90)
+  ```
 * If you encounter OpenGL errors (e.g., `[F glutil.cpp:338] eglInitialize() failed`), then set `force_cuda_rasterize` to true on corresponding node
 * If after the installation, your ComfyUI get stucked at starting or running, you could following the instruction in following link to solve the problem: [Code Hangs Indefinitely When Evaluating Neuron Models on GPU](https://github.com/lava-nc/lava-dl/discussions/211)
-
 
 ## Supporters
 - [MrNeRF](https://twitter.com/janusch_patas)

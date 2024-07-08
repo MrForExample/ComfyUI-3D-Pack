@@ -1,0 +1,33 @@
+repo_id: "MrForExample/Comfy3D_Pre_Builds"
+supported_cuda_versions: ["12.1", "11.8"]
+cuda_version: "12.1"
+
+# Packages inside this file will be pip downloaded before actual build start
+build_requirements: "build_requirements.txt"
+# Dependencies to build wheels from
+dependencies: "dependencies.txt"
+# Folder used to store `git clone` project files from dependencies
+dependencies_dir_name: "_Build_Dependencies"
+# Folder used to store library files download from remote
+libs_dir_name: "_Libs"
+# Folder used to store built wheels
+wheels_dir_name: "_Build_Wheels"
+
+build_base_packages: ["torch", "torchvision"]
+# All packages will be automatically installed at beginning of install.py follwing orders from top to bottom 
+remote_packages:
+  torch:
+    version: "2.3.0"
+    url: "https://download.pytorch.org/whl/${cuda_version}"
+  
+  torchvision:
+    version: "0.18.0"
+    url: "https://download.pytorch.org/whl/${cuda_version}"
+
+  torch-scatter:
+    url_option: "--find-links"
+    url: "https://data.pyg.org/whl/torch-${remote_packages.torch.version}+${cuda_version}.html"
+
+  xformers:
+    version: "0.0.26.post1"
+    url: "https://download.pytorch.org/whl/${cuda_version}"

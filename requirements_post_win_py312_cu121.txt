@@ -1,7 +1,0 @@
-_Pre_Builds/_Wheels_win_py312_cu121/diff_gaussian_rasterization-0.0.0-cp312-cp312-win_amd64.whl
-_Pre_Builds/_Wheels_win_py312_cu121/kiui-0.2.4-py3-none-any.whl
-_Pre_Builds/_Wheels_win_py312_cu121/nvdiffrast-0.3.1-py3-none-any.whl
-_Pre_Builds/_Wheels_win_py312_cu121/pointnet2_ops-3.0.0-cp312-cp312-win_amd64.whl
-_Pre_Builds/_Wheels_win_py312_cu121/pytorch3d-0.7.6-cp312-cp312-win_amd64.whl
-_Pre_Builds/_Wheels_win_py312_cu121/simple_knn-0.0.0-cp312-cp312-win_amd64.whl
-_Pre_Builds/_Wheels_win_py312_cu121/torch_scatter-2.1.2-cp312-cp312-win_amd64.whl

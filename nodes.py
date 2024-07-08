@@ -82,7 +82,8 @@ from .shared_utils.image_utils import (
     prepare_torch_img, torch_imgs_to_pils, troch_image_dilate, 
     pils_rgba_to_rgb, pil_make_image_grid, pil_split_image, pils_to_torch_imgs,
 )
-from .shared_utils.common_utils import cstr, parse_save_filename, get_list_filenames, resume_or_download_model_from_hf
+from .shared_utils.log_utils import cstr
+from .shared_utils.common_utils import parse_save_filename, get_list_filenames, resume_or_download_model_from_hf
 
 DIFFUSERS_PIPE_DICT = OrderedDict([
     ("MVDreamPipeline", MVDreamPipeline),
