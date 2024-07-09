@@ -28,6 +28,7 @@ pytorch_msssim
 pytorch-lightning
 
 # for process images & videos
+rembg
 imageio
 imageio-ffmpeg
 matplotlib
