@@ -754,39 +754,6 @@
       ]
     },
     {
-      "id": 194,
-      "type": "UpscaleModelLoader",
-      "pos": [
-        5578,
-        -1147
-      ],
-      "size": {
-        "0": 394.51678466796875,
-        "1": 58
-      },
-      "flags": {},
-      "order": 6,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "UPSCALE_MODEL",
-          "type": "UPSCALE_MODEL",
-          "links": [
-            547
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "title": "Load Upscale Model [Var]",
-      "properties": {
-        "Node name for S&R": "UpscaleModelLoader"
-      },
-      "widgets_values": [
-        "realesrganX4plus_v1.pt"
-      ]
-    },
-    {
       "id": 243,
       "type": "CLIPVisionLoader",
       "pos": [
@@ -798,7 +765,7 @@
         "1": 58
       },
       "flags": {},
-      "order": 7,
+      "order": 6,
       "mode": 0,
       "outputs": [
         {
@@ -829,7 +796,7 @@
         "1": 58
       },
       "flags": {},
-      "order": 8,
+      "order": 7,
       "mode": 0,
       "outputs": [
         {
@@ -1126,6 +1093,39 @@
       ],
       "color": "#223",
       "bgcolor": "#335"
+    },
+    {
+      "id": 194,
+      "type": "UpscaleModelLoader",
+      "pos": [
+        5578,
+        -1147
+      ],
+      "size": {
+        "0": 394.51678466796875,
+        "1": 58
+      },
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "UPSCALE_MODEL",
+          "type": "UPSCALE_MODEL",
+          "links": [
+            547
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "title": "Load Upscale Model [Var]",
+      "properties": {
+        "Node name for S&R": "UpscaleModelLoader"
+      },
+      "widgets_values": [
+        "RealESRGAN_x4plus.pth"
+      ]
     }
   ],
   "links": [
@@ -1465,10 +1465,10 @@
   "config": {},
   "extra": {
     "ds": {
-      "scale": 0.5730855330117743,
+      "scale": 1.2284597357369258,
       "offset": [
-        -4246.553443737953,
-        1734.3442153644382
+        -5092.452932040381,
+        1313.4781111531727
       ]
     }
   },

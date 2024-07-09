@@ -1398,40 +1398,6 @@
       ]
     },
     {
-      "id": 194,
-      "type": "UpscaleModelLoader",
-      "pos": [
-        310.19045120595905,
-        -207.3873149879232
-      ],
-      "size": {
-        "0": 394.51678466796875,
-        "1": 58
-      },
-      "flags": {},
-      "order": 1,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "UPSCALE_MODEL",
-          "type": "UPSCALE_MODEL",
-          "links": [
-            547,
-            687
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "title": "Load Upscale Model [Var]",
-      "properties": {
-        "Node name for S&R": "UpscaleModelLoader"
-      },
-      "widgets_values": [
-        "realesrganX4plus_v1.pt"
-      ]
-    },
-    {
       "id": 296,
       "type": "[Comfy3D] Save 3D Mesh",
       "pos": [
@@ -1482,7 +1448,7 @@
         "1": 26
       },
       "flags": {},
-      "order": 2,
+      "order": 1,
       "mode": 0,
       "outputs": [
         {
@@ -1611,7 +1577,7 @@
         "1": 314
       },
       "flags": {},
-      "order": 3,
+      "order": 2,
       "mode": 0,
       "outputs": [
         {
@@ -1895,10 +1861,10 @@
         -945,
         -364
       ],
-      "size": [
-        210,
-        58
-      ],
+      "size": {
+        "0": 210,
+        "1": 58
+      },
       "flags": {},
       "order": 11,
       "mode": 0,
@@ -1934,10 +1900,10 @@
         -1370,
         -62
       ],
-      "size": [
-        718.2292537113422,
-        195.954588702313
-      ],
+      "size": {
+        "0": 718.229248046875,
+        "1": 195.95458984375
+      },
       "flags": {},
       "order": 10,
       "mode": 0,
@@ -1959,10 +1925,10 @@
         -607,
         -57
       ],
-      "size": [
-        608.1014177002792,
-        187.80788955609944
-      ],
+      "size": {
+        "0": 608.1014404296875,
+        "1": 187.80789184570312
+      },
       "flags": {},
       "order": 12,
       "mode": 0,
@@ -1976,6 +1942,40 @@
       "properties": {
         "Node name for S&R": "PreviewImage"
       }
+    },
+    {
+      "id": 194,
+      "type": "UpscaleModelLoader",
+      "pos": [
+        310.19045120595905,
+        -207.3873149879232
+      ],
+      "size": {
+        "0": 394.51678466796875,
+        "1": 58
+      },
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "UPSCALE_MODEL",
+          "type": "UPSCALE_MODEL",
+          "links": [
+            547,
+            687
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "title": "Load Upscale Model [Var]",
+      "properties": {
+        "Node name for S&R": "UpscaleModelLoader"
+      },
+      "widgets_values": [
+        "RealESRGAN_x4plus.pth"
+      ]
     }
   ],
   "links": [
@@ -2490,10 +2490,10 @@
   "config": {},
   "extra": {
     "ds": {
-      "scale": 0.5054470284993127,
+      "scale": 0.8954302432552712,
       "offset": [
-        2906.4865159897017,
-        762.6902948157394
+        76.66431332791694,
+        560.5353932591099
       ]
     }
   },

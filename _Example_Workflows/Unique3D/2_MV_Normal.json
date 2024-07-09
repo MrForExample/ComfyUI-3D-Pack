@@ -275,38 +275,6 @@
       ]
     },
     {
-      "id": 24,
-      "type": "UpscaleModelLoader",
-      "pos": [
-        1433,
-        105
-      ],
-      "size": {
-        "0": 315,
-        "1": 58
-      },
-      "flags": {},
-      "order": 2,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "UPSCALE_MODEL",
-          "type": "UPSCALE_MODEL",
-          "links": [
-            34
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "UpscaleModelLoader"
-      },
-      "widgets_values": [
-        "realesrganX4plus_v1.pt"
-      ]
-    },
-    {
       "id": 26,
       "type": "[Comfy3D] Rotate Normal Maps Horizontally",
       "pos": [
@@ -453,6 +421,38 @@
       "properties": {
         "Node name for S&R": "[Comfy3D] Get Masks From Normal Maps"
       }
+    },
+    {
+      "id": 24,
+      "type": "UpscaleModelLoader",
+      "pos": [
+        1433,
+        105
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "UPSCALE_MODEL",
+          "type": "UPSCALE_MODEL",
+          "links": [
+            34
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "UpscaleModelLoader"
+      },
+      "widgets_values": [
+        "RealESRGAN_x4plus.pth"
+      ]
     }
   ],
   "links": [
@@ -549,10 +549,10 @@
   "config": {},
   "extra": {
     "ds": {
-      "scale": 0.8264462809917356,
+      "scale": 1,
       "offset": [
-        -1532.094207035033,
-        229.55273653768023
+        -966.7186084475675,
+        202.58910814821127
       ]
     }
   },

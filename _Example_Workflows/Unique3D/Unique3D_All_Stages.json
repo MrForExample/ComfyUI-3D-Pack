@@ -2878,40 +2878,6 @@
       ]
     },
     {
-      "id": 194,
-      "type": "UpscaleModelLoader",
-      "pos": [
-        5546.459573923641,
-        -1148.9780671362878
-      ],
-      "size": {
-        "0": 394.51678466796875,
-        "1": 58
-      },
-      "flags": {},
-      "order": 9,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "UPSCALE_MODEL",
-          "type": "UPSCALE_MODEL",
-          "links": [
-            547,
-            660
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "title": "Load Upscale Model [Var]",
-      "properties": {
-        "Node name for S&R": "UpscaleModelLoader"
-      },
-      "widgets_values": [
-        "realesrganX4plus_v1.pt"
-      ]
-    },
-    {
       "id": 335,
       "type": "Reroute",
       "pos": [
@@ -3092,6 +3058,40 @@
       "properties": {
         "Node name for S&R": "MaskToImage"
       }
+    },
+    {
+      "id": 194,
+      "type": "UpscaleModelLoader",
+      "pos": [
+        5546.459573923641,
+        -1148.9780671362878
+      ],
+      "size": {
+        "0": 394.51678466796875,
+        "1": 58
+      },
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "UPSCALE_MODEL",
+          "type": "UPSCALE_MODEL",
+          "links": [
+            547,
+            660
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "title": "Load Upscale Model [Var]",
+      "properties": {
+        "Node name for S&R": "UpscaleModelLoader"
+      },
+      "widgets_values": [
+        "RealESRGAN_x4plus.pth"
+      ]
     }
   ],
   "links": [
@@ -3982,10 +3982,10 @@
   "config": {},
   "extra": {
     "ds": {
-      "scale": 0.23579476910001695,
+      "scale": 1.3109994191500893,
       "offset": [
-        143.1811204805715,
-        1624.196279935813
+        -5296.28634484957,
+        1239.1566467650287
       ]
     }
   },
