@@ -10,7 +10,7 @@ PYTHON_PATH = sys.executable
 try:
     from omegaconf import OmegaConf
 except ImportError as e:
-    subprocess.run([PYTHON_PATH, "-s", "-m", "pip", "install", ])
+    subprocess.run([PYTHON_PATH, "-s", "-m", "pip", "install", "OmegaConf"])
     from omegaconf import OmegaConf
 
 BUILD_SCRIPT_ROOT_ABS_PATH = dirname(os.path.abspath(__file__))
