@@ -220,7 +220,7 @@
     },
     {
       "id": 21,
-      "type": "[Comfy3D] Unique3D Diffusion Model",
+      "type": "[Comfy3D] Unique3D MVDiffusion Model",
       "pos": [
         1397,
         254
@@ -262,7 +262,7 @@
         }
       ],
       "properties": {
-        "Node name for S&R": "[Comfy3D] Unique3D Diffusion Model"
+        "Node name for S&R": "[Comfy3D] Unique3D MVDiffusion Model"
       },
       "widgets_values": [
         1145,

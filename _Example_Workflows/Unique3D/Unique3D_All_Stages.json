@@ -1516,7 +1516,7 @@
     },
     {
       "id": 317,
-      "type": "[Comfy3D] Unique3D Diffusion Model",
+      "type": "[Comfy3D] Unique3D MVDiffusion Model",
       "pos": [
         726.0260388541542,
         742.5761190469728
@@ -1558,7 +1558,7 @@
         }
       ],
       "properties": {
-        "Node name for S&R": "[Comfy3D] Unique3D Diffusion Model"
+        "Node name for S&R": "[Comfy3D] Unique3D MVDiffusion Model"
       },
       "widgets_values": [
         1145,
@@ -1607,7 +1607,7 @@
     },
     {
       "id": 307,
-      "type": "[Comfy3D] Unique3D Diffusion Model",
+      "type": "[Comfy3D] Unique3D MVDiffusion Model",
       "pos": [
         -67,
         -1160
@@ -1650,7 +1650,7 @@
         }
       ],
       "properties": {
-        "Node name for S&R": "[Comfy3D] Unique3D Diffusion Model"
+        "Node name for S&R": "[Comfy3D] Unique3D MVDiffusion Model"
       },
       "widgets_values": [
         1145,

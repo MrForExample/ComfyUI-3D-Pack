@@ -12,7 +12,6 @@ from .render import NormalsRenderer, Pytorch3DNormalsRenderer
 from Unique3D.scripts.utils import to_py3d_mesh, init_target
 
 def reconstruct_stage1(pils: List[Image.Image], steps=100, vertices=None, faces=None, start_edge_len=0.1, end_edge_len=0.02, decay=0.995, return_mesh=False, loss_expansion_weight=0.1, gain=0.05):
-    vertices, faces = vertices.to("cuda"), faces.to("cuda")
     assert len(pils) == 4
     mv,proj = make_star_cameras_orthographic(4, 1)
     renderer = NormalsRenderer(mv,proj,list(pils[0].size))
@@ -24,7 +23,7 @@ def reconstruct_stage1(pils: List[Image.Image], steps=100, vertices=None, faces=
     target_images = target_images[[0, 3, 2, 1]]
 
     # 2. init from coarse mesh
-    opt = MeshOptimizer(vertices,faces, local_edgelen=False, gain=gain, edge_len_lims=(end_edge_len, start_edge_len))
+    opt = MeshOptimizer(vertices, faces, local_edgelen=False, gain=gain, edge_len_lims=(end_edge_len, start_edge_len))
 
     vertices = opt.vertices
 

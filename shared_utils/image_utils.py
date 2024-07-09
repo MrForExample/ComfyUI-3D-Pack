@@ -13,7 +13,7 @@ def prepare_torch_img(img, size_H, size_W, device="cuda", keep_shape=False):
         img_new = img_new.permute(0, 2, 3, 1)
     return img_new
 
-def torch_imgs_to_pils(images, masks=None):
+def torch_imgs_to_pils(images, masks=None, alpha_min=0.1):
     """
         images (torch): [N, H, W, C] or [H, W, C]
         masks (torch): [N, H, W] or [H, W]
@@ -24,8 +24,11 @@ def torch_imgs_to_pils(images, masks=None):
     if masks is not None:
         if len(masks.shape) == 2:
             masks = masks.unsqueeze(0)
-        masks = masks.unsqueeze(3)
 
+        inv_mask_index = masks < alpha_min
+        images[inv_mask_index] = 0.
+        
+        masks = masks.unsqueeze(3)
         images = torch.cat((images, masks), dim=3)
         mode="RGBA"
     else:

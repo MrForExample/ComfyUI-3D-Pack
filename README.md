@@ -25,9 +25,13 @@ This is an extensive node suite that enables ComfyUI to process 3D inputs (Mesh 
 - **Note:** at this moment, you'll still need to install [Visual Studio Build Tools for windows](_Pre_Builds/README.md#build-for-windows) and [install `gcc g++` for Linux](_Pre_Builds/README.md#build-for-linux) in order for `InstantNGP & Convert 3DGS to Mesh with NeRF and Marching_Cubes` nodes to work, since those two nodes used JIT torch cpp extension that builds in runtime, but I plan to replace those nodes soon
 
 ## Features:
-- For use cases please check out [Example Workflows](./_Example_Workflows/). [**Last update: 04/July/2024**]
+- For use cases please check out [Example Workflows](./_Example_Workflows/). [**Last update: 09/July/2024**]
   - **Note:** you need to put [Example Inputs Files & Folders](_Example_Workflows/_Example_Inputs_Files/) under ComfyUI Root Directory\ComfyUI\input folder before you can run the example workflow
   - [tripoSR-layered-diffusion workflow](https://github.com/C0nsumption/Consume-ComfyUI-Workflows/tree/main/assets/tripo_sr/00) by [@Consumption](https://twitter.com/c0nsumption_)
+
+- **CharacterGen**: [zjp-shadow/CharacterGen](https://github.com/zjp-shadow/CharacterGen)
+  - Single front view of a character with arbitrary pose
+  - Can [combine with Unique3D workflow](./_Example_Workflows/CharacterGen/CharacterGen_to_Unique3D.json) for better result
 
 - **Unique3D**: [AiuniAI/Unique3D](https://github.com/AiuniAI/Unique3D)
   - Four stages pipeline: 
@@ -35,16 +39,14 @@ This is an extensive node suite that enables ComfyUI to process 3D inputs (Mesh 
     2. Consistent Multi-view images Upscale to 512X512, super resolution to 2048X2048
     3. Multi-view images to Normal maps with resulution: 512X512, super resolution to 2048X2048
     4. Multi-view images & Normal maps to 3D mesh with texture
-  - To use the [pure Unique3D workflow](./_Example_Workflows/Unique3D/Unique3D_All_Stages.json), Download Models:
-    - [img2mvimg](https://huggingface.co/spaces/Wuvin/Unique3D/tree/main/ckpt/img2mvimg) and put it into [./checkpoints/Wuvin/Unique3D/image2mvimage](./checkpoints/Wuvin/Unique3D/image2mvimage)
-    - [image2normal](https://huggingface.co/spaces/Wuvin/Unique3D/tree/main/ckpt/image2normal) and put it into [./checkpoints/Wuvin/Unique3D/image2normal](./checkpoints/Wuvin/Unique3D/image2normal)
+  - To use the [All stage Unique3D workflow](./_Example_Workflows/Unique3D/Unique3D_All_Stages.json), Download Models:
     - [fine-tuned controlnet-tile](https://huggingface.co/spaces/Wuvin/Unique3D/tree/main/ckpt/controlnet-tile) and put it into `Your ComfyUI root directory/ComfyUI/models/controlnet`
     - [ip-adapter_sd15](https://huggingface.co/h94/IP-Adapter/blob/main/models/ip-adapter_sd15.safetensors) and put it into `Your ComfyUI root directory/ComfyUI/models/ipadapter`
     - [RealESRGAN_x4plus](https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth) and put it into `Your ComfyUI root directory/ComfyUI/models/upscale_models`
 
   <video controls autoplay loop src="https://github.com/MrForExample/ComfyUI-3D-Pack/assets/62230687/45dd6bfc-4f2b-4b1f-baed-13a1b0722896"></video>
 
-- **Era3D Diffusion Model**: [pengHTYX/Era3D](https://github.com/pengHTYX/Era3D)
+- **Era3D MVDiffusion Model**: [pengHTYX/Era3D](https://github.com/pengHTYX/Era3D)
   - Single image to 6 multi-view images & normal maps with resulution: 512X512
   - *Note: you need at least 16GB vram to run this model*
 
@@ -155,7 +157,7 @@ This is an extensive node suite that enables ComfyUI to process 3D inputs (Mesh 
   - Custom clients IP address 
 
 ## Roadmap:
-- [ ] Integrate [CharacterGen](https://github.com/zjp-shadow/CharacterGen)
+- [X] Integrate [CharacterGen](https://github.com/zjp-shadow/CharacterGen)
 
 - [ ] Improve 3DGS/Nerf to Mesh conversion algorithms:
   -  Find better methods to converts 3DGS or Points Cloud to Mesh (Normal maps reconstruction maybe?)

@@ -240,7 +240,7 @@
     },
     {
       "id": 336,
-      "type": "[Comfy3D] Era3D Diffusion Model",
+      "type": "[Comfy3D] Era3D MVDiffusion Model",
       "pos": [
         -643.2975797406153,
         -610.8013992433897
@@ -297,7 +297,7 @@
         }
       ],
       "properties": {
-        "Node name for S&R": "[Comfy3D] Era3D Diffusion Model"
+        "Node name for S&R": "[Comfy3D] Era3D MVDiffusion Model"
       },
       "widgets_values": [
         420,

@@ -52,13 +52,13 @@ def get_list_filenames(directory, extension_filter=None):
         return []
     
 # Download pre-trained model if it not exist locally
-def resume_or_download_model_from_hf(checkpoints_dir_abs, default_repo_id, model_name, class_name=""):
+def resume_or_download_model_from_hf(checkpoints_dir_abs, repo_id, model_name, class_name="", repo_type="model"):
     
     ckpt_path = os.path.join(checkpoints_dir_abs, model_name)
     if not os.path.isfile(ckpt_path):
-        cstr(f"[{class_name}] can't find checkpoint {ckpt_path}, will download it from repo {default_repo_id} instead").warning.print()
+        cstr(f"[{class_name}] can't find checkpoint {ckpt_path}, will download it from repo {repo_id} instead").warning.print()
         
         from huggingface_hub import hf_hub_download
-        hf_hub_download(repo_id=default_repo_id, local_dir=checkpoints_dir_abs, filename=model_name, repo_type="model")
+        hf_hub_download(repo_id=repo_id, local_dir=checkpoints_dir_abs, filename=model_name, repo_type=repo_type)
 
     return ckpt_path

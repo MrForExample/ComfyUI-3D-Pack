@@ -1,0 +1,942 @@
+{
+  "last_node_id": 43,
+  "last_link_id": 56,
+  "nodes": [
+    {
+      "id": 18,
+      "type": "[Comfy3D] Switch Mesh Axis",
+      "pos": [
+        1680,
+        520
+      ],
+      "size": {
+        "0": 315,
+        "1": 154
+      },
+      "flags": {},
+      "order": 16,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 21
+        }
+      ],
+      "outputs": [
+        {
+          "name": "switched_mesh",
+          "type": "MESH",
+          "links": [
+            19
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Switch Mesh Axis"
+      },
+      "widgets_values": [
+        "+y",
+        "+z",
+        "+x",
+        false,
+        1
+      ]
+    },
+    {
+      "id": 14,
+      "type": "[Comfy3D] Load InstantMesh Reconstruction Model",
+      "pos": [
+        930,
+        300
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "lrm_model",
+          "type": "LRM_MODEL",
+          "links": [
+            18
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Load InstantMesh Reconstruction Model"
+      },
+      "widgets_values": [
+        "instant_mesh_large.ckpt"
+      ]
+    },
+    {
+      "id": 32,
+      "type": "IMG_padder",
+      "pos": [
+        210,
+        440
+      ],
+      "size": {
+        "0": 315,
+        "1": 82
+      },
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 43
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            44
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "IMG_padder"
+      },
+      "widgets_values": [
+        0.25,
+        "left"
+      ]
+    },
+    {
+      "id": 34,
+      "type": "[Comfy3D] Load CharacterGen MVDiffusion Model",
+      "pos": [
+        -1900,
+        360
+      ],
+      "size": {
+        "0": 294,
+        "1": 26
+      },
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "character_mv_gen_pipe",
+          "type": "CHARACTER_MV_GEN_PIPE",
+          "links": [
+            46
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Load CharacterGen MVDiffusion Model"
+      }
+    },
+    {
+      "id": 36,
+      "type": "InvertMask",
+      "pos": [
+        -1820,
+        530
+      ],
+      "size": {
+        "0": 210,
+        "1": 26
+      },
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mask",
+          "type": "MASK",
+          "link": 45
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            48
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "InvertMask"
+      }
+    },
+    {
+      "id": 39,
+      "type": "Image Rembg (Remove Background)",
+      "pos": [
+        -750,
+        510
+      ],
+      "size": {
+        "0": 315,
+        "1": 250
+      },
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 50
+        }
+      ],
+      "outputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "links": [
+            51,
+            53
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "Image Rembg (Remove Background)"
+      },
+      "widgets_values": [
+        false,
+        "isnet-anime",
+        false,
+        true,
+        false,
+        240,
+        10,
+        10,
+        "white"
+      ]
+    },
+    {
+      "id": 40,
+      "type": "ImageToMask",
+      "pos": [
+        -400,
+        500
+      ],
+      "size": {
+        "0": 210,
+        "1": 58
+      },
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 51
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            42
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ImageToMask"
+      },
+      "widgets_values": [
+        "red"
+      ]
+    },
+    {
+      "id": 31,
+      "type": "[Comfy3D] Image Add Pure Color Background",
+      "pos": [
+        -160,
+        440
+      ],
+      "size": {
+        "0": 315,
+        "1": 126
+      },
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 41
+        },
+        {
+          "name": "masks",
+          "type": "MASK",
+          "link": 42
+        }
+      ],
+      "outputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "links": [
+            43
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Image Add Pure Color Background"
+      },
+      "widgets_values": [
+        255,
+        255,
+        255
+      ]
+    },
+    {
+      "id": 33,
+      "type": "IMG_padder",
+      "pos": [
+        570,
+        440
+      ],
+      "size": {
+        "0": 315,
+        "1": 82
+      },
+      "flags": {},
+      "order": 13,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 44
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            40
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "IMG_padder"
+      },
+      "widgets_values": [
+        0.2,
+        "right"
+      ]
+    },
+    {
+      "id": 30,
+      "type": "ImageScale",
+      "pos": [
+        940,
+        440
+      ],
+      "size": {
+        "0": 315,
+        "1": 130
+      },
+      "flags": {},
+      "order": 14,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 40
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            54
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ImageScale"
+      },
+      "widgets_values": [
+        "lanczos",
+        1024,
+        1024,
+        "disabled"
+      ]
+    },
+    {
+      "id": 38,
+      "type": "GetImagesFromBatchIndexed",
+      "pos": [
+        -1060,
+        440
+      ],
+      "size": {
+        "0": 255.99082946777344,
+        "1": 76.0000228881836
+      },
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 49
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            41,
+            50,
+            52
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "GetImagesFromBatchIndexed"
+      },
+      "widgets_values": [
+        "3, 1, 2, 0"
+      ]
+    },
+    {
+      "id": 37,
+      "type": "[Comfy3D] CharacterGen MVDiffusion Model",
+      "pos": [
+        -1570,
+        440
+      ],
+      "size": {
+        "0": 456,
+        "1": 334
+      },
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "character_mv_gen_pipe",
+          "type": "CHARACTER_MV_GEN_PIPE",
+          "link": 46
+        },
+        {
+          "name": "reference_image",
+          "type": "IMAGE",
+          "link": 47
+        },
+        {
+          "name": "reference_mask",
+          "type": "MASK",
+          "link": 48
+        }
+      ],
+      "outputs": [
+        {
+          "name": "multiviews",
+          "type": "IMAGE",
+          "links": [
+            49
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "orbit_camposes",
+          "type": "ORBIT_CAMPOSES",
+          "links": [
+            55
+          ],
+          "shape": 3,
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] CharacterGen MVDiffusion Model"
+      },
+      "widgets_values": [
+        512,
+        768,
+        2333,
+        "fixed",
+        5,
+        40,
+        "high quality, best quality",
+        "",
+        1.5
+      ]
+    },
+    {
+      "id": 41,
+      "type": "PreviewImage",
+      "pos": [
+        -1273,
+        109
+      ],
+      "size": [
+        718.229248046875,
+        246
+      ],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 52
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 42,
+      "type": "PreviewImage",
+      "pos": [
+        -457,
+        104
+      ],
+      "size": [
+        608.1014404296875,
+        246
+      ],
+      "flags": {},
+      "order": 10,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 53
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 15,
+      "type": "[Comfy3D] InstantMesh Reconstruction Model",
+      "pos": [
+        1330,
+        520
+      ],
+      "size": {
+        "0": 315,
+        "1": 122
+      },
+      "flags": {},
+      "order": 15,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "lrm_model",
+          "type": "LRM_MODEL",
+          "link": 18
+        },
+        {
+          "name": "multiview_images",
+          "type": "IMAGE",
+          "link": 54
+        },
+        {
+          "name": "orbit_camera_poses",
+          "type": "ORBIT_CAMPOSES",
+          "link": 56
+        }
+      ],
+      "outputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "links": [
+            21
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] InstantMesh Reconstruction Model"
+      },
+      "widgets_values": [
+        40,
+        1024
+      ]
+    },
+    {
+      "id": 43,
+      "type": "[Comfy3D] Get Camposes From List Indexed",
+      "pos": [
+        -988,
+        821
+      ],
+      "size": {
+        "0": 531.5999755859375,
+        "1": 200
+      },
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "original_orbit_camera_poses",
+          "type": "ORBIT_CAMPOSES",
+          "link": 55
+        }
+      ],
+      "outputs": [
+        {
+          "name": "ORBIT_CAMPOSES",
+          "type": "ORBIT_CAMPOSES",
+          "links": [
+            56
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Get Camposes From List Indexed"
+      },
+      "widgets_values": [
+        "3, 1, 2, 0"
+      ]
+    },
+    {
+      "id": 35,
+      "type": "LoadImage",
+      "pos": [
+        -2230,
+        460
+      ],
+      "size": {
+        "0": 315,
+        "1": 314
+      },
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            47
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            45
+          ],
+          "shape": 3,
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "CharacterGen_Test_2.png",
+        "image"
+      ]
+    },
+    {
+      "id": 16,
+      "type": "[Comfy3D] Save 3D Mesh",
+      "pos": [
+        2021,
+        520
+      ],
+      "size": [
+        288.29027143395615,
+        58
+      ],
+      "flags": {},
+      "order": 17,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 19
+        }
+      ],
+      "outputs": [
+        {
+          "name": "save_path",
+          "type": "STRING",
+          "links": [
+            20
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Save 3D Mesh"
+      },
+      "widgets_values": [
+        "InstantMesh_test\\Mesh_Girl.glb"
+      ]
+    },
+    {
+      "id": 17,
+      "type": "[Comfy3D] Preview 3DMesh",
+      "pos": [
+        2344,
+        519
+      ],
+      "size": [
+        600,
+        500
+      ],
+      "flags": {},
+      "order": 18,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh_file_path",
+          "type": "STRING",
+          "link": 20,
+          "widget": {
+            "name": "mesh_file_path"
+          }
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Preview 3DMesh"
+      },
+      "widgets_values": [
+        "",
+        null
+      ]
+    }
+  ],
+  "links": [
+    [
+      18,
+      14,
+      0,
+      15,
+      0,
+      "LRM_MODEL"
+    ],
+    [
+      19,
+      18,
+      0,
+      16,
+      0,
+      "MESH"
+    ],
+    [
+      20,
+      16,
+      0,
+      17,
+      0,
+      "STRING"
+    ],
+    [
+      21,
+      15,
+      0,
+      18,
+      0,
+      "MESH"
+    ],
+    [
+      40,
+      33,
+      0,
+      30,
+      0,
+      "IMAGE"
+    ],
+    [
+      41,
+      38,
+      0,
+      31,
+      0,
+      "IMAGE"
+    ],
+    [
+      42,
+      40,
+      0,
+      31,
+      1,
+      "MASK"
+    ],
+    [
+      43,
+      31,
+      0,
+      32,
+      0,
+      "IMAGE"
+    ],
+    [
+      44,
+      32,
+      0,
+      33,
+      0,
+      "IMAGE"
+    ],
+    [
+      45,
+      35,
+      1,
+      36,
+      0,
+      "MASK"
+    ],
+    [
+      46,
+      34,
+      0,
+      37,
+      0,
+      "CHARACTER_MV_GEN_PIPE"
+    ],
+    [
+      47,
+      35,
+      0,
+      37,
+      1,
+      "IMAGE"
+    ],
+    [
+      48,
+      36,
+      0,
+      37,
+      2,
+      "MASK"
+    ],
+    [
+      49,
+      37,
+      0,
+      38,
+      0,
+      "IMAGE"
+    ],
+    [
+      50,
+      38,
+      0,
+      39,
+      0,
+      "IMAGE"
+    ],
+    [
+      51,
+      39,
+      0,
+      40,
+      0,
+      "IMAGE"
+    ],
+    [
+      52,
+      38,
+      0,
+      41,
+      0,
+      "IMAGE"
+    ],
+    [
+      53,
+      39,
+      0,
+      42,
+      0,
+      "IMAGE"
+    ],
+    [
+      54,
+      30,
+      0,
+      15,
+      1,
+      "IMAGE"
+    ],
+    [
+      55,
+      37,
+      1,
+      43,
+      0,
+      "ORBIT_CAMPOSES"
+    ],
+    [
+      56,
+      43,
+      0,
+      15,
+      2,
+      "ORBIT_CAMPOSES"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 1,
+      "offset": [
+        -1287.2902103988,
+        -400.040713409522
+      ]
+    }
+  },
+  "version": 0.4
+}
