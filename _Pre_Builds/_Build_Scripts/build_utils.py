@@ -29,7 +29,7 @@ def get_python_version():
 
 def get_cuda_version():
     # Output: e.g. "cu121" or cu118
-    result = subprocess.run(["nvcc", "--version"], shell=True, text=True, capture_output=True)
+    result = subprocess.run(["nvcc", "--version"], shell=False, text=True, capture_output=True)
     if result.returncode == 0:
         for cuda_version in build_config.supported_cuda_versions:
             if "cuda_" + cuda_version in result.stdout:
