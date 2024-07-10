@@ -1,0 +1,23 @@
+pretrained_model_path: "stabilityai/stable-diffusion-2-1"
+image_encoder_path: "./2D_Stage/models/image_encoder"
+ckpt_dir: "./2D_Stage/models/checkpoint"
+
+validation:
+  use_inv_latent: False
+  video_length: 4
+
+use_pose_guider: True
+use_noise: False
+use_shifted_noise: False
+unet_condition_type: image
+
+unet_from_pretrained_kwargs:
+  camera_embedding_type: 'e_de_da_sincos'
+  projection_class_embeddings_input_dim: 10  # modify
+  joint_attention: false  # modify
+  num_views: 4
+  sample_size: 96
+  zero_init_conv_in: false
+  zero_init_camera_projection: false  
+  in_channels: 4
+  use_safetensors: true

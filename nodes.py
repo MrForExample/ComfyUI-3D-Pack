@@ -29,6 +29,7 @@ from diffusers import (
     KDPM2AncestralDiscreteScheduler,
     KDPM2DiscreteScheduler,
 )
+from huggingface_hub import snapshot_download
 
 from plyfile import PlyData
 from PIL import Image
@@ -77,12 +78,15 @@ from Unique3D.scripts.utils import from_py3d_mesh, to_py3d_mesh, to_pyml_mesh, s
 from Unique3D.scripts.project_mesh import multiview_color_projection, get_cameras_list
 from Unique3D.mesh_reconstruction.recon import reconstruct_stage1
 from Unique3D.mesh_reconstruction.refine import run_mesh_refine
+from CharacterGen.character_inference import Inference2D_API, Inference3D_API
+from CharacterGen.Stage_3D.lrm.utils.config import load_config as load_config_cg3d
 
 from .shared_utils.image_utils import (
     prepare_torch_img, torch_imgs_to_pils, troch_image_dilate, 
     pils_rgba_to_rgb, pil_make_image_grid, pil_split_image, pils_to_torch_imgs,
 )
-from .shared_utils.common_utils import cstr, parse_save_filename, get_list_filenames, resume_or_download_model_from_hf
+from .shared_utils.log_utils import cstr
+from .shared_utils.common_utils import parse_save_filename, get_list_filenames, resume_or_download_model_from_hf
 
 DIFFUSERS_PIPE_DICT = OrderedDict([
     ("MVDreamPipeline", MVDreamPipeline),
@@ -587,6 +591,7 @@ class Switch_Mesh_Axis:
                 "axis_y_to": (["+y", "-y", "+z", "-z", "+x", "-x"],),
                 "axis_z_to": (["+z", "-z", "+x", "-x", "+y", "-y"],),
                 "flip_normal": ("BOOLEAN", {"default": False},),
+                "scale": ("FLOAT", {"default": 1.0, "min": 0.01, "max": 100, "step": 0.01}),
             },
         }
 
@@ -599,12 +604,12 @@ class Switch_Mesh_Axis:
     FUNCTION = "switch_axis_and_scale"
     CATEGORY = "Comfy3D/Preprocessor"
     
-    def switch_axis_and_scale(self, mesh, axis_x_to, axis_y_to, axis_z_to, flip_normal):
+    def switch_axis_and_scale(self, mesh, axis_x_to, axis_y_to, axis_z_to, flip_normal, scale):
         
         switched_mesh = None
         
         if axis_x_to[1] != axis_y_to[1] and axis_x_to[1] != axis_z_to[1] and axis_y_to[1] != axis_z_to[1]:
-            target_axis, target_scale, coordinate_invert_count = get_target_axis_and_scale([axis_x_to, axis_y_to, axis_z_to])
+            target_axis, target_scale, coordinate_invert_count = get_target_axis_and_scale([axis_x_to, axis_y_to, axis_z_to], scale)
             switched_mesh = switch_mesh_axis_and_scale(mesh, target_axis, target_scale, flip_normal)
         else:
             cstr(f"[{self.__class__.__name__}] axis_x_to: {axis_x_to}, axis_y_to: {axis_y_to}, axis_z_to: {axis_z_to} have to be on separated axis").error.print()
@@ -1291,12 +1296,12 @@ class Load_Triplane_Gaussian_Transformers:
     checkpoints_dir = "TriplaneGaussian"
     default_ckpt_name = "model_lvis_rel.ckpt"
     default_repo_id = "VAST-AI/TriplaneGaussian"
-    tgs_config_path = "TriplaneGaussian_config.yaml"
+    config_path = "TriplaneGaussian_config.yaml"
     
     @classmethod
     def INPUT_TYPES(cls):
         cls.checkpoints_dir_abs = os.path.join(CKPT_ROOT_PATH, cls.checkpoints_dir)
-        cls.config_path_abs = os.path.join(CONFIG_ROOT_PATH, cls.tgs_config_path)
+        cls.config_path_abs = os.path.join(CONFIG_ROOT_PATH, cls.config_path)
         all_models_names = get_list_filenames(cls.checkpoints_dir_abs, SUPPORTED_CHECKPOINTS_EXTENSIONS)
         if cls.default_ckpt_name not in all_models_names:
             all_models_names += [cls.default_ckpt_name]
@@ -1333,11 +1338,11 @@ class Load_Triplane_Gaussian_Transformers:
     
 class Triplane_Gaussian_Transformers:
     
-    tgs_config_path = "TriplaneGaussian_config.yaml"
+    config_path = "TriplaneGaussian_config.yaml"
     
     @classmethod
     def INPUT_TYPES(cls):
-        cls.config_path_abs = os.path.join(CONFIG_ROOT_PATH, cls.tgs_config_path)
+        cls.config_path_abs = os.path.join(CONFIG_ROOT_PATH, cls.config_path)
         return {
             "required": {
                 "reference_image": ("IMAGE", ),
@@ -1383,7 +1388,7 @@ class Load_Diffusers_Pipeline:
         return {
             "required": {
                 "diffusers_pipeline_name": (list(DIFFUSERS_PIPE_DICT.keys()),),
-                "model_name": ("STRING", {"default": "ashawkey/imagedream-ipmv-diffusers", "multiline": False}),
+                "repo_id": ("STRING", {"default": "ashawkey/imagedream-ipmv-diffusers", "multiline": False}),
                 "custom_pipeline": ("STRING", {"default": "", "multiline": False}),
                 "download_from_remote": ("BOOLEAN", {"default": True}),
             },
@@ -1398,14 +1403,12 @@ class Load_Diffusers_Pipeline:
     FUNCTION = "load_diffusers_pipe"
     CATEGORY = "Comfy3D/Import|Export"
     
-    def load_diffusers_pipe(self, diffusers_pipeline_name, model_name, custom_pipeline, download_from_remote):
+    def load_diffusers_pipe(self, diffusers_pipeline_name, repo_id, custom_pipeline, download_from_remote):
         
-        # resume pretrained checkpoint
-        ckpt_path = os.path.join(CKPT_DIFFUSERS_PATH, model_name)
-            
+        # resume download pretrained checkpoint
+        ckpt_path = os.path.join(CKPT_DIFFUSERS_PATH, repo_id)
         if download_from_remote:
-            from huggingface_hub import snapshot_download
-            snapshot_download(repo_id=model_name, local_dir=ckpt_path, repo_type="model", ignore_patterns=["*.json", "*.py"])
+            snapshot_download(repo_id=repo_id, local_dir=ckpt_path, repo_type="model", ignore_patterns=["*.json", "*.py"])
         
         diffusers_pipeline_class = DIFFUSERS_PIPE_DICT[diffusers_pipeline_name]
         
@@ -1486,12 +1489,12 @@ class Set_Diffusers_Pipeline_State_Dict:
 
 class Wonder3D_MVDiffusion_Model:
     
-    wonder3d_config_path = "Wonder3D_config.yaml"
+    config_path = "Wonder3D_config.yaml"
     fix_cam_pose_dir = "Wonder3D/data/fixed_poses/nine_views"
     
     @classmethod
     def INPUT_TYPES(cls):
-        cls.config_path_abs = os.path.join(CONFIG_ROOT_PATH, cls.wonder3d_config_path)
+        cls.config_path_abs = os.path.join(CONFIG_ROOT_PATH, cls.config_path)
         cls.fix_cam_pose_dir_abs = os.path.join(MODULE_ROOT_PATH, cls.fix_cam_pose_dir)
         return {
             "required": {
@@ -1800,7 +1803,7 @@ class Load_TripoSR_Model:
     checkpoints_dir = "TripoSR"
     default_ckpt_name = "model.ckpt"
     default_repo_id = "stabilityai/TripoSR"
-    tsr_config_path = "TripoSR_config.yaml"
+    config_path = "TripoSR_config.yaml"
     
     @classmethod
     def INPUT_TYPES(cls):
@@ -1809,7 +1812,7 @@ class Load_TripoSR_Model:
         if cls.default_ckpt_name not in all_models_names:
             all_models_names += [cls.default_ckpt_name]
             
-        cls.config_path_abs = os.path.join(CONFIG_ROOT_PATH, cls.tsr_config_path)
+        cls.config_path_abs = os.path.join(CONFIG_ROOT_PATH, cls.config_path)
         return {
             "required": {
                 "model_name": (all_models_names, ),
@@ -1898,7 +1901,7 @@ class Load_CRM_MVDiffusion_Model:
     default_ckpt_name = ["pixel-diffusion.pth", "ccm-diffusion.pth"]
     default_conf_name = ["sd_v2_base_ipmv_zero_SNR.yaml", "sd_v2_base_ipmv_chin8_zero_snr.yaml"]
     default_repo_id = "Zhengyi/CRM"
-    crm_config_path = "CRM_configs"
+    config_path = "CRM_configs"
     
     @classmethod
     def INPUT_TYPES(cls):
@@ -1908,7 +1911,7 @@ class Load_CRM_MVDiffusion_Model:
             if ckpt_name not in all_models_names:
                 all_models_names += [ckpt_name]
             
-        cls.config_root_path_abs = os.path.join(CONFIG_ROOT_PATH, cls.crm_config_path)
+        cls.config_root_path_abs = os.path.join(CONFIG_ROOT_PATH, cls.config_path)
         return {
             "required": {
                 "model_name": (all_models_names, ),
@@ -2322,12 +2325,12 @@ class InstantMesh_Reconstruction_Model:
         mesh.auto_normal()
         return (mesh,)
 
-class Era3D_Diffusion_Model:
+class Era3D_MVDiffusion_Model:
     
-    era3d_config_path = "Era3D_config.yaml"
+    config_path = "Era3D_config.yaml"
     @classmethod
     def INPUT_TYPES(cls):
-        cls.config_path_abs = os.path.join(CONFIG_ROOT_PATH, cls.era3d_config_path)
+        cls.config_path_abs = os.path.join(CONFIG_ROOT_PATH, cls.config_path)
         return {
             "required": {
                 "era3d_pipe": ("DIFFUSERS_PIPE",),
@@ -2573,6 +2576,7 @@ class FlexiCubes_MVS:
 
 class Load_Unique3D_Custom_UNet:
     checkpoints_dir = "Wuvin/Unique3D"
+    default_repo_id = "MrForExample/Unique3D"
     config_root_dir = "Unique3D_configs"
 
     @classmethod
@@ -2599,9 +2603,12 @@ class Load_Unique3D_Custom_UNet:
         from Unique3D.custum_3d_diffusion.trainings.config_classes import ExprimentConfig
         from Unique3D.custum_3d_diffusion.custum_modules.unifield_processor import AttnConfig, ConfigurableUNet2DConditionModel
         from Unique3D.custum_3d_diffusion.trainings.utils import load_config
+        # Download models and configs
+        ckpt_path = os.path.join(CKPT_DIFFUSERS_PATH, self.checkpoints_dir)
+        snapshot_download(repo_id=self.default_repo_id, local_dir=ckpt_path, repo_type="model", ignore_patterns=["*.json", "*.py"])
 
         cfg_path = os.path.join(self.config_path_abs, config_name + ".yaml")
-        checkpoint_dir_path = os.path.join(CKPT_DIFFUSERS_PATH, self.checkpoints_dir, config_name)
+        checkpoint_dir_path = os.path.join(ckpt_path, config_name)
         checkpoint_path = os.path.join(checkpoint_dir_path, "unet_state_dict.pth")
 
         cfg: ExprimentConfig = load_config(ExprimentConfig, cfg_path)
@@ -2619,7 +2626,7 @@ class Load_Unique3D_Custom_UNet:
         pipe.unet = configurable_unet.unet
         return (pipe, )
     
-class Unique3D_Diffusion_Model:
+class Unique3D_MVDiffusion_Model:
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -2729,10 +2736,10 @@ class ExplicitTarget_Mesh_Optimization:
                 "mesh": ("MESH",),
                 "normal_maps": ("IMAGE",),
                 "normal_masks": ("MASK",),
-                "reconstruction_steps": ("INT", {"default": 200, "min": 1, "max": 0xffffffffffffffff}),
+                "reconstruction_steps": ("INT", {"default": 200, "min": 0, "max": 0xffffffffffffffff}),
                 "coarse_reconstruct_resolution": ("INT", {"default": 512, "min": 128, "max": 8192}),
                 "loss_expansion_weight": ("FLOAT", {"default": 0.1, "min": 0.01, "step": 0.01}),
-                "refinement_steps": ("INT", {"default": 100, "min": 1, "max": 0xffffffffffffffff}),
+                "refinement_steps": ("INT", {"default": 100, "min": 0, "max": 0xffffffffffffffff}),
                 "target_warmup_update_num": ("INT", {"default": 5, "min": 1, "max": 0xffffffffffffffff}),
                 "target_update_interval": ("INT", {"default": 20, "min": 1, "max": 0xffffffffffffffff}),
             },
@@ -2768,9 +2775,12 @@ class ExplicitTarget_Mesh_Optimization:
         pil_normal_list = torch_imgs_to_pils(normal_maps, normal_masks)
         normal_stg1 = [img.resize((coarse_reconstruct_resolution, coarse_reconstruct_resolution)) for img in pil_normal_list]
         with torch.inference_mode(False):
-            vertices, faces = reconstruct_stage1(normal_stg1, steps=reconstruction_steps, vertices=mesh.v, faces=mesh.f, loss_expansion_weight=loss_expansion_weight)
-
-            vertices, faces = run_mesh_refine(vertices, faces, pil_normal_list, steps=refinement_steps, update_normal_interval=target_update_interval, update_warmup=target_warmup_update_num, )
+            vertices, faces = mesh.v.detach().clone().to(DEVICE), mesh.f.detach().clone().to(DEVICE).type(torch.int64)
+            if reconstruction_steps > 0:
+                vertices, faces = reconstruct_stage1(normal_stg1, steps=reconstruction_steps, vertices=vertices, faces=faces, loss_expansion_weight=loss_expansion_weight)
+                
+            if refinement_steps > 0:
+                vertices, faces = run_mesh_refine(vertices, faces, pil_normal_list, steps=refinement_steps, update_normal_interval=target_update_interval, update_warmup=target_warmup_update_num, )
 
             mesh = Mesh(v=vertices, f=faces, device=DEVICE)
             return (mesh,)
@@ -2832,4 +2842,165 @@ class ExplicitTarget_Color_Projection:
 
         mesh = Mesh(v=vertices, f=faces, vc=vertex_colors, device=DEVICE)
         mesh.auto_normal()
+        return (mesh,)
+    
+class Load_CharacterGen_MVDiffusion_Model:
+    checkpoints_dir = "CharacterGen"
+    default_repo_id = "zjpshadow/CharacterGen"
+    config_path = "CharacterGen_configs/Stage_2D_infer.yaml"
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        cls.checkpoints_dir_abs = os.path.join(CKPT_ROOT_PATH, cls.checkpoints_dir)
+        cls.config_root_path_abs = os.path.join(CONFIG_ROOT_PATH, cls.config_path)
+        return {
+            "required": {
+            },
+        }
+    
+    RETURN_TYPES = (
+        "CHARACTER_MV_GEN_PIPE",
+    )
+    RETURN_NAMES = (
+        "character_mv_gen_pipe",
+    )
+    FUNCTION = "load_model"
+    CATEGORY = "Comfy3D/Import|Export"
+    
+    def load_model(self):
+        # Download checkpoints
+        snapshot_download(repo_id=self.default_repo_id, local_dir=self.checkpoints_dir_abs, repo_type="model", ignore_patterns=["*.json", "*.py"])
+        # Load pre-trained models
+        character_mv_gen_pipe = Inference2D_API(checkpoint_root_path=self.checkpoints_dir_abs, **OmegaConf.load(self.config_root_path_abs))
+        return (character_mv_gen_pipe,)
+    
+class CharacterGen_MVDiffusion_Model:
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "character_mv_gen_pipe": ("CHARACTER_MV_GEN_PIPE",),
+                "reference_image": ("IMAGE", ),
+                "reference_mask": ("MASK",),
+                "target_image_width": ("INT", {"default": 512, "min": 128, "max": 8192}),
+                "target_image_height": ("INT", {"default": 768, "min": 128, "max": 8192}),
+                "seed": ("INT", {"default": 2333, "min": 0, "max": 0xffffffffffffffff}),
+                "guidance_scale": ("FLOAT", {"default": 5.0, "min": 0.0, "step": 0.01}),
+                "num_inference_steps": ("INT", {"default": 40, "min": 1}),
+                "prompt": ("STRING", {
+                    "default": "high quality, best quality",
+                    "multiline": True
+                }),
+                "prompt_neg": ("STRING", {
+                    "default": "", 
+                    "multiline": True
+                }),
+                "radius": ("FLOAT", {"default": 1.5, "min": 0.1, "step": 0.01})
+            },
+        }
+    
+    RETURN_TYPES = (
+        "IMAGE",
+        "ORBIT_CAMPOSES",   # [orbit radius, elevation, azimuth, orbit center X, orbit center Y, orbit center Z]
+    )
+    RETURN_NAMES = (
+        "multiviews",
+        "orbit_camposes",
+    )
+    FUNCTION = "run_model"
+    CATEGORY = "Comfy3D/Algorithm"
+    
+    @torch.no_grad()
+    def run_model(
+        self,
+        character_mv_gen_pipe,
+        reference_image,
+        reference_mask,
+        target_image_width,
+        target_image_height,
+        seed,
+        guidance_scale,
+        num_inference_steps,
+        prompt,
+        prompt_neg,
+        radius
+    ):
+        single_image = torch_imgs_to_pils(reference_image, reference_mask)[0]
+
+        multiview_images = character_mv_gen_pipe.inference(
+            single_image, target_image_width, target_image_height, prompt=prompt, prompt_neg=prompt_neg, 
+            guidance_scale=guidance_scale, num_inference_steps=num_inference_steps, seed=seed
+        )
+        
+        azimuths = [-90, 90, 180, 0]
+        elevations = [0.0] * 4
+        radius = [radius] * 4
+        center = [0.0] * 4
+
+        orbit_camposes = [azimuths, elevations, radius, center, center, center]
+
+        return (multiview_images, orbit_camposes)
+    
+class Load_CharacterGen_Reconstruction_Model:
+    checkpoints_dir = "CharacterGen"
+    default_repo_id = "zjpshadow/CharacterGen"
+    config_path = "CharacterGen_configs/Stage_3D_infer.yaml"
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        cls.checkpoints_dir_abs = os.path.join(CKPT_ROOT_PATH, cls.checkpoints_dir)
+        cls.config_root_path_abs = os.path.join(CONFIG_ROOT_PATH, cls.config_path)
+        return {
+            "required": {
+            },
+        }
+    
+    RETURN_TYPES = (
+        "CHARACTER_LRM_PIPE",
+    )
+    RETURN_NAMES = (
+        "character_lrm_pipe",
+    )
+    FUNCTION = "load_model"
+    CATEGORY = "Comfy3D/Import|Export"
+    
+    def load_model(self):
+        # Download checkpoints
+        snapshot_download(repo_id=self.default_repo_id, local_dir=self.checkpoints_dir_abs, repo_type="model", ignore_patterns=["*.json", "*.py"])
+        # Load pre-trained models
+        character_lrm_pipe = Inference3D_API(checkpoint_root_path=self.checkpoints_dir_abs, cfg=load_config_cg3d(self.config_root_path_abs))
+        return (character_lrm_pipe,)
+    
+class CharacterGen_Reconstruction_Model:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "character_lrm_pipe": ("CHARACTER_LRM_PIPE", ),
+                "multiview_images": ("IMAGE",),
+                "multiview_masks": ("MASK",),
+            }
+        }
+
+    RETURN_TYPES = (
+        "MESH",
+    )
+    RETURN_NAMES = (
+        "mesh",
+    )
+    
+    FUNCTION = "run_LRM"
+    CATEGORY = "Comfy3D/Algorithm"
+    
+    @torch.no_grad()
+    def run_LRM(self, character_lrm_pipe, multiview_images, multiview_masks):
+        pil_mv_image_list = torch_imgs_to_pils(multiview_images, multiview_masks, alpha_min=0.2)
+        
+        vertices, faces = character_lrm_pipe.inference(pil_mv_image_list)
+
+        mesh = Mesh(v=vertices, f=faces.to(torch.int64), device=DEVICE)
+        mesh.auto_normal()
+        mesh.auto_uv()
+        
         return (mesh,)

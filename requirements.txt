@@ -1,6 +1,10 @@
-# base
+# build tools
 cmake
 ninja
+
+# web tools
+PyGithub
+requests
 
 # computational libraries
 numpy
@@ -24,6 +28,7 @@ pytorch_msssim
 pytorch-lightning
 
 # for process images & videos
+rembg
 imageio
 imageio-ffmpeg
 matplotlib

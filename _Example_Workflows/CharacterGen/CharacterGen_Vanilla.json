@@ -1,0 +1,680 @@
+{
+  "last_node_id": 32,
+  "last_link_id": 45,
+  "nodes": [
+    {
+      "id": 6,
+      "type": "InvertMask",
+      "pos": [
+        -130,
+        510
+      ],
+      "size": {
+        "0": 210,
+        "1": 26
+      },
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mask",
+          "type": "MASK",
+          "link": 13
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            16
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "InvertMask"
+      }
+    },
+    {
+      "id": 1,
+      "type": "[Comfy3D] Load CharacterGen MVDiffusion Model",
+      "pos": [
+        -210,
+        340
+      ],
+      "size": {
+        "0": 294,
+        "1": 26
+      },
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "character_mv_gen_pipe",
+          "type": "CHARACTER_MV_GEN_PIPE",
+          "links": [
+            14
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Load CharacterGen MVDiffusion Model"
+      }
+    },
+    {
+      "id": 24,
+      "type": "[Comfy3D] Load CharacterGen Reconstruction Model",
+      "pos": [
+        923,
+        351
+      ],
+      "size": {
+        "0": 319.20001220703125,
+        "1": 28.166826248168945
+      },
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "character_lrm_pipe",
+          "type": "CHARACTER_LRM_PIPE",
+          "links": [
+            34
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Load CharacterGen Reconstruction Model"
+      }
+    },
+    {
+      "id": 25,
+      "type": "[Comfy3D] CharacterGen Reconstruction Model",
+      "pos": [
+        1621,
+        400
+      ],
+      "size": {
+        "0": 292.20001220703125,
+        "1": 66
+      },
+      "flags": {},
+      "order": 10,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "character_lrm_pipe",
+          "type": "CHARACTER_LRM_PIPE",
+          "link": 34
+        },
+        {
+          "name": "multiview_images",
+          "type": "IMAGE",
+          "link": 38
+        },
+        {
+          "name": "multiview_masks",
+          "type": "MASK",
+          "link": 37
+        }
+      ],
+      "outputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "links": [
+            43
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] CharacterGen Reconstruction Model"
+      }
+    },
+    {
+      "id": 32,
+      "type": "[Comfy3D] Switch Mesh Axis",
+      "pos": [
+        1956,
+        400
+      ],
+      "size": {
+        "0": 315,
+        "1": 154
+      },
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 43
+        }
+      ],
+      "outputs": [
+        {
+          "name": "switched_mesh",
+          "type": "MESH",
+          "links": [
+            44
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Switch Mesh Axis"
+      },
+      "widgets_values": [
+        "+x",
+        "-z",
+        "+y",
+        false,
+        1
+      ]
+    },
+    {
+      "id": 28,
+      "type": "[Comfy3D] Save 3D Mesh",
+      "pos": [
+        2320,
+        400
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 44
+        }
+      ],
+      "outputs": [
+        {
+          "name": "save_path",
+          "type": "STRING",
+          "links": [
+            41
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Save 3D Mesh"
+      },
+      "widgets_values": [
+        "CharacterGen\\Mesh\\Mesh_Girl.glb"
+      ]
+    },
+    {
+      "id": 13,
+      "type": "[Comfy3D] CharacterGen MVDiffusion Model",
+      "pos": [
+        120,
+        420
+      ],
+      "size": {
+        "0": 456,
+        "1": 334
+      },
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "character_mv_gen_pipe",
+          "type": "CHARACTER_MV_GEN_PIPE",
+          "link": 14
+        },
+        {
+          "name": "reference_image",
+          "type": "IMAGE",
+          "link": 15
+        },
+        {
+          "name": "reference_mask",
+          "type": "MASK",
+          "link": 16
+        }
+      ],
+      "outputs": [
+        {
+          "name": "multiviews",
+          "type": "IMAGE",
+          "links": [
+            26
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "orbit_camposes",
+          "type": "ORBIT_CAMPOSES",
+          "links": [],
+          "shape": 3,
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] CharacterGen MVDiffusion Model"
+      },
+      "widgets_values": [
+        512,
+        768,
+        2333,
+        "fixed",
+        5,
+        40,
+        "high quality, best quality",
+        "",
+        1.5
+      ]
+    },
+    {
+      "id": 21,
+      "type": "Image Rembg (Remove Background)",
+      "pos": [
+        940,
+        483
+      ],
+      "size": {
+        "0": 315,
+        "1": 250
+      },
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 24
+        }
+      ],
+      "outputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "links": [
+            36,
+            42
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "Image Rembg (Remove Background)"
+      },
+      "widgets_values": [
+        false,
+        "isnet-anime",
+        false,
+        true,
+        false,
+        240,
+        10,
+        10,
+        "white"
+      ]
+    },
+    {
+      "id": 19,
+      "type": "GetImagesFromBatchIndexed",
+      "pos": [
+        619,
+        420
+      ],
+      "size": {
+        "0": 255.99082946777344,
+        "1": 76.0000228881836
+      },
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 26
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            24,
+            38,
+            45
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "GetImagesFromBatchIndexed"
+      },
+      "widgets_values": [
+        "2, 3, 0, 1"
+      ]
+    },
+    {
+      "id": 26,
+      "type": "ImageToMask",
+      "pos": [
+        1290,
+        486
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 36
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            37
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ImageToMask"
+      },
+      "widgets_values": [
+        "red"
+      ]
+    },
+    {
+      "id": 4,
+      "type": "SaveImage",
+      "pos": [
+        930,
+        820
+      ],
+      "size": {
+        "0": 526.6419677734375,
+        "1": 270
+      },
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 45
+        }
+      ],
+      "properties": {},
+      "widgets_values": [
+        "CharacterGen\\Multi_Views\\image"
+      ]
+    },
+    {
+      "id": 30,
+      "type": "SaveImage",
+      "pos": [
+        1507,
+        825
+      ],
+      "size": {
+        "0": 526.6419677734375,
+        "1": 270
+      },
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 42
+        }
+      ],
+      "properties": {},
+      "widgets_values": [
+        "CharacterGen\\Multi_View_Masks\\image"
+      ]
+    },
+    {
+      "id": 29,
+      "type": "[Comfy3D] Preview 3DMesh",
+      "pos": [
+        2663,
+        398
+      ],
+      "size": [
+        600,
+        500
+      ],
+      "flags": {},
+      "order": 13,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh_file_path",
+          "type": "STRING",
+          "link": 41,
+          "widget": {
+            "name": "mesh_file_path"
+          }
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Preview 3DMesh"
+      },
+      "widgets_values": [
+        "",
+        null
+      ]
+    },
+    {
+      "id": 3,
+      "type": "LoadImage",
+      "pos": [
+        -540,
+        440
+      ],
+      "size": {
+        "0": 315,
+        "1": 314
+      },
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            15
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            13
+          ],
+          "shape": 3,
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "Test_ChunLi 768X512.png",
+        "image"
+      ]
+    }
+  ],
+  "links": [
+    [
+      13,
+      3,
+      1,
+      6,
+      0,
+      "MASK"
+    ],
+    [
+      14,
+      1,
+      0,
+      13,
+      0,
+      "CHARACTER_MV_GEN_PIPE"
+    ],
+    [
+      15,
+      3,
+      0,
+      13,
+      1,
+      "IMAGE"
+    ],
+    [
+      16,
+      6,
+      0,
+      13,
+      2,
+      "MASK"
+    ],
+    [
+      24,
+      19,
+      0,
+      21,
+      0,
+      "IMAGE"
+    ],
+    [
+      26,
+      13,
+      0,
+      19,
+      0,
+      "IMAGE"
+    ],
+    [
+      34,
+      24,
+      0,
+      25,
+      0,
+      "CHARACTER_LRM_PIPE"
+    ],
+    [
+      36,
+      21,
+      0,
+      26,
+      0,
+      "IMAGE"
+    ],
+    [
+      37,
+      26,
+      0,
+      25,
+      2,
+      "MASK"
+    ],
+    [
+      38,
+      19,
+      0,
+      25,
+      1,
+      "IMAGE"
+    ],
+    [
+      41,
+      28,
+      0,
+      29,
+      0,
+      "STRING"
+    ],
+    [
+      42,
+      21,
+      0,
+      30,
+      0,
+      "IMAGE"
+    ],
+    [
+      43,
+      25,
+      0,
+      32,
+      0,
+      "MESH"
+    ],
+    [
+      44,
+      32,
+      0,
+      28,
+      0,
+      "MESH"
+    ],
+    [
+      45,
+      19,
+      0,
+      4,
+      0,
+      "IMAGE"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.7513148009015781,
+      "offset": [
+        621.9534614969469,
+        -192.59110955183658
+      ]
+    }
+  },
+  "version": 0.4
+}

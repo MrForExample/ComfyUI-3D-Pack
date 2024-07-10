@@ -151,17 +151,18 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-# Differential Gaussian Rasterization
-diff-gaussian-rasterization/
-
-# Nvdiffrast
-nvdiffrast/
-
 # Model files
 *.ckpt
 *.bin
 *.pth
 *.safetensors
+*.pkl
+.huggingface
 
 # Ignore test outputs
 outputs/
+
+# Ignore folders only used for build dependencies
+_Pre_Builds/_Build_Dependencies 
+_Pre_Builds/_Build_Wheels
+_Pre_Builds/_Libs

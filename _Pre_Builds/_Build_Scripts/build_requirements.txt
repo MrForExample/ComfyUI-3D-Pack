@@ -1,0 +1,7 @@
+# build tools
+cmake
+ninja
+
+# web tools
+PyGithub
+requests

@@ -678,7 +678,7 @@ class Mesh:
         )
 
         # append texture info
-        if self.vt is not None:
+        if self.vt is not None and self.albedo is not None:
 
             vt_np = self.vt.detach().cpu().numpy().astype(np.float32)
             vt_np_blob = vt_np.tobytes()

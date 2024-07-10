@@ -95,7 +95,6 @@ def calc_vertex_normals(
         faces:torch.Tensor, #F,3 long, first face may be all zero
         face_normals:torch.Tensor=None, #F,3, not normalized
         )->torch.Tensor: #F,3
-
     F = faces.shape[0]
 
     if face_normals is None:

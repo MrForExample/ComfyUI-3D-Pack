@@ -6,7 +6,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-import roma
 from kiui.op import safe_normalize
 
 def get_rays(pose, h, w, fovy, opengl=True):
@@ -47,7 +46,7 @@ def get_rays(pose, h, w, fovy, opengl=True):
 def orbit_camera_jitter(poses, strength=0.1):
     # poses: [B, 4, 4], assume orbit camera in opengl format
     # random orbital rotate
-
+    import roma
     B = poses.shape[0]
     rotvec_x = poses[:, :3, 1] * strength * np.pi * (torch.rand(B, 1, device=poses.device) * 2 - 1)
     rotvec_y = poses[:, :3, 0] * strength * np.pi / 2 * (torch.rand(B, 1, device=poses.device) * 2 - 1)
