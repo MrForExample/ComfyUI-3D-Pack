@@ -77,7 +77,7 @@ try:
     else:
         cstr(f"[WARNING] Couldn't download directory {remote_pycpp_dir_name} in remote repository {build_config.repo_id} to {python_root_dir}, some nodes may not work properly!").warning.print()
     
-    cstr("Successfully installed Comfy3D! Let's Accelerate🚀").msg.print()
+    cstr("Successfully installed Comfy3D! Let's Accelerate!").msg.print()
     
 except Exception as e:
     cstr("Comfy3D install failed: Dependency installation has failed. Please install manually: https://github.com/MrForExample/ComfyUI-3D-Pack/tree/main/_Pre_Builds/README.md.").error.print()
