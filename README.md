@@ -22,6 +22,7 @@ This is an extensive node suite that enables ComfyUI to process 3D inputs (Mesh 
   - torch 2.3.0+cu121/cu118, torchvision 0.18.0+cu121/cu118
 - [install.py](install.py) will download & install Pre-builds automatically according to your runtime environment, if it couldn't find corresponding Pre-builds, then [build script](_Pre_Builds/_Build_Scripts/auto_build_all.py) will start automatically, if automatic build doesn't work for you, then please check out [Semi-Automatic Build Guide](_Pre_Builds/README.md#build-required-packages-semi-automatically)
 - If you have any missing node in any open Comfy3D workflow, try simply click [Install Missing Custom Nodes](https://github.com/ltdrdata/ComfyUI-Manager?tab=readme-ov-file#support-of-missing-nodes-installation) in ComfyUI-Manager
+- If for some reason your comfy3d can't download pre-trained models automatically, you can always download them manually and put them in to correct folder under [Checkpoints](Checkpoints) directory
 - **Note:** at this moment, you'll still need to install [Visual Studio Build Tools for windows](_Pre_Builds/README.md#build-for-windows) and [install `gcc g++` for Linux](_Pre_Builds/README.md#build-for-linux) in order for `InstantNGP & Convert 3DGS to Mesh with NeRF and Marching_Cubes` nodes to work, since those two nodes used JIT torch cpp extension that builds in runtime, but I plan to replace those nodes soon
 
 ## Features:
@@ -32,6 +33,7 @@ This is an extensive node suite that enables ComfyUI to process 3D inputs (Mesh 
 - **CharacterGen**: [zjp-shadow/CharacterGen](https://github.com/zjp-shadow/CharacterGen)
   - Single front view of a character with arbitrary pose
   - Can [combine with Unique3D workflow](./_Example_Workflows/CharacterGen/CharacterGen_to_Unique3D.json) for better result
+  - Model weights: https://huggingface.co/zjpshadow/CharacterGen/tree/main
 
 - **Unique3D**: [AiuniAI/Unique3D](https://github.com/AiuniAI/Unique3D)
   - Four stages pipeline: 
@@ -43,58 +45,68 @@ This is an extensive node suite that enables ComfyUI to process 3D inputs (Mesh 
     - [fine-tuned controlnet-tile](https://huggingface.co/spaces/Wuvin/Unique3D/tree/main/ckpt/controlnet-tile) and put it into `Your ComfyUI root directory/ComfyUI/models/controlnet`
     - [ip-adapter_sd15](https://huggingface.co/h94/IP-Adapter/blob/main/models/ip-adapter_sd15.safetensors) and put it into `Your ComfyUI root directory/ComfyUI/models/ipadapter`
     - [RealESRGAN_x4plus](https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth) and put it into `Your ComfyUI root directory/ComfyUI/models/upscale_models`
+  - Model weights: https://huggingface.co/spaces/Wuvin/Unique3D/tree/main/ckpt
 
   <video controls autoplay loop src="https://github.com/MrForExample/ComfyUI-3D-Pack/assets/62230687/45dd6bfc-4f2b-4b1f-baed-13a1b0722896"></video>
 
 - **Era3D MVDiffusion Model**: [pengHTYX/Era3D](https://github.com/pengHTYX/Era3D)
   - Single image to 6 multi-view images & normal maps with resulution: 512X512
   - *Note: you need at least 16GB vram to run this model*
+  - Model weights: https://huggingface.co/pengHTYX/MacLab-Era3D-512-6view/tree/main
 
   <video controls autoplay loop src="https://github.com/MrForExample/ComfyUI-3D-Pack/assets/62230687/fc210cac-6c7d-4a55-926c-adb5fb7b0c57"></video>
 
 - **InstantMesh Reconstruction Model**: [TencentARC/InstantMesh](https://github.com/TencentARC/InstantMesh)
   - Sparse multi-view images with white background to 3D Mesh with RGB texture
   - Works with arbitrary MVDiffusion models (Probably works best with Zero123++, but also works with CRM MVDiffusion model)
+  - Model weights: https://huggingface.co/TencentARC/InstantMesh/tree/main
 
   <video controls autoplay loop src="https://github.com/MrForExample/ComfyUI-3D-Pack/assets/62230687/a0648a44-f8cb-4f78-9704-a907f9174936"></video>
   <video controls autoplay loop src="https://github.com/MrForExample/ComfyUI-3D-Pack/assets/62230687/33aecedb-f595-4c12-90dd-89d5f718598e"></video>
 
+
 - **Zero123++**: [SUDO-AI-3D/zero123plus](https://github.com/SUDO-AI-3D/zero123plus)
   - Single image to 6 view images with resulution: 320X320
 
-- **CRM**: [thu-ml/CRM](https://github.com/thu-ml/CRM)
+- **Convolutional Reconstruction Model**: [thu-ml/CRM](https://github.com/thu-ml/CRM)
   - Three stages pipeline: 
     1. Single image to 6 view images (Front, Back, Left, Right, Top & Down)
     2. Single image & 6 view images to 6 same views CCMs (Canonical Coordinate Maps)
     3. 6 view images & CCMs to 3D mesh
   - *Note: For low vram pc, if you can't fit all three models for each stages into your GPU memory, then you can divide those three stages into different comfy workflow and run them separately*
+  - Model weights: https://huggingface.co/sudo-ai/zero123plus-v1.2
 
-    <video controls autoplay loop src="https://github.com/MrForExample/ComfyUI-3D-Pack/assets/62230687/cf68bb83-9244-44df-9db8-f80eb3fdc29e"></video>
+  <video controls autoplay loop src="https://github.com/MrForExample/ComfyUI-3D-Pack/assets/62230687/cf68bb83-9244-44df-9db8-f80eb3fdc29e"></video>
 
 - **TripoSR**: [VAST-AI-Research/TripoSR](https://github.com/VAST-AI-Research/TripoSR) | [ComfyUI-Flowty-TripoSR](https://github.com/flowtyone/ComfyUI-Flowty-TripoSR)
   - Generate NeRF representation and using marching cube to turn it into 3D mesh
+  - Model weights: https://huggingface.co/stabilityai/TripoSR/tree/main
  
-    <video controls autoplay loop src="https://github.com/MrForExample/ComfyUI-3D-Pack/assets/62230687/ec4f8df5-5907-4bbf-ba19-c0565fe95a97"></video>
+  <video controls autoplay loop src="https://github.com/MrForExample/ComfyUI-3D-Pack/assets/62230687/ec4f8df5-5907-4bbf-ba19-c0565fe95a97"></video>
 
 - **Wonder3D**: [xxlong0/Wonder3D](https://github.com/xxlong0/Wonder3D)
   - Generate spatial consistent 6 views images & normal maps from a single image
+  - Model weights: https://huggingface.co/flamehaze1115/wonder3d-v1.0/tree/main
+  
   ![Wonder3D_FatCat_MVs](_Example_Workflows/_Example_Outputs/Wonder3D_FatCat_MVs.jpg)
 
 - **Large Multiview Gaussian Model**: [3DTopia/LGM](https://github.com/3DTopia/LGM)
   - Enable single image to 3D Gaussian in less than 30 seconds on a RTX3080 GPU, later you can also convert 3D Gaussian to mesh
+  - Model weights: https://huggingface.co/ashawkey/LGM/tree/main
 
-    <video controls autoplay loop src="https://github.com/MrForExample/ComfyUI-3D-Pack/assets/62230687/e221d7f8-49ac-4ed4-809b-d4c790b6270e"></video>
+  <video controls autoplay loop src="https://github.com/MrForExample/ComfyUI-3D-Pack/assets/62230687/e221d7f8-49ac-4ed4-809b-d4c790b6270e"></video>
 
 - **Triplane Gaussian Transformers**: [VAST-AI-Research/TriplaneGaussian](https://github.com/VAST-AI-Research/TriplaneGaussian)
   - Enable single image to 3D Gaussian in less than 10 seconds on a RTX3080 GPU, later you can also convert 3D Gaussian to mesh
- 
-    <video controls autoplay loop src="https://github.com/MrForExample/ComfyUI-3D-Pack/assets/62230687/90e7f298-bdbd-4c15-9378-1ca46cbb4871"></video>
+  - Model weights: https://huggingface.co/VAST-AI/TriplaneGaussian/tree/main
+
+  <video controls autoplay loop src="https://github.com/MrForExample/ComfyUI-3D-Pack/assets/62230687/90e7f298-bdbd-4c15-9378-1ca46cbb4871"></video>
 
 - **Preview 3DGS and 3D Mesh**: 3D Visualization inside ComfyUI:
   - Using [gsplat.js](https://github.com/huggingface/gsplat.js/tree/main) and [three.js](https://github.com/mrdoob/three.js/tree/dev) for 3DGS & 3D Mesh visualization respectively
   - Custumizable background base on JS library: [mdbassit/Coloris](https://github.com/mdbassit/Coloris)
 
-    <video controls autoplay loop src="https://github.com/MrForExample/ComfyUI-3D-Pack/assets/62230687/9f3c56b1-afb3-4bf1-8845-ab1025a87463"></video>
+  <video controls autoplay loop src="https://github.com/MrForExample/ComfyUI-3D-Pack/assets/62230687/9f3c56b1-afb3-4bf1-8845-ab1025a87463"></video>
 
 - **Stack Orbit Camera Poses**: Automatically generate all range of camera pose combinations
   - You can use it to conditioning the [StableZero123 (You need to Download the checkpoint first)](https://comfyanonymous.github.io/ComfyUI_examples/3d/), with full range of camera poses in one prompt pass
@@ -121,7 +133,7 @@ This is an extensive node suite that enables ComfyUI to process 3D inputs (Mesh 
     - *remove_floaters_weight*: This can be increased if you observe artifacts in flat areas
     - *cube_stabilizer_weight*: This does not have a significant impact during the optimization of a single shape, however it helps to stabilizing training in somecases
 
-    <video controls autoplay loop src="https://github.com/MrForExample/ComfyUI-3D-Pack/assets/62230687/166bbc1f-04b7-42c8-87bb-302e3f5aabb2"></video>
+  <video controls autoplay loop src="https://github.com/MrForExample/ComfyUI-3D-Pack/assets/62230687/166bbc1f-04b7-42c8-87bb-302e3f5aabb2"></video>
 
 
 - **Instant NGP**: [nerfacc](https://github.com/nerfstudio-project/nerfacc)
