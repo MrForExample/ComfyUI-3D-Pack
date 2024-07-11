@@ -31,7 +31,7 @@ try:
         cstr(f"Try building all required packages...").msg.print()
         result = subprocess.run(
             [PYTHON_PATH, "auto_build_all.py", "--output_root_dir", builds_dir], 
-            cwd=BUILD_SCRIPT_ROOT_ABS_PATH, shell=True, text=True, capture_output=True
+            cwd=BUILD_SCRIPT_ROOT_ABS_PATH, text=True, capture_output=True
         )
         build_succeed = result.returncode == 0
         
