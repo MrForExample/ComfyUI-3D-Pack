@@ -62,9 +62,13 @@ def build_python_wheel(dependency_dir, output_dir):
     # Build wheel and move the wheel file we just built to the output directory
     print(f"Building {dependency_dir}")
     
-    result = subprocess.run([PYTHON_PATH, "setup.py", "bdist_wheel", "--dist-dir", output_dir], cwd=dependency_dir, shell=True, text=True, capture_output=True)
+    result = subprocess.run([PYTHON_PATH, "setup.py", "bdist_wheel", "--dist-dir", output_dir], cwd=dependency_dir, text=True, capture_output=True)
     #print(f"returncode: {result.returncode} \n\n Output: {result.stdout} \n\n Error: {result.stderr}")
     build_failed = result.returncode != 0
+    
+    if build_failed:
+        print(f"[Wheel BUILD LOG]\n{result.stdout}")
+        print(f"[Wheel BUILD ERROR LOG]\n{result.stderr}")
     
     print(f" Build {dependency_dir} {'Failed' if build_failed else 'Succeed'}")
     return build_failed
