@@ -22,7 +22,7 @@ This is an extensive node suite that enables ComfyUI to process 3D inputs (Mesh 
   - torch 2.3.0+cu121/cu118, torchvision 0.18.0+cu121/cu118
 - [install.py](install.py) will download & install Pre-builds automatically according to your runtime environment, if it couldn't find corresponding Pre-builds, then [build script](_Pre_Builds/_Build_Scripts/auto_build_all.py) will start automatically, if automatic build doesn't work for you, then please check out [Semi-Automatic Build Guide](_Pre_Builds/README.md#build-required-packages-semi-automatically)
 - If you have any missing node in any open Comfy3D workflow, try simply click [Install Missing Custom Nodes](https://github.com/ltdrdata/ComfyUI-Manager?tab=readme-ov-file#support-of-missing-nodes-installation) in ComfyUI-Manager
-- If for some reason your comfy3d can't download pre-trained models automatically, you can always download them manually and put them in to correct folder under [Checkpoints](Checkpoints) directory
+- If for some reason your comfy3d can't download pre-trained models automatically, you can always download them manually and put them in to correct folder under [Checkpoints](Checkpoints) directory, but please **DON'T** overwrite any exist .json files
 - **Note:** at this moment, you'll still need to install [Visual Studio Build Tools for windows](_Pre_Builds/README.md#build-for-windows) and [install `gcc g++` for Linux](_Pre_Builds/README.md#build-for-linux) in order for `InstantNGP & Convert 3DGS to Mesh with NeRF and Marching_Cubes` nodes to work, since those two nodes used JIT torch cpp extension that builds in runtime, but I plan to replace those nodes soon
 
 ## Features:
