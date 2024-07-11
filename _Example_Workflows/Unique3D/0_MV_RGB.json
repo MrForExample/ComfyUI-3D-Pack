@@ -3,45 +3,6 @@
   "last_link_id": 40,
   "nodes": [
     {
-      "id": 17,
-      "type": "[Comfy3D] Load Unique3D Custom UNet",
-      "pos": [
-        534,
-        161
-      ],
-      "size": {
-        "0": 315,
-        "1": 58
-      },
-      "flags": {},
-      "order": 2,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "pipe",
-          "type": "DIFFUSERS_PIPE",
-          "link": 21
-        }
-      ],
-      "outputs": [
-        {
-          "name": "pipe",
-          "type": "DIFFUSERS_PIPE",
-          "links": [
-            22
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "[Comfy3D] Load Unique3D Custom UNet"
-      },
-      "widgets_values": [
-        "image2mvimage"
-      ]
-    },
-    {
       "id": 3,
       "type": "[Comfy3D] Set Diffusers Pipeline Scheduler",
       "pos": [
@@ -53,7 +14,7 @@
         "1": 58
       },
       "flags": {},
-      "order": 4,
+      "order": 5,
       "mode": 0,
       "inputs": [
         {
@@ -92,7 +53,7 @@
         "1": 222
       },
       "flags": {},
-      "order": 6,
+      "order": 7,
       "mode": 0,
       "inputs": [
         {
@@ -137,83 +98,6 @@
       ]
     },
     {
-      "id": 1,
-      "type": "[Comfy3D] Load Diffusers Pipeline",
-      "pos": [
-        56,
-        161
-      ],
-      "size": {
-        "0": 430.03009033203125,
-        "1": 130
-      },
-      "flags": {},
-      "order": 0,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "pipe",
-          "type": "DIFFUSERS_PIPE",
-          "links": [
-            21
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "[Comfy3D] Load Diffusers Pipeline"
-      },
-      "widgets_values": [
-        "Unique3DImage2MVCustomPipeline",
-        "Wuvin/Unique3D/image2mvimage",
-        "",
-        false
-      ]
-    },
-    {
-      "id": 6,
-      "type": "LoadImage",
-      "pos": [
-        375,
-        343
-      ],
-      "size": {
-        "0": 315,
-        "1": 314
-      },
-      "flags": {},
-      "order": 1,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "IMAGE",
-          "type": "IMAGE",
-          "links": [
-            35
-          ],
-          "shape": 3,
-          "slot_index": 0
-        },
-        {
-          "name": "MASK",
-          "type": "MASK",
-          "links": [
-            32
-          ],
-          "shape": 3,
-          "slot_index": 1
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "LoadImage"
-      },
-      "widgets_values": [
-        "PriestCat.png",
-        "image"
-      ]
-    },
-    {
       "id": 25,
       "type": "InvertMask",
       "pos": [
@@ -225,7 +109,7 @@
         "1": 26
       },
       "flags": {},
-      "order": 3,
+      "order": 2,
       "mode": 0,
       "inputs": [
         {
@@ -261,7 +145,7 @@
         "1": 270
       },
       "flags": {},
-      "order": 8,
+      "order": 9,
       "mode": 0,
       "inputs": [
         {
@@ -276,53 +160,6 @@
       ]
     },
     {
-      "id": 26,
-      "type": "[Comfy3D] Image Add Pure Color Background",
-      "pos": [
-        975,
-        338
-      ],
-      "size": {
-        "0": 315,
-        "1": 126
-      },
-      "flags": {},
-      "order": 5,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "images",
-          "type": "IMAGE",
-          "link": 35
-        },
-        {
-          "name": "masks",
-          "type": "MASK",
-          "link": 36
-        }
-      ],
-      "outputs": [
-        {
-          "name": "images",
-          "type": "IMAGE",
-          "links": [
-            38,
-            39
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "[Comfy3D] Image Add Pure Color Background"
-      },
-      "widgets_values": [
-        255,
-        255,
-        255
-      ]
-    },
-    {
       "id": 27,
       "type": "ImageScale",
       "pos": [
@@ -334,7 +171,7 @@
         "1": 130
       },
       "flags": {},
-      "order": 7,
+      "order": 6,
       "mode": 0,
       "inputs": [
         {
@@ -376,7 +213,7 @@
         "1": 270
       },
       "flags": {},
-      "order": 9,
+      "order": 8,
       "mode": 0,
       "inputs": [
         {
@@ -388,6 +225,170 @@
       "properties": {},
       "widgets_values": [
         "Unique3D\\Normal_Inputs\\refined_sr_rgb_0"
+      ]
+    },
+    {
+      "id": 6,
+      "type": "LoadImage",
+      "pos": [
+        373,
+        362
+      ],
+      "size": {
+        "0": 315,
+        "1": 314
+      },
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            35
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            32
+          ],
+          "shape": 3,
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "PriestCat.png",
+        "image"
+      ]
+    },
+    {
+      "id": 26,
+      "type": "[Comfy3D] Image Add Pure Color Background",
+      "pos": [
+        975,
+        360
+      ],
+      "size": {
+        "0": 315,
+        "1": 126
+      },
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 35
+        },
+        {
+          "name": "masks",
+          "type": "MASK",
+          "link": 36
+        }
+      ],
+      "outputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "links": [
+            38,
+            39
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Image Add Pure Color Background"
+      },
+      "widgets_values": [
+        255,
+        255,
+        255
+      ]
+    },
+    {
+      "id": 17,
+      "type": "[Comfy3D] Load Unique3D Custom UNet",
+      "pos": [
+        534,
+        161
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "pipe",
+          "type": "DIFFUSERS_PIPE",
+          "link": 21
+        }
+      ],
+      "outputs": [
+        {
+          "name": "pipe",
+          "type": "DIFFUSERS_PIPE",
+          "links": [
+            22
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Load Unique3D Custom UNet"
+      },
+      "widgets_values": [
+        "image2mvimage"
+      ]
+    },
+    {
+      "id": 1,
+      "type": "[Comfy3D] Load Diffusers Pipeline",
+      "pos": [
+        56,
+        161
+      ],
+      "size": {
+        "0": 430.03009033203125,
+        "1": 154
+      },
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "pipe",
+          "type": "DIFFUSERS_PIPE",
+          "links": [
+            21
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Load Diffusers Pipeline"
+      },
+      "widgets_values": [
+        "Unique3DImage2MVCustomPipeline",
+        "MrForExample/Unique3D",
+        "",
+        false,
+        "image2mvimage"
       ]
     }
   ],
@@ -477,10 +478,10 @@
   "config": {},
   "extra": {
     "ds": {
-      "scale": 0.8264462809917354,
+      "scale": 0.6209213230591552,
       "offset": [
-        -813.4684892955395,
-        -48.223766450597736
+        193.67481403456898,
+        357.14355130207736
       ]
     }
   },

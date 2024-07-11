@@ -1390,8 +1390,11 @@ class Load_Diffusers_Pipeline:
                 "diffusers_pipeline_name": (list(DIFFUSERS_PIPE_DICT.keys()),),
                 "repo_id": ("STRING", {"default": "ashawkey/imagedream-ipmv-diffusers", "multiline": False}),
                 "custom_pipeline": ("STRING", {"default": "", "multiline": False}),
-                "download_from_remote": ("BOOLEAN", {"default": True}),
+                "force_download": ("BOOLEAN", {"default": False}),
             },
+            "optional": {
+                "checkpoint_sub_dir": ("STRING", {"default": "", "multiline": False}),
+            }
         }
     
     RETURN_TYPES = (
@@ -1403,12 +1406,11 @@ class Load_Diffusers_Pipeline:
     FUNCTION = "load_diffusers_pipe"
     CATEGORY = "Comfy3D/Import|Export"
     
-    def load_diffusers_pipe(self, diffusers_pipeline_name, repo_id, custom_pipeline, download_from_remote):
+    def load_diffusers_pipe(self, diffusers_pipeline_name, repo_id, custom_pipeline, force_download, checkpoint_sub_dir=""):
         
         # resume download pretrained checkpoint
-        ckpt_path = os.path.join(CKPT_DIFFUSERS_PATH, repo_id)
-        if download_from_remote:
-            snapshot_download(repo_id=repo_id, local_dir=ckpt_path, repo_type="model", ignore_patterns=["*.json", "*.py"])
+        ckpt_download_dir = os.path.join(CKPT_DIFFUSERS_PATH, repo_id)
+        snapshot_download(repo_id=repo_id, local_dir=ckpt_download_dir, force_download=force_download, repo_type="model", ignore_patterns=["*.json", "*.py"])
         
         diffusers_pipeline_class = DIFFUSERS_PIPE_DICT[diffusers_pipeline_name]
         
@@ -1416,6 +1418,7 @@ class Load_Diffusers_Pipeline:
         if not custom_pipeline:
             custom_pipeline = None
             
+        ckpt_path = ckpt_download_dir if not checkpoint_sub_dir else os.path.join(ckpt_download_dir, checkpoint_sub_dir)
         pipe = diffusers_pipeline_class.from_pretrained(
             ckpt_path,
             torch_dtype=WEIGHT_DTYPE,
@@ -2575,12 +2578,12 @@ class FlexiCubes_MVS:
             return (mesh, )
 
 class Load_Unique3D_Custom_UNet:
-    checkpoints_dir = "Wuvin/Unique3D"
     default_repo_id = "MrForExample/Unique3D"
     config_root_dir = "Unique3D_configs"
 
     @classmethod
     def INPUT_TYPES(cls):
+        cls.checkpoints_dir_abs = os.path.join(CKPT_DIFFUSERS_PATH, cls.default_repo_id)
         cls.config_path_abs = os.path.join(CONFIG_ROOT_PATH, cls.config_root_dir)
         return {
             "required": {
@@ -2604,11 +2607,8 @@ class Load_Unique3D_Custom_UNet:
         from Unique3D.custum_3d_diffusion.custum_modules.unifield_processor import AttnConfig, ConfigurableUNet2DConditionModel
         from Unique3D.custum_3d_diffusion.trainings.utils import load_config
         # Download models and configs
-        ckpt_path = os.path.join(CKPT_DIFFUSERS_PATH, self.checkpoints_dir)
-        snapshot_download(repo_id=self.default_repo_id, local_dir=ckpt_path, repo_type="model", ignore_patterns=["*.json", "*.py"])
-
         cfg_path = os.path.join(self.config_path_abs, config_name + ".yaml")
-        checkpoint_dir_path = os.path.join(ckpt_path, config_name)
+        checkpoint_dir_path = os.path.join(self.checkpoints_dir_abs, config_name)
         checkpoint_path = os.path.join(checkpoint_dir_path, "unet_state_dict.pth")
 
         cfg: ExprimentConfig = load_config(ExprimentConfig, cfg_path)
@@ -2855,6 +2855,7 @@ class Load_CharacterGen_MVDiffusion_Model:
         cls.config_root_path_abs = os.path.join(CONFIG_ROOT_PATH, cls.config_path)
         return {
             "required": {
+                "force_download": ("BOOLEAN", {"default": False}),
             },
         }
     
@@ -2867,9 +2868,9 @@ class Load_CharacterGen_MVDiffusion_Model:
     FUNCTION = "load_model"
     CATEGORY = "Comfy3D/Import|Export"
     
-    def load_model(self):
+    def load_model(self, force_download):
         # Download checkpoints
-        snapshot_download(repo_id=self.default_repo_id, local_dir=self.checkpoints_dir_abs, repo_type="model", ignore_patterns=["*.json", "*.py"])
+        snapshot_download(repo_id=self.default_repo_id, local_dir=self.checkpoints_dir_abs, force_download=force_download, repo_type="model", ignore_patterns=["*.json", "*.py"])
         # Load pre-trained models
         character_mv_gen_pipe = Inference2D_API(checkpoint_root_path=self.checkpoints_dir_abs, **OmegaConf.load(self.config_root_path_abs))
         return (character_mv_gen_pipe,)
@@ -2953,6 +2954,7 @@ class Load_CharacterGen_Reconstruction_Model:
         cls.config_root_path_abs = os.path.join(CONFIG_ROOT_PATH, cls.config_path)
         return {
             "required": {
+                "force_download": ("BOOLEAN", {"default": False}),
             },
         }
     
@@ -2965,9 +2967,9 @@ class Load_CharacterGen_Reconstruction_Model:
     FUNCTION = "load_model"
     CATEGORY = "Comfy3D/Import|Export"
     
-    def load_model(self):
+    def load_model(self, force_download):
         # Download checkpoints
-        snapshot_download(repo_id=self.default_repo_id, local_dir=self.checkpoints_dir_abs, repo_type="model", ignore_patterns=["*.json", "*.py"])
+        snapshot_download(repo_id=self.default_repo_id, local_dir=self.checkpoints_dir_abs, force_download=force_download, repo_type="model", ignore_patterns=["*.json", "*.py"])
         # Load pre-trained models
         character_lrm_pipe = Inference3D_API(checkpoint_root_path=self.checkpoints_dir_abs, cfg=load_config_cg3d(self.config_root_path_abs))
         return (character_lrm_pipe,)
