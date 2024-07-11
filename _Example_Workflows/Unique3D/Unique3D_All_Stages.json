@@ -1152,41 +1152,6 @@
       ]
     },
     {
-      "id": 302,
-      "type": "[Comfy3D] Load Diffusers Pipeline",
-      "pos": [
-        -1380,
-        -1190
-      ],
-      "size": {
-        "0": 430.03009033203125,
-        "1": 130
-      },
-      "flags": {},
-      "order": 6,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "pipe",
-          "type": "DIFFUSERS_PIPE",
-          "links": [
-            615
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "[Comfy3D] Load Diffusers Pipeline"
-      },
-      "widgets_values": [
-        "Unique3DImage2MVCustomPipeline",
-        "Wuvin/Unique3D/image2mvimage",
-        "",
-        false
-      ]
-    },
-    {
       "id": 303,
       "type": "[Comfy3D] Set Diffusers Pipeline Scheduler",
       "pos": [
@@ -1198,7 +1163,7 @@
         "1": 58
       },
       "flags": {},
-      "order": 20,
+      "order": 24,
       "mode": 0,
       "inputs": [
         {
@@ -1237,7 +1202,7 @@
         "1": 58
       },
       "flags": {},
-      "order": 13,
+      "order": 17,
       "mode": 0,
       "inputs": [
         {
@@ -1276,7 +1241,7 @@
         "1": 126
       },
       "flags": {},
-      "order": 24,
+      "order": 22,
       "mode": 0,
       "inputs": [
         {
@@ -1354,7 +1319,7 @@
         "1": 58
       },
       "flags": {},
-      "order": 21,
+      "order": 25,
       "mode": 0,
       "inputs": [
         {
@@ -1393,7 +1358,7 @@
         "1": 58
       },
       "flags": {},
-      "order": 14,
+      "order": 18,
       "mode": 0,
       "inputs": [
         {
@@ -1571,41 +1536,6 @@
       ]
     },
     {
-      "id": 312,
-      "type": "[Comfy3D] Load Diffusers Pipeline",
-      "pos": [
-        -603.9739611458458,
-        650.576119046973
-      ],
-      "size": {
-        "0": 430.03009033203125,
-        "1": 130
-      },
-      "flags": {},
-      "order": 7,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "pipe",
-          "type": "DIFFUSERS_PIPE",
-          "links": [
-            625
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "[Comfy3D] Load Diffusers Pipeline"
-      },
-      "widgets_values": [
-        "Unique3DImageCustomPipeline",
-        "Wuvin/Unique3D/image2normal",
-        "",
-        false
-      ]
-    },
-    {
       "id": 307,
       "type": "[Comfy3D] Unique3D MVDiffusion Model",
       "pos": [
@@ -1767,7 +1697,7 @@
         "1": 26
       },
       "flags": {},
-      "order": 17,
+      "order": 15,
       "mode": 0,
       "inputs": [
         {
@@ -2181,7 +2111,7 @@
         "1": 130
       },
       "flags": {},
-      "order": 15,
+      "order": 13,
       "mode": 0,
       "inputs": [
         {
@@ -2318,7 +2248,7 @@
         "1": 26
       },
       "flags": {},
-      "order": 23,
+      "order": 21,
       "mode": 0,
       "inputs": [
         {
@@ -2354,7 +2284,7 @@
         "1": 130
       },
       "flags": {},
-      "order": 22,
+      "order": 20,
       "mode": 0,
       "inputs": [
         {
@@ -2412,7 +2342,7 @@
         "1": 314.0000305175781
       },
       "flags": {},
-      "order": 8,
+      "order": 6,
       "mode": 0,
       "outputs": [
         {
@@ -2455,7 +2385,7 @@
         26
       ],
       "flags": {},
-      "order": 16,
+      "order": 14,
       "mode": 0,
       "inputs": [
         {
@@ -2889,7 +2819,7 @@
         26
       ],
       "flags": {},
-      "order": 18,
+      "order": 16,
       "mode": 0,
       "inputs": [
         {
@@ -2925,7 +2855,7 @@
         26
       ],
       "flags": {},
-      "order": 25,
+      "order": 23,
       "mode": 0,
       "inputs": [
         {
@@ -3071,7 +3001,7 @@
         "1": 58
       },
       "flags": {},
-      "order": 9,
+      "order": 7,
       "mode": 0,
       "outputs": [
         {
@@ -3091,6 +3021,78 @@
       },
       "widgets_values": [
         "RealESRGAN_x4plus.pth"
+      ]
+    },
+    {
+      "id": 302,
+      "type": "[Comfy3D] Load Diffusers Pipeline",
+      "pos": [
+        -1380,
+        -1190
+      ],
+      "size": {
+        "0": 430.03009033203125,
+        "1": 154
+      },
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "pipe",
+          "type": "DIFFUSERS_PIPE",
+          "links": [
+            615
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Load Diffusers Pipeline"
+      },
+      "widgets_values": [
+        "Unique3DImage2MVCustomPipeline",
+        "MrForExample/Unique3D",
+        "",
+        false,
+        "image2mvimage"
+      ]
+    },
+    {
+      "id": 312,
+      "type": "[Comfy3D] Load Diffusers Pipeline",
+      "pos": [
+        -603.9739611458458,
+        650.576119046973
+      ],
+      "size": {
+        "0": 430.03009033203125,
+        "1": 154
+      },
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "pipe",
+          "type": "DIFFUSERS_PIPE",
+          "links": [
+            625
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Load Diffusers Pipeline"
+      },
+      "widgets_values": [
+        "Unique3DImageCustomPipeline",
+        "MrForExample/Unique3D",
+        "",
+        false,
+        "image2normal"
       ]
     }
   ],
@@ -3982,10 +3984,10 @@
   "config": {},
   "extra": {
     "ds": {
-      "scale": 1.3109994191500893,
+      "scale": 0.6727499949326112,
       "offset": [
-        -5296.28634484957,
-        1239.1566467650287
+        -2947.1491377521043,
+        -1183.618622374594
       ]
     }
   },

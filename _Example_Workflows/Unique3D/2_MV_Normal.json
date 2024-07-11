@@ -42,41 +42,6 @@
       ]
     },
     {
-      "id": 1,
-      "type": "[Comfy3D] Load Diffusers Pipeline",
-      "pos": [
-        56,
-        161
-      ],
-      "size": {
-        "0": 430.03009033203125,
-        "1": 130
-      },
-      "flags": {},
-      "order": 0,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "pipe",
-          "type": "DIFFUSERS_PIPE",
-          "links": [
-            21
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "[Comfy3D] Load Diffusers Pipeline"
-      },
-      "widgets_values": [
-        "Unique3DImageCustomPipeline",
-        "Wuvin/Unique3D/image2normal",
-        "",
-        false
-      ]
-    },
-    {
       "id": 3,
       "type": "[Comfy3D] Set Diffusers Pipeline Scheduler",
       "pos": [
@@ -114,67 +79,6 @@
       "widgets_values": [
         "EulerAncestralDiscreteScheduler"
       ]
-    },
-    {
-      "id": 20,
-      "type": "VHS_LoadImagesPath",
-      "pos": [
-        736,
-        322
-      ],
-      "size": [
-        226.8000030517578,
-        194
-      ],
-      "flags": {},
-      "order": 1,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "IMAGE",
-          "type": "IMAGE",
-          "links": [
-            32
-          ],
-          "shape": 3,
-          "slot_index": 0
-        },
-        {
-          "name": "MASK",
-          "type": "MASK",
-          "links": [],
-          "shape": 3,
-          "slot_index": 1
-        },
-        {
-          "name": "INT",
-          "type": "INT",
-          "links": null,
-          "shape": 3
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "VHS_LoadImagesPath"
-      },
-      "widgets_values": {
-        "directory": "C:\\Users\\reall\\Softwares\\ComfyUI_windows_portable\\ComfyUI\\output\\Unique3D\\Normal_Inputs",
-        "image_load_cap": 0,
-        "skip_first_images": 0,
-        "select_every_nth": 1,
-        "choose folder to upload": "image",
-        "videopreview": {
-          "hidden": false,
-          "paused": false,
-          "params": {
-            "frame_load_cap": 0,
-            "skip_first_images": 0,
-            "filename": "C:\\Users\\reall\\Softwares\\ComfyUI_windows_portable\\ComfyUI\\output\\Unique3D\\Normal_Inputs",
-            "type": "path",
-            "format": "folder",
-            "select_every_nth": 1
-          }
-        }
-      }
     },
     {
       "id": 23,
@@ -434,7 +338,7 @@
         "1": 58
       },
       "flags": {},
-      "order": 2,
+      "order": 0,
       "mode": 0,
       "outputs": [
         {
@@ -453,6 +357,103 @@
       "widgets_values": [
         "RealESRGAN_x4plus.pth"
       ]
+    },
+    {
+      "id": 1,
+      "type": "[Comfy3D] Load Diffusers Pipeline",
+      "pos": [
+        56,
+        161
+      ],
+      "size": {
+        "0": 430.03009033203125,
+        "1": 154
+      },
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "pipe",
+          "type": "DIFFUSERS_PIPE",
+          "links": [
+            21
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Load Diffusers Pipeline"
+      },
+      "widgets_values": [
+        "Unique3DImageCustomPipeline",
+        "MrForExample/Unique3D",
+        "",
+        false,
+        "image2normal"
+      ]
+    },
+    {
+      "id": 20,
+      "type": "VHS_LoadImagesPath",
+      "pos": [
+        736,
+        322
+      ],
+      "size": [
+        226.8000030517578,
+        194
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            32
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [],
+          "shape": 3,
+          "slot_index": 1
+        },
+        {
+          "name": "INT",
+          "type": "INT",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VHS_LoadImagesPath"
+      },
+      "widgets_values": {
+        "directory": "C:\\Users\\reall\\Softwares\\ComfyUI_windows_portable\\ComfyUI\\output\\Unique3D\\Normal_Inputs",
+        "image_load_cap": 0,
+        "skip_first_images": 0,
+        "select_every_nth": 1,
+        "choose folder to upload": "image",
+        "videopreview": {
+          "hidden": false,
+          "paused": false,
+          "params": {
+            "frame_load_cap": 0,
+            "skip_first_images": 0,
+            "filename": "C:\\Users\\reall\\Softwares\\ComfyUI_windows_portable\\ComfyUI\\output\\Unique3D\\Normal_Inputs",
+            "type": "path",
+            "format": "folder",
+            "select_every_nth": 1
+          }
+        }
+      }
     }
   ],
   "links": [
@@ -549,10 +550,10 @@
   "config": {},
   "extra": {
     "ds": {
-      "scale": 1,
+      "scale": 0.620921323059155,
       "offset": [
-        -966.7186084475675,
-        202.58910814821127
+        -709.3437170943722,
+        353.7099277437518
       ]
     }
   },
