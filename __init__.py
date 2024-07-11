@@ -31,7 +31,7 @@ setup_logger('diffusers_logging', logging.INFO, [logging.INFO, logging.WARNING],
 # Redirect warnings to the logging system
 logging.captureWarnings(True)
 
-conf_path = os.path.join(ROOT_PATH, "configs/system.conf")
+conf_path = os.path.join(ROOT_PATH, "Configs/system.conf")
 # Configuration
 f = open(conf_path)
 conf_text = f.read()

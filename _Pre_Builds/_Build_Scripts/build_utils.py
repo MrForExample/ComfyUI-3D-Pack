@@ -23,13 +23,21 @@ DEPENDENCIES_ROOT_ABS_PATH = os.path.join(BUILD_ROOT_ABS_PATH, build_config.depe
 WHEELS_ROOT_ABS_PATH = os.path.join(BUILD_ROOT_ABS_PATH, build_config.wheels_dir_name)
 LIBS_ROOT_ABS_PATH = os.path.join(BUILD_ROOT_ABS_PATH, build_config.libs_dir_name)
 
+def get_os_type():
+    if platform.system() == "Windows":
+        return "win"
+    elif platform.system() == "Linux":
+        return "linux"
+    else:
+        raise NotImplementedError(f"Platform {platform.system()} not supported!")
+
 def get_python_version():
     # Output: only first two version numbers, e.g. 3.12.4 -> py312
     return "py" + "".join(platform.python_version().split('.')[:-1])
 
 def get_cuda_version():
     # Output: e.g. "cu121" or cu118
-    result = subprocess.run(["nvcc", "--version"], shell=True, text=True, capture_output=True)
+    result = subprocess.run(["nvcc", "--version"], text=True, capture_output=True)
     if result.returncode == 0:
         for cuda_version in build_config.supported_cuda_versions:
             if "cuda_" + cuda_version in result.stdout:
@@ -37,6 +45,7 @@ def get_cuda_version():
         
     raise RuntimeError(f"Please install/reinstall CUDA tookit with any of the following supported version: {build_config.supported_cuda_versions}")
 
+OS_TYPE = get_os_type()
 PYTHON_VERSION = get_python_version()
 CUDA_VERSION = get_cuda_version()
 build_config.cuda_version = CUDA_VERSION
@@ -45,12 +54,7 @@ def get_platform_config_name():
     platform_config_name = "_Wheels"
     
     # Add OS Type
-    if platform.system() == 'Windows':
-        platform_config_name += "_win"
-    elif platform.system() == "Linux":
-        platform_config_name += "_linux"
-    else:
-        raise NotImplementedError(f"Platform {platform.system()} not supported!")
+    platform_config_name += "_" + OS_TYPE
     
     # Add Python Version
     platform_config_name += "_" + PYTHON_VERSION
