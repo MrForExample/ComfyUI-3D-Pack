@@ -165,7 +165,7 @@ This is an extensive node suite that enables ComfyUI to process 3D inputs (Mesh 
 - **Switch Axis for 3DGS & 3D Mesh**
   - Since different algorithms likely use different coordinate system, so the ability to re-mapping the axis of coordinate is crucial for passing generated result between differnt nodes.
 
-- **[Customizable system config file](configs/system.conf)**
+- **[Customizable system config file](Configs/system.conf)**
   - Custom clients IP address 
 
 ## Roadmap:
