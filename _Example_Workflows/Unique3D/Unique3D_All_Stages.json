@@ -14,7 +14,7 @@
         26
       ],
       "flags": {},
-      "order": 12,
+      "order": 18,
       "mode": 0,
       "inputs": [
         {
@@ -50,7 +50,7 @@
         "1": 121.17926025390625
       },
       "flags": {},
-      "order": 10,
+      "order": 16,
       "mode": 0,
       "inputs": [
         {
@@ -197,7 +197,7 @@
         "1": 123.00312042236328
       },
       "flags": {},
-      "order": 11,
+      "order": 17,
       "mode": 0,
       "inputs": [
         {
@@ -352,7 +352,7 @@
         26
       ],
       "flags": {},
-      "order": 19,
+      "order": 25,
       "mode": 0,
       "inputs": [
         {
@@ -376,57 +376,6 @@
         "showOutputText": false,
         "horizontal": false
       }
-    },
-    {
-      "id": 238,
-      "type": "CheckpointLoaderSimple",
-      "pos": [
-        1642.6586640526511,
-        -1295.0556190475177
-      ],
-      "size": {
-        "0": 354.010986328125,
-        "1": 98
-      },
-      "flags": {},
-      "order": 2,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "MODEL",
-          "type": "MODEL",
-          "links": [
-            523
-          ],
-          "shape": 3,
-          "slot_index": 0
-        },
-        {
-          "name": "CLIP",
-          "type": "CLIP",
-          "links": [
-            524,
-            525
-          ],
-          "shape": 3,
-          "slot_index": 1
-        },
-        {
-          "name": "VAE",
-          "type": "VAE",
-          "links": [
-            526
-          ],
-          "shape": 3,
-          "slot_index": 2
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "CheckpointLoaderSimple"
-      },
-      "widgets_values": [
-        "sd15\\v1-5-pruned-emaonly.ckpt"
-      ]
     },
     {
       "id": 241,
@@ -511,7 +460,7 @@
         "1": 58
       },
       "flags": {},
-      "order": 3,
+      "order": 2,
       "mode": 0,
       "outputs": [
         {
@@ -532,37 +481,6 @@
       ]
     },
     {
-      "id": 243,
-      "type": "CLIPVisionLoader",
-      "pos": [
-        3023,
-        -1126
-      ],
-      "size": {
-        "0": 409.337158203125,
-        "1": 58
-      },
-      "flags": {},
-      "order": 4,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "CLIP_VISION",
-          "type": "CLIP_VISION",
-          "links": [
-            519
-          ],
-          "shape": 3
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "CLIPVisionLoader"
-      },
-      "widgets_values": [
-        "CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors"
-      ]
-    },
-    {
       "id": 192,
       "type": "ControlNetLoader",
       "pos": [
@@ -574,7 +492,7 @@
         "1": 58
       },
       "flags": {},
-      "order": 5,
+      "order": 3,
       "mode": 0,
       "outputs": [
         {
@@ -784,7 +702,7 @@
         }
       },
       "widgets_values": [
-        "Unique3D\\Upscales\\rgb_highres"
+        "Unique3D/Upscales/rgb_highres"
       ],
       "color": "#223",
       "bgcolor": "#335"
@@ -1006,7 +924,7 @@
         "Node name for S&R": "[Comfy3D] Save 3D Mesh"
       },
       "widgets_values": [
-        "Unique3D\\Mesh_Gen_0\\mesh.obj"
+        "Unique3D/Mesh_Gen_0/mesh.obj"
       ]
     },
     {
@@ -1045,7 +963,7 @@
         "Node name for S&R": "[Comfy3D] Save 3D Mesh"
       },
       "widgets_values": [
-        "Unique3D\\Mesh_Gen_1\\mesh.obj"
+        "Unique3D/Mesh_Gen_1/mesh.obj"
       ]
     },
     {
@@ -1116,7 +1034,7 @@
         "Node name for S&R": "[Comfy3D] Save 3D Mesh"
       },
       "widgets_values": [
-        "Unique3D\\Mesh_Gen_2\\mesh.obj"
+        "Unique3D/Mesh_Gen_2/mesh.obj"
       ]
     },
     {
@@ -1163,7 +1081,7 @@
         "1": 58
       },
       "flags": {},
-      "order": 24,
+      "order": 23,
       "mode": 0,
       "inputs": [
         {
@@ -1202,7 +1120,7 @@
         "1": 58
       },
       "flags": {},
-      "order": 17,
+      "order": 14,
       "mode": 0,
       "inputs": [
         {
@@ -1241,7 +1159,7 @@
         "1": 126
       },
       "flags": {},
-      "order": 22,
+      "order": 21,
       "mode": 0,
       "inputs": [
         {
@@ -1319,7 +1237,7 @@
         "1": 58
       },
       "flags": {},
-      "order": 25,
+      "order": 24,
       "mode": 0,
       "inputs": [
         {
@@ -1358,7 +1276,7 @@
         "1": 58
       },
       "flags": {},
-      "order": 18,
+      "order": 15,
       "mode": 0,
       "inputs": [
         {
@@ -1476,7 +1394,7 @@
       ],
       "properties": {},
       "widgets_values": [
-        "Unique3D\\RGB\\rgb"
+        "Unique3D/RGB/rgb"
       ]
     },
     {
@@ -1697,7 +1615,7 @@
         "1": 26
       },
       "flags": {},
-      "order": 15,
+      "order": 12,
       "mode": 0,
       "inputs": [
         {
@@ -2111,7 +2029,7 @@
         "1": 130
       },
       "flags": {},
-      "order": 13,
+      "order": 10,
       "mode": 0,
       "inputs": [
         {
@@ -2248,7 +2166,7 @@
         "1": 26
       },
       "flags": {},
-      "order": 21,
+      "order": 20,
       "mode": 0,
       "inputs": [
         {
@@ -2284,7 +2202,7 @@
         "1": 130
       },
       "flags": {},
-      "order": 20,
+      "order": 19,
       "mode": 0,
       "inputs": [
         {
@@ -2342,7 +2260,7 @@
         "1": 314.0000305175781
       },
       "flags": {},
-      "order": 6,
+      "order": 4,
       "mode": 0,
       "outputs": [
         {
@@ -2385,7 +2303,7 @@
         26
       ],
       "flags": {},
-      "order": 14,
+      "order": 11,
       "mode": 0,
       "inputs": [
         {
@@ -2574,7 +2492,7 @@
         "Node name for S&R": "[Comfy3D] Save 3D Mesh"
       },
       "widgets_values": [
-        "Unique3D\\Mesh_Gen_3\\mesh.obj"
+        "Unique3D/Mesh_Gen_3/mesh.obj"
       ]
     },
     {
@@ -2819,7 +2737,7 @@
         26
       ],
       "flags": {},
-      "order": 16,
+      "order": 13,
       "mode": 0,
       "inputs": [
         {
@@ -2855,7 +2773,7 @@
         26
       ],
       "flags": {},
-      "order": 23,
+      "order": 22,
       "mode": 0,
       "inputs": [
         {
@@ -3001,7 +2919,7 @@
         "1": 58
       },
       "flags": {},
-      "order": 7,
+      "order": 5,
       "mode": 0,
       "outputs": [
         {
@@ -3035,7 +2953,7 @@
         "1": 154
       },
       "flags": {},
-      "order": 8,
+      "order": 6,
       "mode": 0,
       "outputs": [
         {
@@ -3071,7 +2989,7 @@
         "1": 154
       },
       "flags": {},
-      "order": 9,
+      "order": 7,
       "mode": 0,
       "outputs": [
         {
@@ -3093,6 +3011,88 @@
         "",
         false,
         "image2normal"
+      ]
+    },
+    {
+      "id": 243,
+      "type": "CLIPVisionLoader",
+      "pos": [
+        3023,
+        -1126
+      ],
+      "size": {
+        "0": 409.337158203125,
+        "1": 58
+      },
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "CLIP_VISION",
+          "type": "CLIP_VISION",
+          "links": [
+            519
+          ],
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPVisionLoader"
+      },
+      "widgets_values": [
+        "OpenCLIP-ViT-H-14.safetensors"
+      ]
+    },
+    {
+      "id": 238,
+      "type": "CheckpointLoaderSimple",
+      "pos": [
+        1642.6586640526511,
+        -1295.0556190475177
+      ],
+      "size": {
+        "0": 354.010986328125,
+        "1": 98
+      },
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            523
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": [
+            524,
+            525
+          ],
+          "shape": 3,
+          "slot_index": 1
+        },
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "links": [
+            526
+          ],
+          "shape": 3,
+          "slot_index": 2
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CheckpointLoaderSimple"
+      },
+      "widgets_values": [
+        "v1-5-pruned-emaonly.ckpt"
       ]
     }
   ],
@@ -3984,10 +3984,10 @@
   "config": {},
   "extra": {
     "ds": {
-      "scale": 0.6727499949326112,
+      "scale": 0.6115909044841983,
       "offset": [
-        -2947.1491377521043,
-        -1183.618622374594
+        -652.655172706287,
+        1878.426947493726
       ]
     }
   },

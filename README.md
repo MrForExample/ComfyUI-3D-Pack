@@ -23,6 +23,7 @@ This is an extensive node suite that enables ComfyUI to process 3D inputs (Mesh 
 - [install.py](install.py) will download & install Pre-builds automatically according to your runtime environment, if it couldn't find corresponding Pre-builds, then [build script](_Pre_Builds/_Build_Scripts/auto_build_all.py) will start automatically, if automatic build doesn't work for you, then please check out [Semi-Automatic Build Guide](_Pre_Builds/README.md#build-required-packages-semi-automatically)
 - If you have any missing node in any open Comfy3D workflow, try simply click [Install Missing Custom Nodes](https://github.com/ltdrdata/ComfyUI-Manager?tab=readme-ov-file#support-of-missing-nodes-installation) in ComfyUI-Manager
 - If for some reason your comfy3d can't download pre-trained models automatically, you can always download them manually and put them in to correct folder under [Checkpoints](Checkpoints) directory, but please **DON'T** overwrite any exist .json files
+- Docker install please check [DOCKER_INSTRUCTIONS.md](DOCKER_INSTRUCTIONS.md)
 - **Note:** at this moment, you'll still need to install [Visual Studio Build Tools for windows](_Pre_Builds/README.md#build-for-windows) and [install `gcc g++` for Linux](_Pre_Builds/README.md#build-for-linux) in order for `InstantNGP & Convert 3DGS to Mesh with NeRF and Marching_Cubes` nodes to work, since those two nodes used JIT torch cpp extension that builds in runtime, but I plan to replace those nodes soon
 
 ## Features:
@@ -42,8 +43,10 @@ This is an extensive node suite that enables ComfyUI to process 3D inputs (Mesh 
     3. Multi-view images to Normal maps with resulution: 512X512, super resolution to 2048X2048
     4. Multi-view images & Normal maps to 3D mesh with texture
   - To use the [All stage Unique3D workflow](./_Example_Workflows/Unique3D/Unique3D_All_Stages.json), Download Models:
+    - [sdv1.5-pruned-emaonly](https://huggingface.co/runwayml/stable-diffusion-v1-5/blob/main/v1-5-pruned-emaonly.ckpt) and put it into `Your ComfyUI root directory/ComfyUI/models/checkpoints`
     - [fine-tuned controlnet-tile](https://huggingface.co/spaces/Wuvin/Unique3D/tree/main/ckpt/controlnet-tile) and put it into `Your ComfyUI root directory/ComfyUI/models/controlnet`
     - [ip-adapter_sd15](https://huggingface.co/h94/IP-Adapter/blob/main/models/ip-adapter_sd15.safetensors) and put it into `Your ComfyUI root directory/ComfyUI/models/ipadapter`
+    - [OpenCLIP-ViT-H-14](https://huggingface.co/h94/IP-Adapter/blob/main/models/image_encoder/model.safetensors), rename it to **OpenCLIP-ViT-H-14.safetensors** and put it into `Your ComfyUI root directory/ComfyUI/models/clip_vision`
     - [RealESRGAN_x4plus](https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth) and put it into `Your ComfyUI root directory/ComfyUI/models/upscale_models`
   - Model weights: https://huggingface.co/spaces/Wuvin/Unique3D/tree/main/ckpt
 

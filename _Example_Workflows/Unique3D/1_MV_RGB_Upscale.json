@@ -781,7 +781,7 @@
         "Node name for S&R": "CLIPVisionLoader"
       },
       "widgets_values": [
-        "CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors"
+        "OpenCLIP-ViT-H-14.safetensors"
       ]
     },
     {
