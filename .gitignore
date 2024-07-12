@@ -166,3 +166,6 @@ outputs/
 _Pre_Builds/_Build_Dependencies 
 _Pre_Builds/_Build_Wheels
 _Pre_Builds/_Libs
+
+models/
+output/

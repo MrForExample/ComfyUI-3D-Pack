@@ -1,0 +1,21 @@
+services:
+  comfy3d:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    platform: linux/amd64
+    runtime: nvidia
+    image: comfy3d
+    ports:
+      - "8188:8188"
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+      - COMFYUI_PATH=/app
+    volumes:
+      # - ./output:/app/output
+      - ./models/diffusion_pytorch_model.safetensors:/app/models/controlnet/control_unique3d_sd15_tile.safetensors
+      - ./models/ip-adapter_sd15.safetensors:/app/models/ipadapter/ip-adapter_sd15.safetensors
+      - ./models/RealESRGAN_x4plus.pth:/app/models/upscale_models/RealESRGAN_x4plus.pth
+      - ./models/v1-5-pruned-emaonly.ckpt:/app/models/checkpoints/v1-5-pruned-emaonly.ckpt
+      - ./models/model.safetensors:/app/models/clip_vision/OpenCLIP-ViT-H-14.safetensors
