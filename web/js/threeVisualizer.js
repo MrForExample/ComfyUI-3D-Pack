@@ -15,6 +15,7 @@ const container = document.getElementById( 'container' );
 const progressDialog = document.getElementById("progress-dialog");
 const progressIndicator = document.getElementById("progress-indicator");
 const colorPicker = document.getElementById("color-picker");
+const downloadButton = document.getElementById("download-button");
 
 const renderer = new THREE.WebGLRenderer( { antialias: true } );
 renderer.setPixelRatio( window.devicePixelRatio );
@@ -56,9 +57,14 @@ const clock = new THREE.Clock();
 var lastTimestamp = "";
 var needUpdate = false;
 let mixer;
+let currentURL;
+
+downloadButton.addEventListener('click', e => {
+    window.open(currentURL, '_blank');
+});
 
 function frameUpdate() {
-    
+
     var filepath = visualizer.getAttribute("filepath");
     var timestamp = visualizer.getAttribute("timestamp");
     if (timestamp == lastTimestamp){
@@ -100,12 +106,12 @@ async function main(filepath="") {
     if (/^.+\.[a-zA-Z]+$/.test(filepath)){
 
         let params = {"filepath": filepath};
-        const url = api.apiURL('/viewfile?' + new URLSearchParams(params));
+        currentURL = api.apiURL('/viewfile?' + new URLSearchParams(params));
 
         var filepathSplit = filepath.split('.');
         var fileExt = filepathSplit.pop().toLowerCase();
-        var filepathNoExt = filepathSplit.join("."); 
-        
+        var filepathNoExt = filepathSplit.join(".");
+
         if (fileExt == "obj"){
             const loader = new OBJLoader();
 
@@ -118,8 +124,8 @@ async function main(filepath="") {
                 mtl.preload();
                 loader.setMaterials( mtl );
             }, onProgress, onError );
-                
-            loader.load( url, function ( obj ) {
+
+            loader.load( currentURL, function ( obj ) {
                 obj.scale.setScalar( 5 );
                 scene.add( obj );
                 obj.traverse(node => {
@@ -127,7 +133,7 @@ async function main(filepath="") {
                         node.material.vertexColors = true;
                     }
                   });
-                
+
             }, onProgress, onError );
 
         } else if (fileExt == "glb") {
@@ -136,7 +142,7 @@ async function main(filepath="") {
             const loader = new GLTFLoader();
             loader.setDRACOLoader( dracoLoader );
 
-            loader.load( url, function ( gltf ) {
+            loader.load( currentURL, function ( gltf ) {
                 const model = gltf.scene;
                 //model.position.set( 1, 1, 0 );
                 model.scale.set( 3, 3, 3 );
@@ -146,7 +152,7 @@ async function main(filepath="") {
                 gltf.animations.forEach((clip) => {
                     mixer.clipAction(clip).play();
                 });
-            
+
             }, onProgress, onError );
 
         } else if (fileExt == "ply") {
