@@ -163,9 +163,11 @@ cython_debug/
 outputs/
 
 # Ignore folders only used for build dependencies
-_Pre_Builds/_Build_Dependencies 
+_Pre_Builds/_Build_Dependencies
 _Pre_Builds/_Build_Wheels
 _Pre_Builds/_Libs
 
 models/
 output/
+
+.idea

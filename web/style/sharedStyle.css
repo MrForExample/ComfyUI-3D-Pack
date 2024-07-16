@@ -64,3 +64,11 @@ progress::-moz-progress-bar {
     border: 2px solid #aaa;
     border-radius: 5px;
 }
+
+#download-button {
+    margin-left: 5px;
+    margin-top: 10px;
+    position: absolute;
+    z-index: 10;
+    left: 180px;
+}
