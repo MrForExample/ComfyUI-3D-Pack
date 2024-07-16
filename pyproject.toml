@@ -1,7 +1,7 @@
 [project]
 name = "comfyui-3d-pack"
 description = "Make ComfyUI generates 3D assets as good & convenient as it generates image/video!"
-version = "0.0.3"
+version = "0.1.0"
 license = "LICENSE"
 dependencies = ["cmake", "ninja", "PyGithub", "requests", "numpy", "einops", "scipy", "kornia", "opencv-python", "pillow", "roma", "nerfacc>=0.5.3", "PyMCubes", "diffusers>=0.26.1", "transformers>=4.36.2", "safetensors", "open_clip_torch", "torchmetrics", "pytorch_msssim", "pytorch-lightning", "imageio", "imageio-ffmpeg", "matplotlib", "trimesh", "plyfile", "pygltflib", "xatlas", "pymeshlab", "torchtyping", "tqdm", "jaxtyping", "packaging", "OmegaConf", "pyhocon"]
 
