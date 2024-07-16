@@ -1,5 +1,5 @@
 # ComfyUI-3D-Pack
-**Make ComfyUI generates 3D assets as good & convenient as it generates image/video!**
+**Make 3D assets generation in ComfyUI good and convenient as it generates image/video!**
 <br>
 This is an extensive node suite that enables ComfyUI to process 3D inputs (Mesh & UV Texture, etc.) using cutting edge algorithms (3DGS, NeRF, etc.) and models (InstantMesh, CRM, TripoSR, etc.)
 
@@ -185,7 +185,7 @@ This is an extensive node suite that enables ComfyUI to process 3D inputs (Mesh 
 #### How to Contribute
 1. Fork the project
 2. Make Improvements/Add New Features
-3. Creating a Pull Request
+3. Creating a Pull Request to [dev branch](https://github.com/MrForExample/ComfyUI-3D-Pack/tree/dev)
 
 #### Project Structure 
 - **[nodes.py](nodes.py)**: 
