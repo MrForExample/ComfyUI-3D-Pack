@@ -3098,7 +3098,7 @@ class OrbitLists_to_OrbitPoses_JK:
         
         orbit_camposes = []
 
-        for i in range(0, len(orbit_camposes[0])):
+        for i in range(0, len(orbit_lists[0])):
             orbit_camposes.append([orbit_lists[2][i], orbit_lists[1][i], orbit_lists[0][i], orbit_lists[3][i], orbit_lists[4][i], orbit_lists[5][i]])
         
         return (orbit_camposes,)
