@@ -194,7 +194,7 @@ class Mesh:
         v1 = self.v_pos[i1, :]
         v2 = self.v_pos[i2, :]
 
-        face_normals = torch.cross(v1 - v0, v2 - v0)
+        face_normals = torch.cross(v1 - v0, v2 - v0, dim=-1)
 
         # Splat face normals to vertices
         v_nrm = torch.zeros_like(self.v_pos)

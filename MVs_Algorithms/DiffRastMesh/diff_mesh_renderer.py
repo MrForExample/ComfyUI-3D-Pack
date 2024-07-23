@@ -116,7 +116,7 @@ class DiffRastRenderer(nn.Module):
                 i0, i1, i2 = self.mesh.f[:, 0].long(), self.mesh.f[:, 1].long(), self.mesh.f[:, 2].long()
                 v0, v1, v2 = v[i0, :], v[i1, :], v[i2, :]
 
-                face_normals = torch.cross(v1 - v0, v2 - v0)
+                face_normals = torch.cross(v1 - v0, v2 - v0, dim=-1)
                 face_normals = safe_normalize(face_normals)
                 
                 vn = torch.zeros_like(v)
