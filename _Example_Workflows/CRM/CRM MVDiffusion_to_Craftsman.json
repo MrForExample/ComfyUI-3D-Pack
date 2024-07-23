@@ -1,0 +1,488 @@
+{
+  "last_node_id": 34,
+  "last_link_id": 53,
+  "nodes": [
+    {
+      "id": 20,
+      "type": "InvertMask",
+      "pos": [
+        341,
+        400
+      ],
+      "size": {
+        "0": 210,
+        "1": 26
+      },
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mask",
+          "type": "MASK",
+          "link": 26
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            28
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "InvertMask"
+      }
+    },
+    {
+      "id": 1,
+      "type": "LoadImage",
+      "pos": [
+        -191,
+        320
+      ],
+      "size": {
+        "0": 473.3881530761719,
+        "1": 545.7767944335938
+      },
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            2
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            26
+          ],
+          "shape": 3,
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "Mario_Cat.png",
+        "image"
+      ]
+    },
+    {
+      "id": 3,
+      "type": "[Comfy3D] CRM Images MVDiffusion Model",
+      "pos": [
+        600,
+        300
+      ],
+      "size": {
+        "0": 506.4000244140625,
+        "1": 262
+      },
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "crm_mvdiffusion_sampler",
+          "type": "CRM_MVDIFFUSION_SAMPLER",
+          "link": 48
+        },
+        {
+          "name": "reference_image",
+          "type": "IMAGE",
+          "link": 2
+        },
+        {
+          "name": "reference_mask",
+          "type": "MASK",
+          "link": 28
+        }
+      ],
+      "outputs": [
+        {
+          "name": "multiview_images",
+          "type": "IMAGE",
+          "links": [
+            39,
+            47
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "orbit_camposes",
+          "type": "ORBIT_CAMPOSES",
+          "links": [],
+          "shape": 3,
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] CRM Images MVDiffusion Model"
+      },
+      "widgets_values": [
+        "3D assets",
+        "uniform low no texture ugly, boring, bad anatomy, blurry, pixelated,  obscure, unnatural colors, poor lighting, dull, and unclear.",
+        1234,
+        "fixed",
+        5.5,
+        50
+      ]
+    },
+    {
+      "id": 32,
+      "type": "[Comfy3D] Load CRM MVDiffusion Model",
+      "pos": [
+        -157,
+        163
+      ],
+      "size": {
+        "0": 435.45733642578125,
+        "1": 83.6087875366211
+      },
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "crm_mvdiffusion_sampler",
+          "type": "CRM_MVDIFFUSION_SAMPLER",
+          "links": [
+            48
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Load CRM MVDiffusion Model"
+      },
+      "widgets_values": [
+        "pixel-diffusion.pth",
+        "sd_v2_base_ipmv_zero_SNR.yaml"
+      ]
+    },
+    {
+      "id": 33,
+      "type": "[Comfy3D] Craftsman Shape Diffusion Model",
+      "pos": [
+        1501,
+        283
+      ],
+      "size": {
+        "0": 315,
+        "1": 174
+      },
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "craftsman_model",
+          "type": "CRAFTSMAN_MODEL",
+          "link": 51
+        },
+        {
+          "name": "multiview_images",
+          "type": "IMAGE",
+          "link": 52
+        }
+      ],
+      "outputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "links": [
+            53
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Craftsman Shape Diffusion Model"
+      },
+      "widgets_values": [
+        0,
+        "fixed",
+        5,
+        50,
+        256
+      ]
+    },
+    {
+      "id": 34,
+      "type": "[Comfy3D] Load Craftsman Shape Diffusion Model",
+      "pos": [
+        807,
+        169
+      ],
+      "size": {
+        "0": 642.2877807617188,
+        "1": 60.448020935058594
+      },
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "craftsman_model",
+          "type": "CRAFTSMAN_MODEL",
+          "links": [
+            51
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Load Craftsman Shape Diffusion Model"
+      },
+      "widgets_values": [
+        "image-to-shape-diffusion/clip-mvrgb-modln-l256-e64-ne8-nd16-nl6-aligned-vae/model.ckpt"
+      ]
+    },
+    {
+      "id": 25,
+      "type": "[Comfy3D] Preview 3DMesh",
+      "pos": [
+        2218,
+        287
+      ],
+      "size": [
+        600,
+        500
+      ],
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh_file_path",
+          "type": "STRING",
+          "link": 35,
+          "widget": {
+            "name": "mesh_file_path"
+          }
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Preview 3DMesh"
+      },
+      "widgets_values": [
+        "",
+        null
+      ]
+    },
+    {
+      "id": 27,
+      "type": "GetImagesFromBatchIndexed",
+      "pos": [
+        1187,
+        300
+      ],
+      "size": {
+        "0": 255.99082946777344,
+        "1": 76.0000228881836
+      },
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 39
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            52
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "GetImagesFromBatchIndexed"
+      },
+      "widgets_values": [
+        "5, 0, 2, 3"
+      ]
+    },
+    {
+      "id": 31,
+      "type": "PreviewImage",
+      "pos": [
+        1184,
+        515
+      ],
+      "size": [
+        741.4351814481588,
+        158.14768246691654
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 47
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 24,
+      "type": "[Comfy3D] Save 3D Mesh",
+      "pos": [
+        1861,
+        284
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 53
+        }
+      ],
+      "outputs": [
+        {
+          "name": "save_path",
+          "type": "STRING",
+          "links": [
+            35
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Save 3D Mesh"
+      },
+      "widgets_values": [
+        "Craftsman_test\\Mesh_Cat_CRM.obj"
+      ]
+    }
+  ],
+  "links": [
+    [
+      2,
+      1,
+      0,
+      3,
+      1,
+      "IMAGE"
+    ],
+    [
+      26,
+      1,
+      1,
+      20,
+      0,
+      "MASK"
+    ],
+    [
+      28,
+      20,
+      0,
+      3,
+      2,
+      "MASK"
+    ],
+    [
+      35,
+      24,
+      0,
+      25,
+      0,
+      "STRING"
+    ],
+    [
+      39,
+      3,
+      0,
+      27,
+      0,
+      "IMAGE"
+    ],
+    [
+      47,
+      3,
+      0,
+      31,
+      0,
+      "IMAGE"
+    ],
+    [
+      48,
+      32,
+      0,
+      3,
+      0,
+      "CRM_MVDIFFUSION_SAMPLER"
+    ],
+    [
+      51,
+      34,
+      0,
+      33,
+      0,
+      "CRAFTSMAN_MODEL"
+    ],
+    [
+      52,
+      27,
+      0,
+      33,
+      1,
+      "IMAGE"
+    ],
+    [
+      53,
+      33,
+      0,
+      24,
+      0,
+      "MESH"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.9090909090909091,
+      "offset": [
+        -816.3016446237854,
+        -1.7073104334998879
+      ]
+    }
+  },
+  "version": 0.4
+}
