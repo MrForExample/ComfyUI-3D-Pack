@@ -3149,7 +3149,7 @@ class OrbitPoses_JK:
     RETURN_NAMES = ("orbit_lists", "orbit_camposes",)
     
     FUNCTION = "get_orbit_poses"
-    CATEGORY = icons.get("JK/3D")
+    CATEGORY = "Comfy3D/Preprocessor"
     
     def get_orbit_poses(self, orbitpose_preset, azimuths, elevations, radius, center):
         
@@ -3201,7 +3201,7 @@ class OrbitLists_to_OrbitPoses_JK:
     RETURN_NAMES = ("orbit_camposes",)
     
     FUNCTION = "convert_orbit_poses"
-    CATEGORY = icons.get("JK/3D")
+    CATEGORY = "Comfy3D/Preprocessor"
     
     def convert_orbit_poses(self, orbit_lists):
         
@@ -3228,7 +3228,7 @@ class OrbitPoses_to_OrbitLists_JK:
     RETURN_NAMES = ("orbit_lists",)
     
     FUNCTION = "convert_orbit_poses"
-    CATEGORY = icons.get("JK/3D")
+    CATEGORY = "Comfy3D/Preprocessor"
     
     def convert_orbit_poses(self, orbit_camposes):
         
