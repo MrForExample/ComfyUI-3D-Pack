@@ -44,10 +44,28 @@ def parse_save_filename(save_path, output_directory, supported_extensions, class
     
     return None
 
-# Get all files in a folder, if extension_filter is provided then only reture the files with extensions in extension_filter
-def get_list_filenames(directory, extension_filter=None):
+def get_list_filenames(directory, extension_filter=None, recursive=False):
+    """
+    Recursively finds files with specified extensions in a directory and returns relative paths.
+
+    Args:
+        directory (str): The directory path to search.
+        extension_filter (list): List of file extensions (e.g., ['.txt', '.csv']).
+
+    Returns:
+        list: List of relative file paths matching the specified extensions.
+    """
     if exists(directory):
-        return [f for f in listdir(directory) if isfile(join(directory, f)) and (extension_filter is None or f.lower().endswith(extension_filter))]
+        if recursive:
+            result = []
+            for root, _, files in os.walk(directory):
+                for item in files:
+                    if extension_filter is None or os.path.splitext(item)[1].lower() in extension_filter:
+                        relative_path = os.path.relpath(os.path.join(root, item), directory)
+                        result.append(relative_path)
+            return result
+        else:
+            return [f for f in listdir(directory) if isfile(join(directory, f)) and (extension_filter is None or f.lower().endswith(extension_filter))]
     else:
         return []
     

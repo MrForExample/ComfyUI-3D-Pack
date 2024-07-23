@@ -350,9 +350,9 @@ def flip_edges(
         e1 = v[:,1]
         cl = v[:,2]
         cr = v[:,3]
-        n = torch.cross(e1,cl) + torch.cross(cr,e1) #sum of old normal vectors 
-        flip.logical_and_(torch.sum(n*torch.cross(cr,cl),dim=-1)>0) #first new face
-        flip.logical_and_(torch.sum(n*torch.cross(cl-e1,cr-e1),dim=-1)>0) #second new face
+        n = torch.cross(e1,cl,dim=-1) + torch.cross(cr,e1,dim=-1) #sum of old normal vectors 
+        flip.logical_and_(torch.sum(n*torch.cross(cr,cl,dim=-1),dim=-1)>0) #first new face
+        flip.logical_and_(torch.sum(n*torch.cross(cl-e1,cr-e1,dim=-1),dim=-1)>0) #second new face
 
     flip_edges_neighbors = edges_neighbors[flip] #E",4
     flip_edge_to_face = edge_to_face[candidates,:,0][flip] #E",2

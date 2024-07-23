@@ -53,7 +53,7 @@ from GaussianSplatting.main_3DGS_renderer import GaussianSplattingRenderer
 from NeRF.Instant_NGP import InstantNGP
 
 from TriplaneGaussian.triplane_gaussian_transformers import TGS
-from TriplaneGaussian.utils.config import ExperimentConfig, load_config as load_config_tgs
+from TriplaneGaussian.utils.config import ExperimentConfig as ExperimentConfigTGS, load_config as load_config_tgs
 from TriplaneGaussian.data import CustomImageOrbitDataset
 from TriplaneGaussian.utils.misc import todevice, get_device
 from LGM.core.options import config_defaults
@@ -80,6 +80,9 @@ from Unique3D.mesh_reconstruction.recon import reconstruct_stage1
 from Unique3D.mesh_reconstruction.refine import run_mesh_refine
 from CharacterGen.character_inference import Inference2D_API, Inference3D_API
 from CharacterGen.Stage_3D.lrm.utils.config import load_config as load_config_cg3d
+import craftsman
+from craftsman.systems.base import BaseSystem
+from craftsman.utils.config import ExperimentConfig as ExperimentConfigCraftsman, load_config as load_config_craftsman
 
 from .shared_utils.image_utils import (
     prepare_torch_img, torch_imgs_to_pils, troch_image_dilate, 
@@ -1325,7 +1328,7 @@ class Load_Triplane_Gaussian_Transformers:
 
         device = get_device()
 
-        cfg: ExperimentConfig = load_config_tgs(self.config_path_abs)
+        cfg: ExperimentConfigTGS = load_config_tgs(self.config_path_abs)
 
         ckpt_path = resume_or_download_model_from_hf(self.checkpoints_dir_abs, self.default_repo_id, model_name, self.__class__.__name__)
             
@@ -1362,7 +1365,7 @@ class Triplane_Gaussian_Transformers:
     CATEGORY = "Comfy3D/Algorithm"
     
     def run_TGS(self, reference_image, reference_mask, tgs_model, cam_dist):        
-        cfg: ExperimentConfig = load_config_tgs(self.config_path_abs)
+        cfg: ExperimentConfigTGS = load_config_tgs(self.config_path_abs)
 
         cfg.data.cond_camera_distance = cam_dist
         cfg.data.eval_camera_distance = cam_dist
@@ -1874,8 +1877,6 @@ class TripoSR:
 
     @torch.no_grad()
     def run_TSR(self, tsr_model, reference_image, reference_mask, geometry_extract_resolution, marching_cude_threshold):
-        cstr(f"[{self.__class__.__name__}] Running TripoSR...").msg.print()
-        
         mesh = None
         
         image = reference_image[0]
@@ -2274,6 +2275,8 @@ class Load_InstantMesh_Reconstruction_Model:
         if is_flexicubes:
             lrm_model.init_flexicubes_geometry(DEVICE, fovy=30.0)
         lrm_model = lrm_model.eval()
+        
+        cstr(f"[{self.__class__.__name__}] loaded model ckpt from {ckpt_path}").msg.print()
 
         return (lrm_model, )
     
@@ -2624,6 +2627,8 @@ class Load_Unique3D_Custom_UNet:
         configurable_unet.unet.to(DEVICE, dtype=WEIGHT_DTYPE)
 
         pipe.unet = configurable_unet.unet
+        
+        cstr(f"[{self.__class__.__name__}] loaded unet ckpt from {checkpoint_path}").msg.print()
         return (pipe, )
     
 class Unique3D_MVDiffusion_Model:
@@ -2873,6 +2878,8 @@ class Load_CharacterGen_MVDiffusion_Model:
         snapshot_download(repo_id=self.default_repo_id, local_dir=self.checkpoints_dir_abs, force_download=force_download, repo_type="model", ignore_patterns=["*.json", "*.py"])
         # Load pre-trained models
         character_mv_gen_pipe = Inference2D_API(checkpoint_root_path=self.checkpoints_dir_abs, **OmegaConf.load(self.config_root_path_abs))
+        
+        cstr(f"[{self.__class__.__name__}] loaded model ckpt from {self.checkpoints_dir_abs}").msg.print()
         return (character_mv_gen_pipe,)
     
 class CharacterGen_MVDiffusion_Model:
@@ -2972,6 +2979,8 @@ class Load_CharacterGen_Reconstruction_Model:
         snapshot_download(repo_id=self.default_repo_id, local_dir=self.checkpoints_dir_abs, force_download=force_download, repo_type="model", ignore_patterns=["*.json", "*.py"])
         # Load pre-trained models
         character_lrm_pipe = Inference3D_API(checkpoint_root_path=self.checkpoints_dir_abs, cfg=load_config_cg3d(self.config_root_path_abs))
+        
+        cstr(f"[{self.__class__.__name__}] loaded model ckpt from {self.checkpoints_dir_abs}").msg.print()
         return (character_lrm_pipe,)
     
 class CharacterGen_Reconstruction_Model:
@@ -3002,6 +3011,106 @@ class CharacterGen_Reconstruction_Model:
         vertices, faces = character_lrm_pipe.inference(pil_mv_image_list)
 
         mesh = Mesh(v=vertices, f=faces.to(torch.int64), device=DEVICE)
+        mesh.auto_normal()
+        mesh.auto_uv()
+        
+        return (mesh,)
+    
+class Load_Craftsman_Shape_Diffusion_Model:
+    checkpoints_dir = "Craftsman"
+    default_repo_id = "wyysf/CraftsMan"
+    default_ckpt_name = "image-to-shape-diffusion/clip-mvrgb-modln-l256-e64-ne8-nd16-nl6-aligned-vae/model.ckpt"
+    config_path = "Craftsman_config.yaml"
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        cls.checkpoints_dir_abs = os.path.join(CKPT_ROOT_PATH, cls.checkpoints_dir)
+        cls.config_root_path_abs = os.path.join(CONFIG_ROOT_PATH, cls.config_path)
+        all_models_names = get_list_filenames(cls.checkpoints_dir_abs, SUPPORTED_CHECKPOINTS_EXTENSIONS, recursive=True)
+        if cls.default_ckpt_name not in all_models_names:
+            all_models_names += [cls.default_ckpt_name]
+
+        return {
+            "required": {
+                "model_name": (all_models_names, ),
+            },
+        }
+    
+    RETURN_TYPES = (
+        "CRAFTSMAN_MODEL",
+    )
+    RETURN_NAMES = (
+        "craftsman_model",
+    )
+    FUNCTION = "load_model"
+    CATEGORY = "Comfy3D/Import|Export"
+    
+    def load_model(self, model_name):
+        ckpt_path = resume_or_download_model_from_hf(self.checkpoints_dir_abs, self.default_repo_id, model_name, self.__class__.__name__)
+        
+        cfg: ExperimentConfigCraftsman
+        cfg = load_config_craftsman(self.config_root_path_abs)
+
+        craftsman_model: BaseSystem = craftsman.find(cfg.system_type)(
+            cfg.system, 
+        )
+        
+        craftsman_model.load_state_dict(torch.load(ckpt_path, map_location=torch.device('cpu'))['state_dict'])
+        craftsman_model = craftsman_model.to(DEVICE).eval()
+        
+        cstr(f"[{self.__class__.__name__}] loaded model ckpt from {self.checkpoints_dir_abs}").msg.print()
+        return (craftsman_model,)
+    
+class Craftsman_Shape_Diffusion_Model:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "craftsman_model": ("CRAFTSMAN_MODEL", ),
+                "multiview_images": ("IMAGE",),
+                "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
+                "guidance_scale": ("FLOAT", {"default": 5.0, "min": 0.0, "step": 0.01}),
+                "num_inference_steps": ("INT", {"default": 50, "min": 1}),
+                "marching_cude_grids_resolution": ("INT", {"default": 256, "min": 1, "max": 0xffffffffffffffff}),
+            }
+        }
+
+    RETURN_TYPES = (
+        "MESH",
+    )
+    RETURN_NAMES = (
+        "mesh",
+    )
+    
+    FUNCTION = "run_model"
+    CATEGORY = "Comfy3D/Algorithm"
+    
+    @torch.no_grad()
+    def run_model(self, craftsman_model, multiview_images, seed, guidance_scale, num_inference_steps, marching_cude_grids_resolution):
+        pil_mv_image_list = torch_imgs_to_pils(multiview_images)
+        
+        sample_inputs = {"mvimages": [pil_mv_image_list]}   # view order: front, right, back, left
+        
+        latents = craftsman_model.sample(
+            sample_inputs,
+            sample_times=1,
+            steps=num_inference_steps,
+            guidance_scale=guidance_scale,
+            return_intermediates=False,
+            seed=seed
+        )[0]
+        
+        cstr(f"[{self.__class__.__name__}] Starting to extract mesh...").msg.print()
+        # decode the latents to mesh
+        box_v = 1.1
+        mesh_outputs, _ = craftsman_model.shape_model.extract_geometry(
+            latents,
+            bounds=[-box_v, -box_v, -box_v, box_v, box_v, box_v],
+            grids_resolution=marching_cude_grids_resolution
+        )
+        vertices, faces = torch.from_numpy(mesh_outputs[0][0]).to(DEVICE), torch.from_numpy(mesh_outputs[0][1]).to(torch.int64).to(DEVICE)
+
+        mesh = Mesh(v=vertices, f=faces, device=DEVICE)
         mesh.auto_normal()
         mesh.auto_uv()
         

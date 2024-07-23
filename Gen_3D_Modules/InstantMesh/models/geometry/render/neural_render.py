@@ -48,7 +48,7 @@ def compute_vertex_normal(v_pos, t_pos_idx):
     v1 = v_pos[i1, :]
     v2 = v_pos[i2, :]
 
-    face_normals = torch.cross(v1 - v0, v2 - v0)
+    face_normals = torch.cross(v1 - v0, v2 - v0, dim=-1)
 
     # Splat face normals to vertices
     v_nrm = torch.zeros_like(v_pos)

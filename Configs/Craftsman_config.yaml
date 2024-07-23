@@ -1,0 +1,143 @@
+name: michelangelo-image-to-shape-diffusion/clip-mvrgb-modln-l256-e64-ne8-nd16-nl6-170k
+description: ''
+tag: michelangelo-aligned-autoencoder+n4096+noise0.0+pfeat3+zeroemb0.0+normembFalse+lr5e-05+qkvbiasFalse+nfreq8+ln_postTrue
+seed: 0
+use_timestamp: true
+timestamp: ''
+exp_root_dir: outputs
+exp_dir: outputs/michelangelo-image-to-shape-diffusion/clip-mvrgb-modln-l256-e64-ne8-nd16-nl6-170k
+trial_name: michelangelo-aligned-autoencoder+n4096+noise0.0+pfeat3+zeroemb0.0+normembFalse+lr5e-05+qkvbiasFalse+nfreq8+ln_postTrue
+trial_dir: outputs/michelangelo-image-to-shape-diffusion/clip-mvrgb-modln-l256-e64-ne8-nd16-nl6-170k/michelangelo-aligned-autoencoder+n4096+noise0.0+pfeat3+zeroemb0.0+normembFalse+lr5e-05+qkvbiasFalse+nfreq8+ln_postTrue
+n_gpus: 8
+resume: ./ckpts/3DNativeGeneration/michelangelo-image-to-shape-diffusion/clip-mvrgb-modln-l256-e64-ne8-nd16-nl6-170k.ckpt
+data_type: objaverse-datamodule
+data:
+  root_dir: data/objaverse_clean/cap3d_high_quality_170k_images
+  data_type: occupancy
+  n_samples: 4096
+  noise_sigma: 0.0
+  load_supervision: false
+  supervision_type: occupancy
+  n_supervision: 10000
+  load_image: true
+  image_data_path: data/objaverse_clean/raw_data/images/cap3d_high_quality_170k
+  image_type: mvrgb
+  idx:
+  - 0
+  - 4
+  - 8
+  - 12
+  - 16
+  n_views: 4
+  load_caption: false
+  rotate_points: false
+  batch_size: 32
+  num_workers: 16
+system_type: shape-diffusion-system
+system:
+  val_samples_json: val_data/mv_images/val_samples_rgb_mvimage.json
+  z_scale_factor: 1.0
+  guidance_scale: 7.5
+  num_inference_steps: 50
+  eta: 0.0
+  shape_model_type: michelangelo-aligned-autoencoder
+  shape_model:
+    num_latents: 256
+    embed_dim: 64
+    point_feats: 3
+    out_dim: 1
+    num_freqs: 8
+    include_pi: false
+    heads: 12
+    width: 768
+    num_encoder_layers: 8
+    num_decoder_layers: 16
+    use_ln_post: true
+    init_scale: 0.25
+    qkv_bias: false
+    use_flash: true
+    use_checkpoint: true
+  condition_model_type: clip-embedder
+  condition_model:
+    pretrained_model_name_or_path: openai/clip-vit-large-patch14
+    encode_camera: true
+    camera_embeds_dim: 32
+    n_views: 4
+    empty_embeds_ratio: 0.1
+    normalize_embeds: false
+    zero_uncond_embeds: true
+  denoiser_model_type: simple-denoiser
+  denoiser_model:
+    input_channels: 64
+    output_channels: 64
+    n_ctx: 256
+    width: 768
+    layers: 6
+    heads: 12
+    context_dim: 1024
+    init_scale: 1.0
+    skip_ln: true
+    use_checkpoint: true
+  noise_scheduler_type: diffusers.schedulers.DDPMScheduler
+  noise_scheduler:
+    num_train_timesteps: 1000
+    beta_start: 0.00085
+    beta_end: 0.012
+    beta_schedule: scaled_linear
+    variance_type: fixed_small
+    clip_sample: false
+  denoise_scheduler_type: diffusers.schedulers.DDIMScheduler
+  denoise_scheduler:
+    num_train_timesteps: 1000
+    beta_start: 0.00085
+    beta_end: 0.012
+    beta_schedule: scaled_linear
+    clip_sample: false
+    set_alpha_to_one: false
+    steps_offset: 1
+  loggers:
+    wandb:
+      enable: false
+      project: JiangXin
+      name: text-to-shape-diffusion+michelangelo-image-to-shape-diffusion/clip-mvrgb-modln-l256-e64-ne8-nd16-nl6-170k+michelangelo-aligned-autoencoder+n4096+noise0.0+pfeat3+zeroemb0.0+normembFalse+lr5e-05+qkvbiasFalse+nfreq8+ln_postTrue
+  loss:
+    loss_type: mse
+    lambda_diffusion: 1.0
+  optimizer:
+    name: AdamW
+    args:
+      lr: 5.0e-05
+      betas:
+      - 0.9
+      - 0.99
+      eps: 1.0e-06
+  scheduler:
+    name: SequentialLR
+    interval: step
+    schedulers:
+    - name: LinearLR
+      interval: step
+      args:
+        start_factor: 1.0e-06
+        end_factor: 1.0
+        total_iters: 5000
+    - name: CosineAnnealingLR
+      interval: step
+      args:
+        T_max: 5000
+        eta_min: 0.0
+    milestones:
+    - 5000
+trainer:
+  num_nodes: 2
+  max_epochs: 100000
+  log_every_n_steps: 5
+  num_sanity_val_steps: 1
+  check_val_every_n_epoch: 3
+  enable_progress_bar: true
+  precision: 16-mixed
+  strategy: ddp_find_unused_parameters_true
+checkpoint:
+  save_last: true
+  save_top_k: -1
+  every_n_train_steps: 5000
