@@ -3115,3 +3115,138 @@ class Craftsman_Shape_Diffusion_Model:
         mesh.auto_uv()
         
         return (mesh,)
+
+ORBITPOSE_PRESET = ["Custom", "CRM(6)", "Zero123Plus(6)", "Wonder3D(6)", "Era3D(6)", "MVDream(4)", "Unique3D(4)", "CharacterGen(4)"]
+
+OrbitPosesList = {
+    "Custom":           [[-90.0, 0.0, 180.0, 90.0, 0.0, 0.0], [0.0, 90.0, 0.0, 0.0, -90.0, 0.0], [4.0, 4.0, 4.0, 4.0, 4.0, 4.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]],
+    "CRM(6)":           [[-90.0, 0.0, 180.0, 90.0, 0.0, 0.0], [0.0, 90.0, 0.0, 0.0, -90.0, 0.0], [4.0, 4.0, 4.0, 4.0, 4.0, 4.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]],
+    "Wonder3D(6)":      [[0.0, 45.0, 90.0, 180.0, -90.0, -45.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [4.0, 4.0, 4.0, 4.0, 4.0, 4.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]],
+    "Zero123Plus(6)":   [[30.0, 90.0, 150.0, -150.0, -90.0, -30.0], [-20.0, 10.0, -20.0, 10.0, -20.0, 10.0], [4.0, 4.0, 4.0, 4.0, 4.0, 4.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]],
+    "Era3D(6)":         [[0.0, 45.0, 90.0, 180.0, -90.0, -45.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], #[[radius], [radius], [radius], [radius], [radius], [radius]], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    "MVDream(4)":       [[0.0, 90.0, 180.0, -90.0], [0.0, 0.0, 0.0, 0.0], [4.0, 4.0, 4.0, 4.0], [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]],
+    "Unique3D(4)":      [[0.0, 90.0, 180.0, -90.0], [0.0, 0.0, 0.0, 0.0]], #[[radius], [radius], [radius], [radius]], [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]
+    "CharacterGen(4)":  [[-90.0, 180.0, 90.0, 0.0], [0.0, 0.0, 0.0, 0.0]], #[[radius], [radius], [radius], [radius]], [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]
+}
+
+class OrbitPoses_JK:
+    def __init__(self):
+        pass
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "orbitpose_preset": (ORBITPOSE_PRESET, {"default": "Custom"}),
+                "azimuths": ("STRING", {"default": "-90.0, 0.0, 180.0, 90.0, 0.0, 0.0"}),
+                "elevations": ("STRING", {"default": "0.0, 90.0, 0.0, 0.0, -90.0, 0.0"}),
+                "radius": ("STRING", {"default": "4.0, 4.0, 4.0, 4.0, 4.0, 4.0"}),
+                "center": ("STRING", {"default": "0.0, 0.0, 0.0, 0.0, 0.0, 0.0"}),
+            },
+        }
+    
+    RETURN_TYPES = ("ORBIT_CAMPOSES", "ORBIT_CAMPOSES",)
+    RETURN_NAMES = ("orbit_lists", "orbit_camposes",)
+    
+    FUNCTION = "get_orbit_poses"
+    CATEGORY = icons.get("JK/3D")
+    
+    def get_orbit_poses(self, orbitpose_preset, azimuths, elevations, radius, center):
+        
+        orbit_lists = OrbitPosesList.get(f"{orbitpose_preset}")
+        
+        if orbitpose_preset == "Custom":
+            azimuths = azimuths.split(",")
+            elevations = elevations.split(",")
+            radius = radius.split(",")
+            center = center.split(",")
+            orbit_azimuths = [float(item) for item in azimuths]
+            orbit_elevations = [float(item) for item in elevations]
+            orbit_radius = [float(item) for item in radius]
+            orbit_center = [float(item) for item in center]
+            orbit_lists = [orbit_azimuths, orbit_elevations, orbit_radius, orbit_center, orbit_center, orbit_center]
+        elif orbitpose_preset == "Era3D(6)":
+            radius = radius.split(",")
+            orbit_radius = [float(item) for item in radius]
+            orbit_center = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+            orbit_lists = [orbit_lists[0], orbit_lists[1], orbit_radius, orbit_center, orbit_center, orbit_center]
+        elif orbitpose_preset == "Unique3D(4)" or orbitpose_preset == "CharacterGen(4)":
+            radius = radius.split(",")
+            orbit_radius = [float(item) for item in radius]
+            orbit_radius.pop(4)
+            orbit_radius.pop(4)
+            orbit_center = [0.0, 0.0, 0.0, 0.0]
+            orbit_lists = [orbit_lists[0], orbit_lists[1], orbit_radius, orbit_center, orbit_center, orbit_center]
+        
+        orbit_camposes = []
+
+        for i in range(0, len(orbit_lists[0])):
+            orbit_camposes.append([orbit_lists[2][i], orbit_lists[1][i], orbit_lists[0][i], orbit_lists[3][i], orbit_lists[4][i], orbit_lists[5][i]])
+        
+        return (orbit_lists, orbit_camposes,)
+
+class OrbitLists_to_OrbitPoses_JK:
+    def __init__(self):
+        pass
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "orbit_lists": ("ORBIT_CAMPOSES",),
+            },
+        }
+    
+    RETURN_TYPES = ("ORBIT_CAMPOSES",)
+    RETURN_NAMES = ("orbit_camposes",)
+    
+    FUNCTION = "convert_orbit_poses"
+    CATEGORY = icons.get("JK/3D")
+    
+    def convert_orbit_poses(self, orbit_lists):
+        
+        orbit_camposes = []
+
+        for i in range(0, len(orbit_lists[0])):
+            orbit_camposes.append([orbit_lists[2][i], orbit_lists[1][i], orbit_lists[0][i], orbit_lists[3][i], orbit_lists[4][i], orbit_lists[5][i]])
+        
+        return (orbit_camposes,)
+
+class OrbitPoses_to_OrbitLists_JK:
+    def __init__(self):
+        pass
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "orbit_camposes": ("ORBIT_CAMPOSES",),
+            },
+        }
+    
+    RETURN_TYPES = ("ORBIT_CAMPOSES",)
+    RETURN_NAMES = ("orbit_lists",)
+    
+    FUNCTION = "convert_orbit_poses"
+    CATEGORY = icons.get("JK/3D")
+    
+    def convert_orbit_poses(self, orbit_camposes):
+        
+        orbit_azimuths = []
+        orbit_elevations = []
+        orbit_radius = []
+        orbit_center0 = []
+        orbit_center1 = []
+        orbit_center2 = []
+
+        for i in range(0, len(orbit_camposes)):
+            orbit_azimuths.append(orbit_camposes[i][2])
+            orbit_elevations.append(orbit_camposes[i][1])
+            orbit_radius.append(orbit_camposes[i][0])
+            orbit_center0.append(orbit_camposes[i][3])
+            orbit_center1.append(orbit_camposes[i][4])
+            orbit_center2.append(orbit_camposes[i][5])
+        
+        orbit_lists = [orbit_azimuths, orbit_elevations, orbit_radius, orbit_center0, orbit_center1, orbit_center2]
+        
+        return (orbit_lists,)
