@@ -36,10 +36,14 @@ This is an extensive node suite that enables ComfyUI to process 3D inputs (Mesh 
   - *Note: you need to agree to Stability-AI's term of usage before been able to donwload the model weights, if you downloaded model weights manaully, then you need to put it under [Checkpoints/StableFast3D](Checkpoints/StableFast3D), otherwise you can add your huggingface token in [Configs/system.conf](Configs/system.conf)*
   - Model weights: https://huggingface.co/stabilityai/stable-fast-3d/tree/main
 
+  <video controls autoplay loop src="https://github.com/user-attachments/assets/3ed3d1ed-4abe-4959-bd79-4431d19c9d47"></video>
+
 - **CharacterGen**: [zjp-shadow/CharacterGen](https://github.com/zjp-shadow/CharacterGen)
   - Single front view of a character with arbitrary pose
   - Can [combine with Unique3D workflow](./_Example_Workflows/CharacterGen/CharacterGen_to_Unique3D.json) for better result
   - Model weights: https://huggingface.co/zjpshadow/CharacterGen/tree/main
+ 
+  <video controls autoplay loop src="https://github.com/user-attachments/assets/4f0ae0c0-2d29-49f0-a6f2-a636dd4b4dcc"></video>
 
 - **Unique3D**: [AiuniAI/Unique3D](https://github.com/AiuniAI/Unique3D)
   - Four stages pipeline: 
