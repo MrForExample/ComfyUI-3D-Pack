@@ -33,7 +33,7 @@ This is an extensive node suite that enables ComfyUI to process 3D inputs (Mesh 
 
 - **StableFast3D**: [Stability-AI/stable-fast-3d](https://github.com/Stability-AI/stable-fast-3d)
   - Single image to 3D Mesh with RGB texture
-  - *Note: you need to agree to Stability-AI's term of usage before been able to donwload the model weights, if you downloaded model weights manaully, then you need to put it under [Checkpoints/StableFast3D](Checkpoints/StableFast3D), otherwise you can add your huggingface token in [Configs/system.conf](Configs/system.conf)*
+  - *Note: you need to agree to Stability-AI's term of usage before been able to download the model weights, if you downloaded model weights manually, then you need to put it under [Checkpoints/StableFast3D](Checkpoints/StableFast3D), otherwise you can add your huggingface token in [Configs/system.conf](Configs/system.conf)*
   - Model weights: https://huggingface.co/stabilityai/stable-fast-3d/tree/main
 
   <video controls autoplay loop src="https://github.com/user-attachments/assets/3ed3d1ed-4abe-4959-bd79-4431d19c9d47"></video>
