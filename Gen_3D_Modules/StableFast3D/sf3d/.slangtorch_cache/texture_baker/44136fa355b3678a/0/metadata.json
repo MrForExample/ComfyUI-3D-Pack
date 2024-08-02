@@ -1,0 +1,42 @@
+{
+    "cpp": {
+        "options": [],
+        "deps": [
+            [
+                "C:\\Users\\reall\\Softwares\\Miniconda\\envs\\AI3D_Exp\\_Projects\\stable-fast-3d\\sf3d\\texture_baker.slang",
+                1722544000.3105776
+            ],
+            [
+                "C:\\Users\\reall\\Softwares\\Miniconda\\envs\\AI3D_Exp\\Lib\\site-packages\\slangtorch\\bin\\slangc.exe",
+                1722544345.7507377
+            ],
+            [
+                "C:\\Users\\reall\\Softwares\\Miniconda\\envs\\AI3D_Exp\\Lib\\site-packages\\slangtorch\\bin\\slang.dll",
+                1722544345.7507377
+            ]
+        ],
+        "version": "1.2.3",
+        "includePaths": []
+    },
+    "cuda": {
+        "options": [],
+        "deps": [
+            [
+                "C:\\Users\\reall\\Softwares\\Miniconda\\envs\\AI3D_Exp\\_Projects\\stable-fast-3d\\sf3d\\texture_baker.slang",
+                1722544000.3105776
+            ],
+            [
+                "C:\\Users\\reall\\Softwares\\Miniconda\\envs\\AI3D_Exp\\Lib\\site-packages\\slangtorch\\bin\\slangc.exe",
+                1722544345.7507377
+            ],
+            [
+                "C:\\Users\\reall\\Softwares\\Miniconda\\envs\\AI3D_Exp\\Lib\\site-packages\\slangtorch\\bin\\slang.dll",
+                1722544345.7507377
+            ]
+        ],
+        "version": "1.2.3",
+        "includePaths": []
+    },
+    "moduleName": "_slangtorch_texture_baker_44136fa355b3678a",
+    "moduleBinary": "C:\\Users\\reall\\Softwares\\Miniconda\\envs\\AI3D_Exp\\_Projects\\stable-fast-3d\\sf3d\\.slangtorch_cache\\texture_baker\\44136fa355b3678a\\0\\_slangtorch_texture_baker_44136fa355b3678a.pyd"
+}

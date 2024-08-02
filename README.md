@@ -27,9 +27,14 @@ This is an extensive node suite that enables ComfyUI to process 3D inputs (Mesh 
 - **Note:** at this moment, you'll still need to install [Visual Studio Build Tools for windows](_Pre_Builds/README.md#build-for-windows) and [install `gcc g++` for Linux](_Pre_Builds/README.md#build-for-linux) in order for `InstantNGP & Convert 3DGS to Mesh with NeRF and Marching_Cubes` nodes to work, since those two nodes used JIT torch cpp extension that builds in runtime, but I plan to replace those nodes soon
 
 ## Features:
-- For use cases please check out [Example Workflows](./_Example_Workflows/). [**Last update: 09/July/2024**]
+- For use cases please check out [Example Workflows](./_Example_Workflows/). [**Last update: 01/August/2024**]
   - **Note:** you need to put [Example Inputs Files & Folders](_Example_Workflows/_Example_Inputs_Files/) under ComfyUI Root Directory\ComfyUI\input folder before you can run the example workflow
   - [tripoSR-layered-diffusion workflow](https://github.com/C0nsumption/Consume-ComfyUI-Workflows/tree/main/assets/tripo_sr/00) by [@Consumption](https://twitter.com/c0nsumption_)
+
+- **StableFast3D**: [Stability-AI/stable-fast-3d](https://github.com/Stability-AI/stable-fast-3d)
+  - Single image to 3D Mesh with RGB texture
+  - *Note: you need to agree to Stability-AI's term of usage before been able to donwload the model weights, if you downloaded model weights manaully, then you need to put it under [Checkpoints/StableFast3D](Checkpoints/StableFast3D), otherwise you can add your huggingface token in [Configs/system.conf](Configs/system.conf)*
+  - Model weights: https://huggingface.co/stabilityai/stable-fast-3d/tree/main
 
 - **CharacterGen**: [zjp-shadow/CharacterGen](https://github.com/zjp-shadow/CharacterGen)
   - Single front view of a character with arbitrary pose
@@ -169,7 +174,8 @@ This is an extensive node suite that enables ComfyUI to process 3D inputs (Mesh 
   - Since different algorithms likely use different coordinate system, so the ability to re-mapping the axis of coordinate is crucial for passing generated result between differnt nodes.
 
 - **[Customizable system config file](Configs/system.conf)**
-  - Custom clients IP address 
+  - Custom clients IP address
+  - Add your huggingface user token
 
 ## Roadmap:
 - [X] Integrate [CharacterGen](https://github.com/zjp-shadow/CharacterGen)

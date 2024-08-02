@@ -61,6 +61,8 @@ from LGM.mvdream.pipeline_mvdream import MVDreamPipeline
 from LGM.large_multiview_gaussian_model import LargeMultiviewGaussianModel
 from LGM.nerf_marching_cubes_converter import GSConverterNeRFMarchingCubes
 from TripoSR.system import TSR
+from StableFast3D.sf3d import utils as sf3d_utils
+from StableFast3D.sf3d.system import SF3D
 from InstantMesh.utils.camera_util import oribt_camera_poses_to_input_cameras
 from CRM.model.crm.model import ConvolutionalReconstructionModel
 from CRM.model.crm.sampler import CRMSampler
@@ -86,7 +88,7 @@ from craftsman.utils.config import ExperimentConfig as ExperimentConfigCraftsman
 
 from .shared_utils.image_utils import (
     prepare_torch_img, torch_imgs_to_pils, troch_image_dilate, 
-    pils_rgba_to_rgb, pil_make_image_grid, pil_split_image, pils_to_torch_imgs,
+    pils_rgba_to_rgb, pil_make_image_grid, pil_split_image, pils_to_torch_imgs, pils_resize_foreground
 )
 from .shared_utils.log_utils import cstr
 from .shared_utils.common_utils import parse_save_filename, get_list_filenames, resume_or_download_model_from_hf
@@ -391,6 +393,37 @@ class Image_Add_Pure_Color_Background:
         images = pils_to_torch_imgs(image_pils, images.device)
         return (images,)
     
+class Resize_Image_Foreground:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "images": ("IMAGE",),
+                "masks": ("MASK",),
+                "foreground_ratio": ("FLOAT", {"default": 0.85, "min": 0.01, "max": 1.0, "step": 0.01}),
+            },
+        }
+        
+    RETURN_TYPES = (
+        "IMAGE",
+        "MASK",
+    )
+    RETURN_NAMES = (
+        "images",
+        "masks",
+    )
+    
+    FUNCTION = "resize_img_foreground"
+    CATEGORY = "Comfy3D/Preprocessor"
+
+    def resize_img_foreground(self, images, masks, foreground_ratio):
+        image_pils = torch_imgs_to_pils(images, masks)
+        image_pils = pils_resize_foreground(image_pils, foreground_ratio)
+        
+        images = pils_to_torch_imgs(image_pils, images.device, force_rgb=False)
+        images, masks = images[:, :, :, 0:-1], images[:, :, :, -1]
+        return (images, masks,)
+    
 class Make_Image_Grid:
     @classmethod
     def INPUT_TYPES(cls):
@@ -531,7 +564,7 @@ class Fast_Clean_Mesh:
                 "apply_smooth": ("BOOLEAN", {"default": True},),
                 "smooth_step": ("INT", {"default": 1, "min": 0, "max": 0xffffffffffffffff}),
                 "apply_sub_divide": ("BOOLEAN", {"default": True},),
-                "sub_divide_threshold": ("FLOAT", {"default": 0.25, 'step': 0.001}),
+                "sub_divide_threshold": ("FLOAT", {"default": 0.25, "step": 0.001}),
             },
         }
 
@@ -675,24 +708,24 @@ class Stack_Orbit_Camera_Poses:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "orbit_radius_start": ("FLOAT", {"default": 1.75, 'step': 0.0001}),
-                "orbit_radius_stop": ("FLOAT", {"default": 1.75, 'step': 0.0001}),
-                "orbit_radius_step": ("FLOAT", {"default": 0.1, 'step': 0.0001}),
-                "elevation_start": ("FLOAT", {"default": 0.0, "min": ELEVATION_MIN, "max": ELEVATION_MAX, 'step': 0.0001}),
-                "elevation_stop": ("FLOAT", {"default": 0.0, "min": ELEVATION_MIN, "max": ELEVATION_MAX, 'step': 0.0001}),
-                "elevation_step": ("FLOAT", {"default": 0.0, "min": ELEVATION_MIN, "max": ELEVATION_MAX, 'step': 0.0001}),
-                "azimuth_start": ("FLOAT", {"default": 0.0, "min": AZIMUTH_MIN, "max": AZIMUTH_MAX, 'step': 0.0001}),
-                "azimuth_stop": ("FLOAT", {"default": 0.0, "min": AZIMUTH_MIN, "max": AZIMUTH_MAX, 'step': 0.0001}),
-                "azimuth_step": ("FLOAT", {"default": 0.0, "min": AZIMUTH_MIN, "max": AZIMUTH_MAX, 'step': 0.0001}),
-                "orbit_center_X_start": ("FLOAT", {"default": 0.0, 'step': 0.0001}),
-                "orbit_center_X_stop": ("FLOAT", {"default": 0.0, 'step': 0.0001}),
-                "orbit_center_X_step": ("FLOAT", {"default": 0.1, 'step': 0.0001}),
-                "orbit_center_Y_start": ("FLOAT", {"default": 0.0, 'step': 0.0001}),
-                "orbit_center_Y_stop": ("FLOAT", {"default": 0.0, 'step': 0.0001}),
-                "orbit_center_Y_step": ("FLOAT", {"default": 0.1, 'step': 0.0001}),
-                "orbit_center_Z_start": ("FLOAT", {"default": 0.0, 'step': 0.0001}),
-                "orbit_center_Z_stop": ("FLOAT", {"default": 0.0, 'step': 0.0001}),
-                "orbit_center_Z_step": ("FLOAT", {"default": 0.1, 'step': 0.0001}),
+                "orbit_radius_start": ("FLOAT", {"default": 1.75, "step": 0.0001}),
+                "orbit_radius_stop": ("FLOAT", {"default": 1.75, "step": 0.0001}),
+                "orbit_radius_step": ("FLOAT", {"default": 0.1, "step": 0.0001}),
+                "elevation_start": ("FLOAT", {"default": 0.0, "min": ELEVATION_MIN, "max": ELEVATION_MAX, "step": 0.0001}),
+                "elevation_stop": ("FLOAT", {"default": 0.0, "min": ELEVATION_MIN, "max": ELEVATION_MAX, "step": 0.0001}),
+                "elevation_step": ("FLOAT", {"default": 0.0, "min": ELEVATION_MIN, "max": ELEVATION_MAX, "step": 0.0001}),
+                "azimuth_start": ("FLOAT", {"default": 0.0, "min": AZIMUTH_MIN, "max": AZIMUTH_MAX, "step": 0.0001}),
+                "azimuth_stop": ("FLOAT", {"default": 0.0, "min": AZIMUTH_MIN, "max": AZIMUTH_MAX, "step": 0.0001}),
+                "azimuth_step": ("FLOAT", {"default": 0.0, "min": AZIMUTH_MIN, "max": AZIMUTH_MAX, "step": 0.0001}),
+                "orbit_center_X_start": ("FLOAT", {"default": 0.0, "step": 0.0001}),
+                "orbit_center_X_stop": ("FLOAT", {"default": 0.0, "step": 0.0001}),
+                "orbit_center_X_step": ("FLOAT", {"default": 0.1, "step": 0.0001}),
+                "orbit_center_Y_start": ("FLOAT", {"default": 0.0, "step": 0.0001}),
+                "orbit_center_Y_stop": ("FLOAT", {"default": 0.0, "step": 0.0001}),
+                "orbit_center_Y_step": ("FLOAT", {"default": 0.1, "step": 0.0001}),
+                "orbit_center_Z_start": ("FLOAT", {"default": 0.0, "step": 0.0001}),
+                "orbit_center_Z_stop": ("FLOAT", {"default": 0.0, "step": 0.0001}),
+                "orbit_center_Z_step": ("FLOAT", {"default": 0.1, "step": 0.0001}),
             },
         }
 
@@ -1600,7 +1633,7 @@ class MVDream_Model:
                 "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
                 "mv_guidance_scale": ("FLOAT", {"default": 5.0, "min": 0.0, "step": 0.01}),
                 "num_inference_steps": ("INT", {"default": 30, "min": 1}),
-                "elevation": ("FLOAT", {"default": 0.0, "min": ELEVATION_MIN, "max": ELEVATION_MAX, 'step': 0.0001}),
+                "elevation": ("FLOAT", {"default": 0.0, "min": ELEVATION_MIN, "max": ELEVATION_MAX, "step": 0.0001}),
             },
         }
     
@@ -1899,6 +1932,127 @@ class TripoSR:
         image = image[:, :, :3] * image[:, :, 3:4] + (1 - image[:, :, 3:4]) * 0.5
         image = Image.fromarray((image * 255.0).astype(np.uint8))
         return image
+    
+class Load_SF3D_Model:
+    checkpoints_dir = "StableFast3D"
+    default_ckpt_name = "model.safetensors"
+    default_repo_id = "stabilityai/stable-fast-3d"
+    config_path = "StableFast3D_config.yaml"
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        cls.checkpoints_dir_abs = os.path.join(CKPT_ROOT_PATH, cls.checkpoints_dir)
+        all_models_names = get_list_filenames(cls.checkpoints_dir_abs, SUPPORTED_CHECKPOINTS_EXTENSIONS)
+        if cls.default_ckpt_name not in all_models_names:
+            all_models_names += [cls.default_ckpt_name]
+            
+        cls.config_path_abs = os.path.join(CONFIG_ROOT_PATH, cls.config_path)
+        return {
+            "required": {
+                "model_name": (all_models_names, ),
+            },
+        }
+    
+    RETURN_TYPES = (
+        "SF3D_MODEL",
+    )
+    RETURN_NAMES = (
+        "sf3d_model",
+    )
+    FUNCTION = "load_SF3D"
+    CATEGORY = "Comfy3D/Import|Export"
+    
+    def load_SF3D(self, model_name):
+        
+        ckpt_path = resume_or_download_model_from_hf(self.checkpoints_dir_abs, self.default_repo_id, model_name, self.__class__.__name__)
+
+        sf3d_model = SF3D.from_pretrained(
+            config_path=self.config_path_abs,
+            weight_path=ckpt_path
+        )
+        
+        sf3d_model.eval()
+        sf3d_model.to(DEVICE)
+        
+        cstr(f"[{self.__class__.__name__}] loaded model ckpt from {ckpt_path}").msg.print()
+        
+        return (sf3d_model, )
+    
+class StableFast3D:
+
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "sf3d_model": ("SF3D_MODEL", ),
+                "reference_image": ("IMAGE",),
+                "reference_mask": ("MASK",),
+                "texture_resolution": ("INT", {"default": 1024, "min": 128, "max": 8192}),
+                "remesh_option": (["None", "Triangle"], ),
+            }
+        }
+
+    RETURN_TYPES = (
+        "MESH",
+    )
+    RETURN_NAMES = (
+        "mesh",
+    )
+    
+    FUNCTION = "run_SF3D"
+    CATEGORY = "Comfy3D/Algorithm"
+
+    @torch.no_grad()
+    def run_SF3D(self, sf3d_model, reference_image, reference_mask, texture_resolution, remesh_option):
+        single_image = torch_imgs_to_pils(reference_image, reference_mask)[0]
+        
+        with torch.autocast(device_type=DEVICE_STR, dtype=WEIGHT_DTYPE):
+            model_batch = self.create_batch(single_image)
+            model_batch = {k: v.cuda() for k, v in model_batch.items()}
+            trimesh_mesh, _ = sf3d_model.generate_mesh(
+                model_batch, texture_resolution, remesh_option
+            )
+        mesh = Mesh.load_trimesh(given_mesh=trimesh_mesh[0])
+
+        return (mesh,)
+    
+    # Default model are trained on images with this background 
+    def create_batch(self, input_image: Image):
+        COND_WIDTH = 512
+        COND_HEIGHT = 512
+        COND_DISTANCE = 1.6
+        COND_FOVY_DEG = 40
+        BACKGROUND_COLOR = [0.5, 0.5, 0.5]
+
+        # Cached. Doesn't change
+        c2w_cond = sf3d_utils.default_cond_c2w(COND_DISTANCE)
+        intrinsic, intrinsic_normed_cond = sf3d_utils.create_intrinsic_from_fov_deg(
+            COND_FOVY_DEG, COND_HEIGHT, COND_WIDTH
+        )
+        
+        img_cond = (
+            torch.from_numpy(
+                np.asarray(input_image.resize((COND_WIDTH, COND_HEIGHT))).astype(np.float32)
+                / 255.0
+            )
+            .float()
+            .clip(0, 1)
+        )
+        mask_cond = img_cond[:, :, -1:]
+        rgb_cond = torch.lerp(
+            torch.tensor(BACKGROUND_COLOR)[None, None, :], img_cond[:, :, :3], mask_cond
+        )
+
+        batch_elem = {
+            "rgb_cond": rgb_cond,
+            "mask_cond": mask_cond,
+            "c2w_cond": c2w_cond.unsqueeze(0),
+            "intrinsic_cond": intrinsic.unsqueeze(0),
+            "intrinsic_normed_cond": intrinsic_normed_cond.unsqueeze(0),
+        }
+        # Add batch dim
+        batched = {k: v.unsqueeze(0) for k, v in batch_elem.items()}
+        return batched
     
 class Load_CRM_MVDiffusion_Model:
     checkpoints_dir = "CRM"
@@ -3115,6 +3269,8 @@ class Craftsman_Shape_Diffusion_Model:
         mesh.auto_uv()
         
         return (mesh,)
+    
+
 
 ORBITPOSE_PRESET = ["Custom", "CRM(6)", "Zero123Plus(6)", "Wonder3D(6)", "Era3D(6)", "MVDream(4)", "Unique3D(4)", "CharacterGen(4)"]
 

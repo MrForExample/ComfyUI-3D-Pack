@@ -40,6 +40,12 @@ sys_conf = ConfigFactory.parse_string(conf_text)
 
 set_web_conf(sys_conf['web'])
 
+# Log into huggingface if given user specificed token
+hf_token = sys_conf['huggingface.token']
+if isinstance(hf_token, str) and len(hf_token) > 0:
+    from huggingface_hub import login
+    login(token=hf_token)
+
 NODE_CLASS_MAPPINGS = {}
 NODE_DISPLAY_NAME_MAPPINGS = {}
 

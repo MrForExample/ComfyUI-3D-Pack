@@ -64,7 +64,7 @@ class CRMSampler:
         )
         
         stage1_images = stage1_images[:-1] # remove reference view
-        return stage1_images # (N, H, W, 3) in [0, 1]
+        return stage1_images # (N, H, W, 3) in [0, 255]
     
     @classmethod
     def stage2_sample(

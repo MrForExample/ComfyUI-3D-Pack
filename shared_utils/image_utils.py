@@ -55,18 +55,18 @@ def troch_image_dilate(img):
     img = (img.clip(0, 255) / 255).astype(np.float32)
     return torch.from_numpy(img)
 
-def pils_to_torch_imgs(pils: Union[Image.Image, List[Image.Image]], device="cuda"):
+def pils_to_torch_imgs(pils: Union[Image.Image, List[Image.Image]], device="cuda", force_rgb=True):
     if isinstance(pils, Image.Image):
         pils = [pils]
     
     images = []
     for pil in pils:
-        if pil.mode == "RGBA":
+        if pil.mode == "RGBA" and force_rgb:
             pil = pil.convert('RGB')
 
         images.append(TF.to_tensor(pil).permute(1, 2, 0))
 
-    images = torch.stack(images, dim=0)
+    images = torch.stack(images, dim=0).to(device)
 
     return images
 
@@ -149,3 +149,50 @@ def pils_erode_masks(mask_list):
         out_mask_list.append(Image.fromarray(alpha[:, :, None]))
 
     return out_mask_list
+
+def pils_resize_foreground(
+    pils: Union[Image.Image, List[Image.Image]],
+    ratio: float,
+) -> List[Image.Image]:
+    if isinstance(pils, Image.Image):
+        pils = [pils]
+        
+    new_pils = []
+    for image in pils:
+        image = np.array(image)
+        assert image.shape[-1] == 4
+        alpha = np.where(image[..., 3] > 0)
+        y1, y2, x1, x2 = (
+            alpha[0].min(),
+            alpha[0].max(),
+            alpha[1].min(),
+            alpha[1].max(),
+        )
+        # crop the foreground
+        fg = image[y1:y2, x1:x2]
+        # pad to square
+        size = max(fg.shape[0], fg.shape[1])
+        ph0, pw0 = (size - fg.shape[0]) // 2, (size - fg.shape[1]) // 2
+        ph1, pw1 = size - fg.shape[0] - ph0, size - fg.shape[1] - pw0
+        new_image = np.pad(
+            fg,
+            ((ph0, ph1), (pw0, pw1), (0, 0)),
+            mode="constant",
+            constant_values=((0, 0), (0, 0), (0, 0)),
+        )
+
+        # compute padding according to the ratio
+        new_size = int(new_image.shape[0] / ratio)
+        # pad to size, double side
+        ph0, pw0 = (new_size - size) // 2, (new_size - size) // 2
+        ph1, pw1 = new_size - size - ph0, new_size - size - pw0
+        new_image = np.pad(
+            new_image,
+            ((ph0, ph1), (pw0, pw1), (0, 0)),
+            mode="constant",
+            constant_values=((0, 0), (0, 0), (0, 0)),
+        )
+        new_image = Image.fromarray(new_image, mode="RGBA")
+        new_pils.append(new_image)
+    
+    return new_pils
