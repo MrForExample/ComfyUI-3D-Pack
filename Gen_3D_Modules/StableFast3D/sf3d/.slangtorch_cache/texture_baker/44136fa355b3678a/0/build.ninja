@@ -1,0 +1,33 @@
+ninja_required_version = 1.3
+cxx = cl
+nvcc = C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\bin\nvcc
+
+cflags = -DTORCH_EXTENSION_NAME=_slangtorch_texture_baker_44136fa355b3678a -DTORCH_API_INCLUDE_EXTENSION_H -IC:\Users\reall\Softwares\Miniconda\envs\AI3D_Exp\_Projects\stable-fast-3d\sf3d -IC:\Users\reall\Softwares\Miniconda\envs\AI3D_Exp\Lib\site-packages\torch\include -IC:\Users\reall\Softwares\Miniconda\envs\AI3D_Exp\Lib\site-packages\torch\include\torch\csrc\api\include -IC:\Users\reall\Softwares\Miniconda\envs\AI3D_Exp\Lib\site-packages\torch\include\TH -IC:\Users\reall\Softwares\Miniconda\envs\AI3D_Exp\Lib\site-packages\torch\include\THC "-IC:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\include" -IC:\Users\reall\Softwares\Miniconda\envs\AI3D_Exp\Include -D_GLIBCXX_USE_CXX11_ABI=0 /MD /wd4819 /wd4251 /wd4244 /wd4267 /wd4275 /wd4018 /wd4190 /wd4624 /wd4067 /wd4068 /EHsc /std:c++17 /std:c++17
+post_cflags = 
+cuda_cflags = -Xcudafe --diag_suppress=dll_interface_conflict_dllexport_assumed -Xcudafe --diag_suppress=dll_interface_conflict_none_assumed -Xcudafe --diag_suppress=field_without_dll_interface -Xcudafe --diag_suppress=base_class_has_different_dll_interface -Xcompiler /EHsc -Xcompiler /wd4068 -Xcompiler /wd4067 -Xcompiler /wd4624 -Xcompiler /wd4190 -Xcompiler /wd4018 -Xcompiler /wd4275 -Xcompiler /wd4267 -Xcompiler /wd4244 -Xcompiler /wd4251 -Xcompiler /wd4819 -Xcompiler /MD -DTORCH_EXTENSION_NAME=_slangtorch_texture_baker_44136fa355b3678a -DTORCH_API_INCLUDE_EXTENSION_H -IC:\Users\reall\Softwares\Miniconda\envs\AI3D_Exp\_Projects\stable-fast-3d\sf3d -IC:\Users\reall\Softwares\Miniconda\envs\AI3D_Exp\Lib\site-packages\torch\include -IC:\Users\reall\Softwares\Miniconda\envs\AI3D_Exp\Lib\site-packages\torch\include\torch\csrc\api\include -IC:\Users\reall\Softwares\Miniconda\envs\AI3D_Exp\Lib\site-packages\torch\include\TH -IC:\Users\reall\Softwares\Miniconda\envs\AI3D_Exp\Lib\site-packages\torch\include\THC "-IC:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\include" -IC:\Users\reall\Softwares\Miniconda\envs\AI3D_Exp\Include -D_GLIBCXX_USE_CXX11_ABI=0 -D__CUDA_NO_HALF_OPERATORS__ -D__CUDA_NO_HALF_CONVERSIONS__ -D__CUDA_NO_BFLOAT16_CONVERSIONS__ -D__CUDA_NO_HALF2_OPERATORS__ --expt-relaxed-constexpr -gencode=arch=compute_89,code=compute_89 -gencode=arch=compute_89,code=sm_89 -std=c++17 --std=c++17 -U__CUDA_NO_HALF_OPERATORS__ -U__CUDA_NO_HALF_CONVERSIONS__ -U__CUDA_NO_HALF2_OPERATORS__ -U__CUDA_NO_BFLOAT16_CONVERSIONS__ -DSLANG_CUDA_ENABLE_HALF=1
+cuda_post_cflags = 
+cuda_dlink_post_cflags = 
+ldflags = /DLL c10.lib c10_cuda.lib torch_cpu.lib torch_cuda.lib -INCLUDE:?warp_size@cuda@at@@YAHXZ torch.lib /LIBPATH:C:\Users\reall\Softwares\Miniconda\envs\AI3D_Exp\Lib\site-packages\torch\lib torch_python.lib /LIBPATH:C:\Users\reall\Softwares\Miniconda\envs\AI3D_Exp\libs "/LIBPATH:C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\lib\x64" cudart.lib
+
+rule compile
+  command = cl /showIncludes $cflags -c $in /Fo$out $post_cflags
+  deps = msvc
+
+rule cuda_compile
+  depfile = $out.d
+  deps = gcc
+  command = $nvcc --generate-dependencies-with-compile --dependency-output $out.d $cuda_cflags -c $in -o $out $cuda_post_cflags
+
+
+
+rule link
+  command = "C$:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\bin\Hostx64\x64/link.exe" $in /nologo $ldflags /out:$out
+
+build texture_baker.o: compile C$:\Users\reall\Softwares\Miniconda\envs\AI3D_Exp\_Projects\stable-fast-3d\sf3d\.slangtorch_cache\texture_baker\44136fa355b3678a\texture_baker.cpp
+build texture_baker_cuda.cuda.o: cuda_compile C$:\Users\reall\Softwares\Miniconda\envs\AI3D_Exp\_Projects\stable-fast-3d\sf3d\.slangtorch_cache\texture_baker\44136fa355b3678a\texture_baker_cuda.cu
+
+
+
+build _slangtorch_texture_baker_44136fa355b3678a.pyd: link texture_baker.o texture_baker_cuda.cuda.o
+
+default _slangtorch_texture_baker_44136fa355b3678a.pyd

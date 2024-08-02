@@ -1,0 +1,96 @@
+cond_image_size: 512
+isosurface_resolution: 160
+radius: 0.87
+
+camera_embedder_cls: StableFast3D.sf3d.models.camera.LinearCameraEmbedder
+camera_embedder:
+  in_channels: 25
+  out_channels: 768
+  conditions:
+    - c2w_cond
+    - intrinsic_normed_cond
+
+image_tokenizer_cls: StableFast3D.sf3d.models.tokenizers.image.DINOV2SingleImageTokenizer
+image_tokenizer:
+  pretrained_model_name_or_path: "facebook/dinov2-large"
+  width: 512
+  height: 512
+  modulation_cond_dim: 768
+
+tokenizer_cls: StableFast3D.sf3d.models.tokenizers.triplane.TriplaneLearnablePositionalEmbedding
+tokenizer:
+  plane_size: 96
+  num_channels: 1024
+
+backbone_cls: StableFast3D.sf3d.models.transformers.backbone.TwoStreamInterleaveTransformer
+backbone:
+  num_attention_heads: 16
+  attention_head_dim: 64
+  raw_triplane_channels: 1024
+  triplane_channels: 1024
+  raw_image_channels: 1024 # DINO features
+  num_latents: 1792
+  num_blocks: 4
+  num_basic_blocks: 3
+
+post_processor_cls: StableFast3D.sf3d.models.network.PixelShuffleUpsampleNetwork
+post_processor:
+  in_channels: 1024
+  out_channels: 40
+  scale_factor: 4
+  conv_layers: 4
+
+
+decoder_cls: StableFast3D.sf3d.models.network.MaterialMLP
+decoder:
+  in_channels: 120
+  n_neurons: 64
+  activation: silu
+  heads:
+    - name: density
+      out_channels: 1
+      out_bias: -1.0
+      n_hidden_layers: 2
+      output_activation: trunc_exp
+    - name: features
+      out_channels: 3
+      n_hidden_layers: 3
+      output_activation: sigmoid
+    - name: perturb_normal
+      out_channels: 3
+      n_hidden_layers: 3
+      output_activation: normalize_channel_last
+    - name: vertex_offset
+      out_channels: 3
+      n_hidden_layers: 2
+
+image_estimator_cls: StableFast3D.sf3d.models.image_estimator.clip_based_estimator.ClipBasedHeadEstimator
+image_estimator:
+  distribution: beta
+  distribution_eval: mode
+  heads:
+    - name: roughness
+      out_channels: 1
+      n_hidden_layers: 3
+      output_activation: linear
+      add_to_decoder_features: true
+      output_bias: 1.0
+      shape: [-1, 1, 1]
+    - name: metallic
+      out_channels: 1
+      n_hidden_layers: 3
+      output_activation: linear
+      add_to_decoder_features: true
+      output_bias: 1.0
+      shape: [-1, 1, 1]
+
+global_estimator_cls: StableFast3D.sf3d.models.global_estimator.multi_head_estimator.MultiHeadEstimator
+global_estimator:
+  triplane_features: 1024
+  heads:
+    - name: sg_amplitudes
+      out_channels: 24
+      n_hidden_layers: 3
+      output_activation: softplus
+      output_bias: 1.0
+      shape: [-1, 24, 1]

@@ -1,0 +1,419 @@
+{
+  "last_node_id": 43,
+  "last_link_id": 69,
+  "nodes": [
+    {
+      "id": 40,
+      "type": "[Comfy3D] Resize Image Foreground",
+      "pos": [
+        305,
+        244
+      ],
+      "size": {
+        "0": 315,
+        "1": 78
+      },
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 61
+        },
+        {
+          "name": "masks",
+          "type": "MASK",
+          "link": 65
+        }
+      ],
+      "outputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "links": [
+            63
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "masks",
+          "type": "MASK",
+          "links": [
+            64
+          ],
+          "shape": 3,
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Resize Image Foreground"
+      },
+      "widgets_values": [
+        0.85
+      ]
+    },
+    {
+      "id": 36,
+      "type": "[Comfy3D] Load SF3D Model",
+      "pos": [
+        304,
+        122
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "sf3d_model",
+          "type": "SF3D_MODEL",
+          "links": [
+            56
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Load SF3D Model"
+      },
+      "widgets_values": [
+        "model.safetensors"
+      ]
+    },
+    {
+      "id": 20,
+      "type": "InvertMask",
+      "pos": [
+        136,
+        330
+      ],
+      "size": {
+        "0": 140,
+        "1": 26
+      },
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mask",
+          "type": "MASK",
+          "link": 26
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            65
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "InvertMask"
+      }
+    },
+    {
+      "id": 38,
+      "type": "[Comfy3D] Preview 3DMesh",
+      "pos": [
+        1706,
+        222
+      ],
+      "size": [
+        600,
+        500
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh_file_path",
+          "type": "STRING",
+          "link": 60,
+          "widget": {
+            "name": "mesh_file_path"
+          }
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Preview 3DMesh"
+      },
+      "widgets_values": [
+        "",
+        null
+      ]
+    },
+    {
+      "id": 37,
+      "type": "[Comfy3D] StableFast3D",
+      "pos": [
+        650,
+        221
+      ],
+      "size": {
+        "0": 315,
+        "1": 122
+      },
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "sf3d_model",
+          "type": "SF3D_MODEL",
+          "link": 56
+        },
+        {
+          "name": "reference_image",
+          "type": "IMAGE",
+          "link": 63
+        },
+        {
+          "name": "reference_mask",
+          "type": "MASK",
+          "link": 64
+        }
+      ],
+      "outputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "links": [
+            68
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] StableFast3D"
+      },
+      "widgets_values": [
+        1024,
+        "None"
+      ]
+    },
+    {
+      "id": 43,
+      "type": "[Comfy3D] Switch Mesh Axis",
+      "pos": [
+        995,
+        221
+      ],
+      "size": {
+        "0": 315,
+        "1": 154
+      },
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 68
+        }
+      ],
+      "outputs": [
+        {
+          "name": "switched_mesh",
+          "type": "MESH",
+          "links": [
+            69
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Switch Mesh Axis"
+      },
+      "widgets_values": [
+        "-x",
+        "+y",
+        "-z",
+        false,
+        1
+      ]
+    },
+    {
+      "id": 39,
+      "type": "[Comfy3D] Save 3D Mesh",
+      "pos": [
+        1345,
+        222
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 69
+        }
+      ],
+      "outputs": [
+        {
+          "name": "save_path",
+          "type": "STRING",
+          "links": [
+            60
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Save 3D Mesh"
+      },
+      "widgets_values": [
+        "SF3D_Test\\mesh.glb"
+      ]
+    },
+    {
+      "id": 1,
+      "type": "LoadImage",
+      "pos": [
+        -379,
+        245
+      ],
+      "size": {
+        "0": 473.3881530761719,
+        "1": 545.7767944335938
+      },
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            61
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            26
+          ],
+          "shape": 3,
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "PirateCat_0.png",
+        "image"
+      ]
+    }
+  ],
+  "links": [
+    [
+      26,
+      1,
+      1,
+      20,
+      0,
+      "MASK"
+    ],
+    [
+      56,
+      36,
+      0,
+      37,
+      0,
+      "SF3D_MODEL"
+    ],
+    [
+      60,
+      39,
+      0,
+      38,
+      0,
+      "STRING"
+    ],
+    [
+      61,
+      1,
+      0,
+      40,
+      0,
+      "IMAGE"
+    ],
+    [
+      63,
+      40,
+      0,
+      37,
+      1,
+      "IMAGE"
+    ],
+    [
+      64,
+      40,
+      1,
+      37,
+      2,
+      "MASK"
+    ],
+    [
+      65,
+      20,
+      0,
+      40,
+      1,
+      "MASK"
+    ],
+    [
+      68,
+      37,
+      0,
+      43,
+      0,
+      "MESH"
+    ],
+    [
+      69,
+      43,
+      0,
+      39,
+      0,
+      "MESH"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.6830134553650706,
+      "offset": [
+        164.94221702032814,
+        121.40961470392963
+      ]
+    }
+  },
+  "version": 0.4
+}

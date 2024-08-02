@@ -14,7 +14,7 @@ kornia
 opencv-python
 pillow
 nerfacc>=0.5.3
-PyMCubes
+slangtorch
 
 # for use ML models
 diffusers>=0.26.1
@@ -33,12 +33,14 @@ imageio
 imageio-ffmpeg
 matplotlib
 
-# for dmtet and mesh import & export
+# for process, import & export mesh 
 trimesh
 plyfile
 pygltflib
 xatlas
 pymeshlab
+gpytoolbox
+PyMCubes
 
 # configs & extra
 torchtyping
