@@ -77,7 +77,7 @@ from Unique3D.custum_3d_diffusion.custum_pipeline.unifield_pipeline_img2mvimg im
 from Unique3D.custum_3d_diffusion.custum_pipeline.unifield_pipeline_img2img import StableDiffusionImageCustomPipeline
 from Unique3D.scripts.mesh_init import fast_geo
 from Unique3D.scripts.utils import from_py3d_mesh, to_py3d_mesh, to_pyml_mesh, simple_clean_mesh
-from Unique3D.scripts.project_mesh import multiview_color_projection, get_cameras_list
+from Unique3D.scripts.project_mesh import multiview_color_projection, get_cameras_list, get_orbit_cameras_list
 from Unique3D.mesh_reconstruction.recon import reconstruct_stage1
 from Unique3D.mesh_reconstruction.refine import run_mesh_refine
 from CharacterGen.character_inference import Inference2D_API, Inference3D_API
@@ -90,6 +90,7 @@ from .shared_utils.image_utils import (
     prepare_torch_img, torch_imgs_to_pils, troch_image_dilate, 
     pils_rgba_to_rgb, pil_make_image_grid, pil_split_image, pils_to_torch_imgs, pils_resize_foreground
 )
+from .shared_utils.camera_utils import compose_orbit_camposes
 from .shared_utils.log_utils import cstr
 from .shared_utils.common_utils import parse_save_filename, get_list_filenames, resume_or_download_model_from_hf
 
@@ -113,6 +114,18 @@ DIFFUSERS_SCHEDULER_DICT = OrderedDict([
     ("LCMScheduler,", LCMScheduler),
     ("KDPM2AncestralDiscreteScheduler,", KDPM2AncestralDiscreteScheduler),
     ("KDPM2DiscreteScheduler,", KDPM2DiscreteScheduler),
+])
+
+#{Key: [elevation, azimuth], ...}
+ORBITPOSE_PRESET_DICT = OrderedDict([
+    ("Custom",           [[0.0, 90.0, 0.0, 0.0, -90.0, 0.0], [-90.0, 0.0, 180.0, 90.0, 0.0, 0.0]]),
+    ("CRM(6)",           [[0.0, 90.0, 0.0, 0.0, -90.0, 0.0], [-90.0, 0.0, 180.0, 90.0, 0.0, 0.0]]),
+    ("Wonder3D(6)",      [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 45.0, 90.0, 180.0, -90.0, -45.0]]),
+    ("Zero123Plus(6)",   [[-20.0, 10.0, -20.0, 10.0, -20.0, 10.0], [30.0, 90.0, 150.0, -150.0, -90.0, -30.0]]),
+    ("Era3D(6)",         [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 45.0, 90.0, 180.0, -90.0, -45.0]]),
+    ("MVDream(4)",       [[0.0, 0.0, 0.0, 0.0], [0.0, 90.0, 180.0, -90.0]]),
+    ("Unique3D(4)",      [[0.0, 0.0, 0.0, 0.0], [0.0, 90.0, 180.0, -90.0]]),
+    ("CharacterGen(4)",  [[0.0, 0.0, 0.0, 0.0], [-90.0, 180.0, 90.0, 0.0]]),
 ])
 
 ROOT_PATH = os.path.join(comfy_paths.get_folder_paths("custom_nodes")[0], "ComfyUI-3D-Pack")
@@ -730,7 +743,7 @@ class Stack_Orbit_Camera_Poses:
         }
 
     RETURN_TYPES = (
-        "ORBIT_CAMPOSES",   # [orbit radius, elevation, azimuth, orbit center X, orbit center Y, orbit center Z]
+        "ORBIT_CAMPOSES",   # [[orbit radius, elevation, azimuth, orbit center X, orbit center Y, orbit center Z], ...]
         "FLOAT",
         "FLOAT",
         "FLOAT",
@@ -739,7 +752,7 @@ class Stack_Orbit_Camera_Poses:
         "FLOAT",
     )
     RETURN_NAMES = (
-        "orbit_camposes",  # List of 6 lists
+        "orbit_camposes",
         "orbit_radius_list",
         "elevation_list", 
         "azimuth_list", 
@@ -1548,11 +1561,13 @@ class Wonder3D_MVDiffusion_Model:
         
     RETURN_TYPES = (
         "IMAGE",
-        "IMAGE", 
+        "IMAGE",
+        "ORBIT_CAMPOSES",
     )
     RETURN_NAMES = (
         "multiview_images",
         "multiview_normals",
+        "orbit_camposes",
     )
     FUNCTION = "run_mvdiffusion"
     CATEGORY = "Comfy3D/Algorithm"
@@ -1605,8 +1620,13 @@ class Wonder3D_MVDiffusion_Model:
         # [N, 3, H, W] -> [N, H, W, 3]
         mv_images = out[num_views:].permute(0, 2, 3, 1)
         mv_normals = out[:num_views].permute(0, 2, 3, 1)
+        
+        orbit_radius = [4.0] * 6
+        orbit_center = [0.0] * 6
+        orbit_elevations, orbit_azimuths = ORBITPOSE_PRESET_DICT["Wonder3D(6)"]
+        orbit_camposes = compose_orbit_camposes(orbit_radius, orbit_elevations, orbit_azimuths, orbit_center, orbit_center, orbit_center)
     
-        return (mv_images, mv_normals, )
+        return (mv_images, mv_normals, orbit_camposes)
     
     def prepare_data(self, ref_image, ref_mask):
         single_image = torch_imgs_to_pils(ref_image, ref_mask)[0]
@@ -1639,7 +1659,7 @@ class MVDream_Model:
     
     RETURN_TYPES = (
         "IMAGE",
-        "ORBIT_CAMPOSES",   # [orbit radius, elevation, azimuth, orbit center X, orbit center Y, orbit center Z]
+        "ORBIT_CAMPOSES",   
     )
     RETURN_NAMES = (
         "multiview_images",
@@ -1674,13 +1694,11 @@ class MVDream_Model:
         # generate multi-view images
         mv_images = mvdream_pipe(prompt, reference_image, generator=generator, negative_prompt=prompt_neg, guidance_scale=mv_guidance_scale, num_inference_steps=num_inference_steps, elevation=elevation)
         mv_images = torch.from_numpy(np.stack([mv_images[1], mv_images[2], mv_images[3], mv_images[0]], axis=0)).float() # [4, H, W, 3], float32
-        
-        azimuths = [0, 90, 180, -90]
-        elevations = [0, 0, 0, 0]
-        radius = [4.0] * 4
-        center = [0.0] * 4
 
-        orbit_camposes = [azimuths, elevations, radius, center, center, center]
+        orbit_radius = [4.0] * 4
+        orbit_center = [0.0] * 4
+        orbit_elevations, orbit_azimuths = ORBITPOSE_PRESET_DICT["MVDream(4)"]
+        orbit_camposes = compose_orbit_camposes(orbit_radius, orbit_elevations, orbit_azimuths, orbit_center, orbit_center, orbit_center)
 
         return (mv_images, orbit_camposes)
     
@@ -2138,7 +2156,7 @@ class CRM_Images_MVDiffusion_Model:
     
     RETURN_TYPES = (
         "IMAGE",
-        "ORBIT_CAMPOSES",   # [orbit radius, elevation, azimuth, orbit center X, orbit center Y, orbit center Z]
+        "ORBIT_CAMPOSES",   
     )
     RETURN_NAMES = (
         "multiview_images",
@@ -2171,13 +2189,11 @@ class CRM_Images_MVDiffusion_Model:
             num_inference_steps
         )
 
-        azimuths = [-90, 0, 180, 90, 0, 0]
-        elevations = [0, 90, 0, 0, -90, 0]
-        radius = [4.0] * 6
-        center = [0.0] * 6
-
-        orbit_camposes = [azimuths, elevations, radius, center, center, center]
-
+        orbit_radius = [4.0] * 6
+        orbit_center = [0.0] * 6
+        orbit_elevations, orbit_azimuths = ORBITPOSE_PRESET_DICT["CRM(6)"]
+        orbit_camposes = compose_orbit_camposes(orbit_radius, orbit_elevations, orbit_azimuths, orbit_center, orbit_center, orbit_center)
+        
         return (multiview_images, orbit_camposes)
     
 class CRM_CCMs_MVDiffusion_Model:
@@ -2332,7 +2348,7 @@ class Zero123Plus_Diffusion_Model:
     
     RETURN_TYPES = (
         "IMAGE",
-        "ORBIT_CAMPOSES",   # [orbit radius, elevation, azimuth, orbit center X, orbit center Y, orbit center Z]
+        "ORBIT_CAMPOSES",   
     )
     RETURN_NAMES = (
         "multiviews",
@@ -2369,12 +2385,10 @@ class Zero123Plus_Diffusion_Model:
         multiview_images = torch.from_numpy(multiview_images).permute(2, 0, 1).contiguous().float()     # (3, 960, 640)
         multiview_images = rearrange(multiview_images, 'c (n h) (m w) -> (n m) h w c', n=3, m=2)        # (6, 320, 320, 3)
 
-        azimuths = [30, 90, 150, -150, -90, -30]
-        elevations = [-20, 10, -20, 10, -20, 10]
-        radius = [4.0] * 6
-        center = [0.0] * 6
-
-        orbit_camposes = [azimuths, elevations, radius, center, center, center]
+        orbit_radius = [4.0] * 6
+        orbit_center = [0.0] * 6
+        orbit_elevations, orbit_azimuths = ORBITPOSE_PRESET_DICT["Zero123Plus(6)"]
+        orbit_camposes = compose_orbit_camposes(orbit_radius, orbit_elevations, orbit_azimuths, orbit_center, orbit_center, orbit_center)
 
         return (multiview_images, orbit_camposes)
     
@@ -2465,7 +2479,11 @@ class InstantMesh_Reconstruction_Model:
         images = v2.functional.resize(images, 320, interpolation=3, antialias=True).clamp(0, 1)
 
         # convert camera format from orbit to lrm inputs
-        azimuths, elevations, radius = orbit_camera_poses[0], orbit_camera_poses[1], orbit_camera_poses[2]
+        azimuths, elevations, radius = [], [], []
+        for i in range(len(orbit_camera_poses)):
+            azimuths.append(orbit_camera_poses[i][2])
+            elevations.append(orbit_camera_poses[i][1])
+            radius.append(orbit_camera_poses[i][0])
         input_cameras = oribt_camera_poses_to_input_cameras(azimuths, elevations, radius=radius, fov=orbit_camera_fovy).to(DEVICE)
 
         # get triplane
@@ -2508,7 +2526,7 @@ class Era3D_MVDiffusion_Model:
     RETURN_TYPES = (
         "IMAGE",
         "IMAGE",
-        "ORBIT_CAMPOSES",   # [orbit radius, elevation, azimuth, orbit center X, orbit center Y, orbit center Z]
+        "ORBIT_CAMPOSES",   
     )
     RETURN_NAMES = (
         "multiviews",
@@ -2804,7 +2822,7 @@ class Unique3D_MVDiffusion_Model:
     
     RETURN_TYPES = (
         "IMAGE",
-        "ORBIT_CAMPOSES",   # [orbit radius, elevation, azimuth, orbit center X, orbit center Y, orbit center Z]
+        "ORBIT_CAMPOSES",   
     )
     RETURN_NAMES = (
         "multiviews",
@@ -2850,12 +2868,10 @@ class Unique3D_MVDiffusion_Model:
         # [N, H, W, 3]
         multiview_images = pils_to_torch_imgs(image_pils, reference_image.device)
 
-        azimuths = [0, 90, 180, -90]
-        elevations = [0.0] * 4
-        radius = [radius] * 4
-        center = [0.0] * 4
-
-        orbit_camposes = [azimuths, elevations, radius, center, center, center]
+        orbit_radius = [radius] * 4
+        orbit_center = [0.0] * 4
+        orbit_elevations, orbit_azimuths = ORBITPOSE_PRESET_DICT["Unique3D(4)"]
+        orbit_camposes = compose_orbit_camposes(orbit_radius, orbit_elevations, orbit_azimuths, orbit_center, orbit_center, orbit_center)
 
         return (multiview_images, orbit_camposes)
 
@@ -2954,6 +2970,7 @@ class ExplicitTarget_Color_Projection:
                 "reference_masks": ("MASK",),
                 "projection_resolution": ("INT", {"default": 1024, "min": 128, "max": 8192}),
                 "complete_unseen_rgb":  ("BOOLEAN", {"default": True},),
+                "render_orbit_camera_fovy": ("FLOAT", {"default": 47.5, "min": 0.0, "max": 180.0, "step": 0.1}),
             },
             "optional": {
                 "reference_orbit_camera_poses": ("ORBIT_CAMPOSES",),    # [orbit radius, elevation, azimuth, orbit center X,  orbit center Y,  orbit center Z]
@@ -2976,6 +2993,7 @@ class ExplicitTarget_Color_Projection:
         reference_masks,  
         projection_resolution, 
         complete_unseen_rgb,
+        render_orbit_camera_fovy,
         reference_orbit_camera_poses=None,
     ):
         pil_image_list = torch_imgs_to_pils(reference_images, reference_masks)
@@ -2991,9 +3009,11 @@ class ExplicitTarget_Color_Projection:
             for i in range(0, img_num):
                 azimuths.append(angle)
                 angle += interval
+                
+            cam_list = get_cameras_list(azimuths, DEVICE, focal=1)
         else:
-            azimuths = [360 + angle if angle < 0 else angle for angle in reference_orbit_camera_poses[0]]
-        cam_list = get_cameras_list(azimuths, DEVICE, focal=1)
+            #reference_orbit_camera_poses[0] = [360 + angle if angle < 0 else angle for angle in reference_orbit_camera_poses[0]]
+            cam_list = get_orbit_cameras_list(reference_orbit_camera_poses, DEVICE, render_orbit_camera_fovy)
         
         new_meshes = multiview_color_projection(meshes, pil_image_list, resolution=projection_resolution, device=DEVICE, complete_unseen=complete_unseen_rgb, confidence_threshold=0.2, cameras_list=cam_list)
         vertices, faces, vertex_colors = from_py3d_mesh(new_meshes)
@@ -3064,7 +3084,7 @@ class CharacterGen_MVDiffusion_Model:
     
     RETURN_TYPES = (
         "IMAGE",
-        "ORBIT_CAMPOSES",   # [orbit radius, elevation, azimuth, orbit center X, orbit center Y, orbit center Z]
+        "ORBIT_CAMPOSES",   
     )
     RETURN_NAMES = (
         "multiviews",
@@ -3095,12 +3115,10 @@ class CharacterGen_MVDiffusion_Model:
             guidance_scale=guidance_scale, num_inference_steps=num_inference_steps, seed=seed
         )
         
-        azimuths = [-90, 90, 180, 0]
-        elevations = [0.0] * 4
-        radius = [radius] * 4
-        center = [0.0] * 4
-
-        orbit_camposes = [azimuths, elevations, radius, center, center, center]
+        orbit_radius = [radius] * 4
+        orbit_center = [0.0] * 4
+        orbit_elevations, orbit_azimuths = ORBITPOSE_PRESET_DICT["CharacterGen(4)"]
+        orbit_camposes = compose_orbit_camposes(orbit_radius, orbit_elevations, orbit_azimuths, orbit_center, orbit_center, orbit_center)
 
         return (multiview_images, orbit_camposes)
     
@@ -3269,21 +3287,6 @@ class Craftsman_Shape_Diffusion_Model:
         mesh.auto_uv()
         
         return (mesh,)
-    
-
-
-ORBITPOSE_PRESET = ["Custom", "CRM(6)", "Zero123Plus(6)", "Wonder3D(6)", "Era3D(6)", "MVDream(4)", "Unique3D(4)", "CharacterGen(4)"]
-
-OrbitPosesList = {
-    "Custom":           [[-90.0, 0.0, 180.0, 90.0, 0.0, 0.0], [0.0, 90.0, 0.0, 0.0, -90.0, 0.0], [4.0, 4.0, 4.0, 4.0, 4.0, 4.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]],
-    "CRM(6)":           [[-90.0, 0.0, 180.0, 90.0, 0.0, 0.0], [0.0, 90.0, 0.0, 0.0, -90.0, 0.0], [4.0, 4.0, 4.0, 4.0, 4.0, 4.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]],
-    "Wonder3D(6)":      [[0.0, 45.0, 90.0, 180.0, -90.0, -45.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [4.0, 4.0, 4.0, 4.0, 4.0, 4.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]],
-    "Zero123Plus(6)":   [[30.0, 90.0, 150.0, -150.0, -90.0, -30.0], [-20.0, 10.0, -20.0, 10.0, -20.0, 10.0], [4.0, 4.0, 4.0, 4.0, 4.0, 4.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]],
-    "Era3D(6)":         [[0.0, 45.0, 90.0, 180.0, -90.0, -45.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], #[[radius], [radius], [radius], [radius], [radius], [radius]], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-    "MVDream(4)":       [[0.0, 90.0, 180.0, -90.0], [0.0, 0.0, 0.0, 0.0], [4.0, 4.0, 4.0, 4.0], [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]],
-    "Unique3D(4)":      [[0.0, 90.0, 180.0, -90.0], [0.0, 0.0, 0.0, 0.0]], #[[radius], [radius], [radius], [radius]], [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]
-    "CharacterGen(4)":  [[-90.0, 180.0, 90.0, 0.0], [0.0, 0.0, 0.0, 0.0]], #[[radius], [radius], [radius], [radius]], [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]
-}
 
 class OrbitPoses_JK:
     def __init__(self):
@@ -3293,116 +3296,41 @@ class OrbitPoses_JK:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "orbitpose_preset": (ORBITPOSE_PRESET, {"default": "Custom"}),
-                "azimuths": ("STRING", {"default": "-90.0, 0.0, 180.0, 90.0, 0.0, 0.0"}),
-                "elevations": ("STRING", {"default": "0.0, 90.0, 0.0, 0.0, -90.0, 0.0"}),
+                "orbitpose_preset": (list(ORBITPOSE_PRESET_DICT.keys()),),
                 "radius": ("STRING", {"default": "4.0, 4.0, 4.0, 4.0, 4.0, 4.0"}),
-                "center": ("STRING", {"default": "0.0, 0.0, 0.0, 0.0, 0.0, 0.0"}),
-            },
-        }
-    
-    RETURN_TYPES = ("ORBIT_CAMPOSES", "ORBIT_CAMPOSES",)
-    RETURN_NAMES = ("orbit_lists", "orbit_camposes",)
-    
-    FUNCTION = "get_orbit_poses"
-    CATEGORY = "Comfy3D/Preprocessor"
-    
-    def get_orbit_poses(self, orbitpose_preset, azimuths, elevations, radius, center):
-        
-        orbit_lists = OrbitPosesList.get(f"{orbitpose_preset}")
-        
-        if orbitpose_preset == "Custom":
-            azimuths = azimuths.split(",")
-            elevations = elevations.split(",")
-            radius = radius.split(",")
-            center = center.split(",")
-            orbit_azimuths = [float(item) for item in azimuths]
-            orbit_elevations = [float(item) for item in elevations]
-            orbit_radius = [float(item) for item in radius]
-            orbit_center = [float(item) for item in center]
-            orbit_lists = [orbit_azimuths, orbit_elevations, orbit_radius, orbit_center, orbit_center, orbit_center]
-        elif orbitpose_preset == "Era3D(6)":
-            radius = radius.split(",")
-            orbit_radius = [float(item) for item in radius]
-            orbit_center = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-            orbit_lists = [orbit_lists[0], orbit_lists[1], orbit_radius, orbit_center, orbit_center, orbit_center]
-        elif orbitpose_preset == "Unique3D(4)" or orbitpose_preset == "CharacterGen(4)":
-            radius = radius.split(",")
-            orbit_radius = [float(item) for item in radius]
-            orbit_radius.pop(4)
-            orbit_radius.pop(4)
-            orbit_center = [0.0, 0.0, 0.0, 0.0]
-            orbit_lists = [orbit_lists[0], orbit_lists[1], orbit_radius, orbit_center, orbit_center, orbit_center]
-        
-        orbit_camposes = []
-
-        for i in range(0, len(orbit_lists[0])):
-            orbit_camposes.append([orbit_lists[2][i], orbit_lists[1][i], orbit_lists[0][i], orbit_lists[3][i], orbit_lists[4][i], orbit_lists[5][i]])
-        
-        return (orbit_lists, orbit_camposes,)
-
-class OrbitLists_to_OrbitPoses_JK:
-    def __init__(self):
-        pass
-
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "orbit_lists": ("ORBIT_CAMPOSES",),
+                "elevations": ("STRING", {"default": "0.0, 90.0, 0.0, 0.0, -90.0, 0.0"}),
+                "azimuths": ("STRING", {"default": "-90.0, 0.0, 180.0, 90.0, 0.0, 0.0"}),
+                "centerX": ("STRING", {"default": "0.0, 0.0, 0.0, 0.0, 0.0, 0.0"}),
+                "centerY": ("STRING", {"default": "0.0, 0.0, 0.0, 0.0, 0.0, 0.0"}),
+                "centerZ": ("STRING", {"default": "0.0, 0.0, 0.0, 0.0, 0.0, 0.0"}),
             },
         }
     
     RETURN_TYPES = ("ORBIT_CAMPOSES",)
     RETURN_NAMES = ("orbit_camposes",)
     
-    FUNCTION = "convert_orbit_poses"
+    FUNCTION = "get_orbit_poses"
     CATEGORY = "Comfy3D/Preprocessor"
     
-    def convert_orbit_poses(self, orbit_lists):
+    def get_orbit_poses(self, orbitpose_preset, azimuths, elevations, radius, centerX, centerY, centerZ):
+        radius = radius.split(",")
+        orbit_radius = [float(item) for item in radius]
         
-        orbit_camposes = []
+        centerX = centerX.split(",")
+        centerY = centerY.split(",")
+        centerZ = centerZ.split(",")
+        orbit_center_x = [float(item) for item in centerX]
+        orbit_center_y = [float(item) for item in centerY]
+        orbit_center_z = [float(item) for item in centerZ]
+        
+        if orbitpose_preset == "Custom":
+            elevations = elevations.split(",")
+            azimuths = azimuths.split(",")
+            orbit_elevations = [float(item) for item in elevations]
+            orbit_azimuths = [float(item) for item in azimuths]
+        else:
+            orbit_elevations, orbit_azimuths = ORBITPOSE_PRESET_DICT[orbitpose_preset]
 
-        for i in range(0, len(orbit_lists[0])):
-            orbit_camposes.append([orbit_lists[2][i], orbit_lists[1][i], orbit_lists[0][i], orbit_lists[3][i], orbit_lists[4][i], orbit_lists[5][i]])
-        
+        orbit_camposes = compose_orbit_camposes(orbit_radius, orbit_elevations, orbit_azimuths, orbit_center_x, orbit_center_y, orbit_center_z)
+
         return (orbit_camposes,)
-
-class OrbitPoses_to_OrbitLists_JK:
-    def __init__(self):
-        pass
-
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "orbit_camposes": ("ORBIT_CAMPOSES",),
-            },
-        }
-    
-    RETURN_TYPES = ("ORBIT_CAMPOSES",)
-    RETURN_NAMES = ("orbit_lists",)
-    
-    FUNCTION = "convert_orbit_poses"
-    CATEGORY = "Comfy3D/Preprocessor"
-    
-    def convert_orbit_poses(self, orbit_camposes):
-        
-        orbit_azimuths = []
-        orbit_elevations = []
-        orbit_radius = []
-        orbit_center0 = []
-        orbit_center1 = []
-        orbit_center2 = []
-
-        for i in range(0, len(orbit_camposes)):
-            orbit_azimuths.append(orbit_camposes[i][2])
-            orbit_elevations.append(orbit_camposes[i][1])
-            orbit_radius.append(orbit_camposes[i][0])
-            orbit_center0.append(orbit_camposes[i][3])
-            orbit_center1.append(orbit_camposes[i][4])
-            orbit_center2.append(orbit_camposes[i][5])
-        
-        orbit_lists = [orbit_azimuths, orbit_elevations, orbit_radius, orbit_center0, orbit_center1, orbit_center2]
-        
-        return (orbit_lists,)

@@ -2,7 +2,7 @@ from typing import List
 import torch
 import numpy as np
 from PIL import Image
-from pytorch3d.renderer.cameras import look_at_view_transform, OrthographicCameras, CamerasBase
+from pytorch3d.renderer.cameras import look_at_view_transform, OrthographicCameras, PerspectiveCameras, CamerasBase
 from pytorch3d.renderer.mesh.rasterizer import Fragments
 from pytorch3d.structures import Meshes
 from pytorch3d.renderer import (
@@ -18,7 +18,7 @@ def get_camera(world_to_cam, fov_in_degrees=60, focal_length=1 / (2**0.5), cam_t
     R = world_to_cam[:3, :3].t()[None, ...]
     T = world_to_cam[:3, 3][None, ...]
     if cam_type == 'fov':
-        camera = FoVPerspectiveCameras(device=world_to_cam.device, R=R, T=T, fov=fov_in_degrees, degrees=True)
+        camera = FoVPerspectiveCameras(device=world_to_cam.device, R=R, T=T, fov=fov_in_degrees, degrees=True, znear=0.1)
     else:
         focal_length = 1 / focal_length
         camera = FoVOrthographicCameras(device=world_to_cam.device, R=R, T=T, min_x=-focal_length, max_x=focal_length, min_y=-focal_length, max_y=focal_length)
@@ -91,6 +91,7 @@ class Pix2FacesRenderer:
         cameras = cameras.to(self.device)
         vertices = self.transform_vertices(meshes, cameras)
         faces = meshes.faces_packed().to(torch.int32)
+        print(f"#############vertices: {vertices.shape}; faces: {faces.shape}")
         rast_out,_ = dr.rasterize(self._glctx, vertices, faces, resolution=(H, W), grad_db=False) #C,H,W,4
         pix_to_face = rast_out[..., -1].to(torch.int32) - 1
         return pix_to_face
@@ -309,6 +310,16 @@ def multiview_color_projection(meshes: Meshes, image_list: List[Image.Image], ca
     ret_mesh = meshes.detach()
     del meshes
     return ret_mesh
+
+def get_orbit_cameras_list(orbit_camera_poses, device, fov_in_degrees=60):
+    ret = []
+    for i in range(len(orbit_camera_poses)):
+        campose = orbit_camera_poses[i]
+        R, T = look_at_view_transform(campose[0], campose[1], campose[2])
+        w2c = torch.cat([R[0].T, T[0, :, None]], dim=1)
+        cameras: PerspectiveCameras = get_camera(w2c, fov_in_degrees=fov_in_degrees, cam_type='fov').to(device)
+        ret.append(cameras)
+    return ret
 
 def get_cameras_list(azim_list, device, focal=2/1.35, dist=1.1):
     ret = []

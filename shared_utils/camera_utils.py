@@ -256,3 +256,12 @@ class BaseCameraController(ABC):
             
         # [Number of Poses, 3, H, W], [Number of Poses, 1, H, W] both in [0, 1]
         return torch.stack(all_rendered_images, dim=0), torch.stack(all_rendered_masks, dim=0), extra_outputs
+    
+def compose_orbit_camposes(orbit_radius, orbit_elevations, orbit_azimuths, orbit_center_x, orbit_center_y, orbit_center_z):
+    orbit_camposes = []
+    
+    campose_num = len(orbit_radius)
+    for i in range(campose_num):
+        orbit_camposes.append([orbit_radius[i], orbit_elevations[i], orbit_azimuths[i], orbit_center_x[i], orbit_center_y[i], orbit_center_z[i]])
+        
+    return orbit_camposes
