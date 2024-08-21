@@ -43,6 +43,8 @@ from .mesh_processer.mesh_utils import (
     calculate_max_sh_degree_from_gs_ply,
     marching_cubes_density_to_mesh,
     color_func_to_albedo,
+    K_nearest_neighbors_func,
+    interpolate_texture_map,
 )
 
 from FlexiCubes.flexicubes_trainer import FlexiCubesTrainer
@@ -90,7 +92,10 @@ from .shared_utils.image_utils import (
     prepare_torch_img, torch_imgs_to_pils, troch_image_dilate, 
     pils_rgba_to_rgb, pil_make_image_grid, pil_split_image, pils_to_torch_imgs, pils_resize_foreground
 )
-from .shared_utils.camera_utils import compose_orbit_camposes
+from .shared_utils.camera_utils import (
+    ORBITPOSE_PRESET_DICT, ELEVATION_MIN, ELEVATION_MAX, AZIMUTH_MIN, AZIMUTH_MAX, 
+    compose_orbit_camposes
+)
 from .shared_utils.log_utils import cstr
 from .shared_utils.common_utils import parse_save_filename, get_list_filenames, resume_or_download_model_from_hf
 
@@ -114,18 +119,6 @@ DIFFUSERS_SCHEDULER_DICT = OrderedDict([
     ("LCMScheduler,", LCMScheduler),
     ("KDPM2AncestralDiscreteScheduler,", KDPM2AncestralDiscreteScheduler),
     ("KDPM2DiscreteScheduler,", KDPM2DiscreteScheduler),
-])
-
-#{Key: [elevation, azimuth], ...}
-ORBITPOSE_PRESET_DICT = OrderedDict([
-    ("Custom",           [[0.0, 90.0, 0.0, 0.0, -90.0, 0.0], [-90.0, 0.0, 180.0, 90.0, 0.0, 0.0]]),
-    ("CRM(6)",           [[0.0, 90.0, 0.0, 0.0, -90.0, 0.0], [-90.0, 0.0, 180.0, 90.0, 0.0, 0.0]]),
-    ("Wonder3D(6)",      [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 45.0, 90.0, 180.0, -90.0, -45.0]]),
-    ("Zero123Plus(6)",   [[-20.0, 10.0, -20.0, 10.0, -20.0, 10.0], [30.0, 90.0, 150.0, -150.0, -90.0, -30.0]]),
-    ("Era3D(6)",         [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 45.0, 90.0, 180.0, -90.0, -45.0]]),
-    ("MVDream(4)",       [[0.0, 0.0, 0.0, 0.0], [0.0, 90.0, 180.0, -90.0]]),
-    ("Unique3D(4)",      [[0.0, 0.0, 0.0, 0.0], [0.0, 90.0, 180.0, -90.0]]),
-    ("CharacterGen(4)",  [[0.0, 0.0, 0.0, 0.0], [-90.0, 180.0, 90.0, 0.0]]),
 ])
 
 ROOT_PATH = os.path.join(comfy_paths.get_folder_paths("custom_nodes")[0], "ComfyUI-3D-Pack")
@@ -157,11 +150,6 @@ SUPPORTED_CHECKPOINTS_EXTENSIONS = (
     '.bin', 
     '.safetensors',
 )
-
-ELEVATION_MIN = -90
-ELEVATION_MAX = 90.0
-AZIMUTH_MIN = -180.0
-AZIMUTH_MAX = 180.0
 
 WEIGHT_DTYPE = torch.float16
 
@@ -1297,6 +1285,9 @@ class Fitting_Mesh_With_Multiview_Images:
         force_cuda_rasterize,
     ):
         
+        if mesh.vt is None:
+            mesh.auto_uv()
+            
         mesh.set_new_albedo(mesh_albedo_width, mesh_albedo_height)
         
         trained_mesh = None
@@ -2971,6 +2962,8 @@ class ExplicitTarget_Color_Projection:
                 "projection_resolution": ("INT", {"default": 1024, "min": 128, "max": 8192}),
                 "complete_unseen_rgb":  ("BOOLEAN", {"default": True},),
                 "render_orbit_camera_fovy": ("FLOAT", {"default": 47.5, "min": 0.0, "max": 180.0, "step": 0.1}),
+                "projection_weights": ("STRING", {"default": "2.0, 0.2, 1.0, 0.2"}),
+                "confidence_threshold": ("FLOAT", {"default": 0.02, "min": 0.001, "max": 1.0, "step": 0.001}),
             },
             "optional": {
                 "reference_orbit_camera_poses": ("ORBIT_CAMPOSES",),    # [orbit radius, elevation, azimuth, orbit center X,  orbit center Y,  orbit center Z]
@@ -2994,6 +2987,8 @@ class ExplicitTarget_Color_Projection:
         projection_resolution, 
         complete_unseen_rgb,
         render_orbit_camera_fovy,
+        projection_weights,
+        confidence_threshold,
         reference_orbit_camera_poses=None,
     ):
         pil_image_list = torch_imgs_to_pils(reference_images, reference_masks)
@@ -3015,13 +3010,59 @@ class ExplicitTarget_Color_Projection:
             #reference_orbit_camera_poses[0] = [360 + angle if angle < 0 else angle for angle in reference_orbit_camera_poses[0]]
             cam_list = get_orbit_cameras_list(reference_orbit_camera_poses, DEVICE, render_orbit_camera_fovy)
         
-        new_meshes = multiview_color_projection(meshes, pil_image_list, resolution=projection_resolution, device=DEVICE, complete_unseen=complete_unseen_rgb, confidence_threshold=0.2, cameras_list=cam_list)
+        weights = projection_weights.split(",")
+        if len(weights) == len(cam_list):
+            weights = [float(item) for item in weights]
+        else:
+            weights = None
+        
+        new_meshes = multiview_color_projection(meshes, pil_image_list, weights=weights, resolution=projection_resolution, device=DEVICE, complete_unseen=complete_unseen_rgb, confidence_threshold=confidence_threshold, cameras_list=cam_list)
         vertices, faces, vertex_colors = from_py3d_mesh(new_meshes)
         vertices = vertices / 2 * 1.35
 
         mesh = Mesh(v=vertices, f=faces, vc=vertex_colors, device=DEVICE)
         mesh.auto_normal()
         return (mesh,)
+    
+class Convert_Vertex_Color_To_Texture:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "mesh": ("MESH",),
+                "texture_resolution": ("INT", {"default": 1024, "min": 128, "max": 8192}),
+                "K_nearest_neighbors": ("INT", {"default": 3, "min": 1, "max": 0xffffffffffffffff}),
+                "force_cuda_rast": ("BOOLEAN", {"default": False}),
+            },
+        }
+
+    RETURN_TYPES = (
+        "MESH",
+    )
+    RETURN_NAMES = (
+        "mesh",
+    )
+    FUNCTION = "run_convert_func"
+    CATEGORY = "Comfy3D/Algorithm"
+    
+    def run_convert_func(self, mesh, texture_resolution, K_nearest_neighbors, force_cuda_rast):
+        
+        if mesh.vc is not None:
+            #self.v = mesh.v.detach()
+            #self.vc = mesh.vc.detach()
+            #self.K = K_nearest_neighbors
+            #mesh.albedo = color_func_to_albedo(mesh, self.get_color_func, texture_resolution, device=DEVICE, force_cuda_rast=force_cuda_rast)
+
+            mesh.albedo = interpolate_texture_map(mesh, texture_resolution)
+        else:
+            cstr(f"[{self.__class__.__name__}] skip this node since there is no vertex color found in mesh").msg.print()
+        
+        return (mesh,)
+    
+    def get_color_func(self, xs):
+        _, idx, dist = K_nearest_neighbors_func(self.v, self.K, xs, return_dist=True, skip_first_index=False)
+        colors = torch.sum(self.vc[idx] * (dist / torch.sum(dist, dim=-1, keepdim=True)).unsqueeze(-1), dim=1)
+        return colors
     
 class Load_CharacterGen_MVDiffusion_Model:
     checkpoints_dir = "CharacterGen"

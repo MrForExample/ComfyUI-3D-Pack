@@ -546,6 +546,8 @@ class Mesh:
             vmapping[ft] = f # scatter, randomly choose one if index is not unique
 
         self.v = self.v[vmapping]
+        if self.vc is not None:
+            self.vc = self.vc[vmapping]
         self.f = self.ft
         # assume fn == f
         if self.vn is not None:

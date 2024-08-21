@@ -91,7 +91,6 @@ class Pix2FacesRenderer:
         cameras = cameras.to(self.device)
         vertices = self.transform_vertices(meshes, cameras)
         faces = meshes.faces_packed().to(torch.int32)
-        print(f"#############vertices: {vertices.shape}; faces: {faces.shape}")
         rast_out,_ = dr.rasterize(self._glctx, vertices, faces, resolution=(H, W), grad_db=False) #C,H,W,4
         pix_to_face = rast_out[..., -1].to(torch.int32) - 1
         return pix_to_face
@@ -267,12 +266,10 @@ def multiview_color_projection(meshes: Meshes, image_list: List[Image.Image], ca
         elif len(image_list) == 2:
             weights = [1.0, 1.0]
         else:
-            raise ValueError("weights is None, and can not be guessed from image_list")
+            weights = [1. for _ in range(len(cameras_list))]
     
     # 2. run projection
     meshes = meshes.clone().to(device)
-    if weights is None:
-        weights = [1. for _ in range(len(cameras_list))]
     assert len(cameras_list) == len(image_list) == len(weights)
     original_color = meshes.textures.verts_features_packed()
     assert not torch.isnan(original_color).any()
@@ -315,10 +312,10 @@ def get_orbit_cameras_list(orbit_camera_poses, device, fov_in_degrees=60):
     ret = []
     for i in range(len(orbit_camera_poses)):
         campose = orbit_camera_poses[i]
-        R, T = look_at_view_transform(campose[0], campose[1], campose[2])
+        R, T = look_at_view_transform(campose[0], -campose[1], campose[2])
         w2c = torch.cat([R[0].T, T[0, :, None]], dim=1)
-        cameras: PerspectiveCameras = get_camera(w2c, fov_in_degrees=fov_in_degrees, cam_type='fov').to(device)
-        ret.append(cameras)
+        camera: PerspectiveCameras = get_camera(w2c, fov_in_degrees=fov_in_degrees, cam_type='fov').to(device)
+        ret.append(camera)
     return ret
 
 def get_cameras_list(azim_list, device, focal=2/1.35, dist=1.1):
@@ -326,8 +323,8 @@ def get_cameras_list(azim_list, device, focal=2/1.35, dist=1.1):
     for azim in azim_list:
         R, T = look_at_view_transform(dist, 0, azim)
         w2c = torch.cat([R[0].T, T[0, :, None]], dim=1)
-        cameras: OrthographicCameras = get_camera(w2c, focal_length=focal, cam_type='orthogonal').to(device)
-        ret.append(cameras)
+        camera: OrthographicCameras = get_camera(w2c, focal_length=focal, cam_type='orthogonal').to(device)
+        ret.append(camera)
     return ret
 
 def get_8view_cameras(device, focal=2/1.35):

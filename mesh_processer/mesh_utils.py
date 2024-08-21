@@ -7,6 +7,15 @@ from kornia.geometry.conversions import (
 import pymeshlab as pml
 from plyfile import PlyData, PlyElement
 
+from typing import Optional
+
+pytorch3d_capable = True
+try:
+    import pytorch3d
+    from pytorch3d.ops import knn_points
+except ImportError:
+    pytorch3d_capable = False
+
 from .mesh import PointCloud
 from shared_utils.sh_utils import SH2RGB, RGB2SH
 
@@ -506,6 +515,9 @@ def color_func_to_albedo(mesh, get_rgb_func, texture_resolution=1024, padding=2,
     
     # render uv maps
     h = w = texture_resolution
+    if mesh.vt is None:
+        mesh.auto_uv()
+
     uv = mesh.vt * 2.0 - 1.0 # uvs to range [-1, 1]
     uv = torch.cat((uv, torch.zeros_like(uv[..., :1]), torch.ones_like(uv[..., :1])), dim=-1) # [N, 4]
 
@@ -539,3 +551,178 @@ def color_func_to_albedo(mesh, get_rgb_func, texture_resolution=1024, padding=2,
     albedo = uv_padding(albedo, mask, padding)
     
     return albedo
+
+@torch.no_grad()
+def K_nearest_neighbors_func(
+    points: torch.Tensor,
+    K: int,
+    query: Optional[torch.Tensor] = None,
+    return_dist=False,
+    skip_first_index=True,
+):
+    if not pytorch3d_capable:
+        raise ImportError("pytorch3d is not installed, which is required for KNN")
+    
+    # query/points: Tensor of shape (N, P1/P2, D) giving a batch of N point clouds, each containing up to P1/P2 points of dimension D
+    if query is None:
+        query = points
+    dist, idx, nn = knn_points(query[None, ...], points[None, ...], K=K, return_nn=True)
+
+    # idx: Tensor of shape (N, P1, K)
+    # nn: Tensor of shape (N, P1, K, D)
+
+    # take the index 1 since index 0 is the point itself
+    if skip_first_index:
+        if not return_dist:
+            return nn[0, :, 1:, :], idx[0, :, 1:]
+        else:
+            return nn[0, :, 1:, :], idx[0, :, 1:], dist[0, :, 1:]
+    else:
+        if not return_dist:
+            return nn[0, :, :, :], idx[0, :, :]
+        else:
+            return nn[0, :, :, :], idx[0, :, :], dist[0, :, :]
+        
+def _interpolate_texture_map(mesh, texture_size: int = 256):    
+    # Get UV coordinates and faces
+    if mesh.vt is None:
+        mesh.auto_uv()
+    verts_uvs = mesh.vt
+    verts_uvs_idx = (verts_uvs * (texture_size - 1)).to(torch.int)
+    faces = mesh.f
+    verts_colors = mesh.vc
+    
+    # Create a blank texture map
+    texture_map = torch.zeros((texture_size, texture_size, 3), device=verts_colors.device)
+    
+    # Create a grid of UV coordinates
+    grid_x, grid_y = torch.meshgrid(torch.linspace(0, 1, texture_size, device=verts_colors.device), torch.linspace(0, 1, texture_size, device=verts_colors.device))
+    #grid = torch.stack([grid_x, grid_y], dim=-1).reshape(-1, 2)
+    grid = torch.stack([grid_x, grid_y], dim=-1)
+    
+    # Function to interpolate colors within a triangle
+    def _interpolate_triangle(grid, uvs, colors):
+        # Compute barycentric coordinates
+        v0, v1, v2 = uvs
+        denom = (v1[1] - v2[1]) * (v0[0] - v2[0]) + (v2[0] - v1[0]) * (v0[1] - v2[1])
+        a = ((v1[1] - v2[1]) * (grid[:, 0] - v2[0]) + (v2[0] - v1[0]) * (grid[:, 1] - v2[1])) / denom
+        b = ((v2[1] - v0[1]) * (grid[:, 0] - v2[0]) + (v0[0] - v2[0]) * (grid[:, 1] - v2[1])) / denom
+        c = 1 - a - b
+        
+        # Mask for points inside the triangle
+        mask = (a >= 0) & (b >= 0) & (c >= 0)
+        
+        uv_coords = (grid[mask] * (texture_size - 1)).to(torch.int)
+        
+        # Interpolate colors
+        interpolated_colors = a[:, None] * colors[0] + b[:, None] * colors[1] + c[:, None] * colors[2]
+        
+        #print(f"############sub_grid: {grid.shape}; a: {a.shape}; b: {b.shape}; mask: {mask.shape}; uv_coords: {grid[mask].shape}; interpolated_colors: {interpolated_colors[mask].shape}")
+        
+        #return grid[mask], interpolated_colors[mask]
+        return uv_coords, interpolated_colors[mask]
+    
+    # Function to interpolate colors within a triangle
+    def interpolate_triangle(grid, uvs_idx, uvs, colors):
+        u_idx, v_idx = uvs_idx[:, 0], uvs_idx[:, 1]
+        sub_grid = grid[torch.min(u_idx):torch.max(u_idx)+1, torch.min(v_idx):torch.max(v_idx)+1]
+        #sub_grid = grid
+        # Compute barycentric coordinates
+        v0, v1, v2 = uvs
+        denom = (v1[1] - v2[1]) * (v0[0] - v2[0]) + (v2[0] - v1[0]) * (v0[1] - v2[1])
+        a = ((v1[1] - v2[1]) * (sub_grid[:, :, 0] - v2[0]) + (v2[0] - v1[0]) * (sub_grid[:, :, 1] - v2[1])) / denom
+        b = ((v2[1] - v0[1]) * (sub_grid[:, :, 0] - v2[0]) + (v0[0] - v2[0]) * (sub_grid[:, :, 1] - v2[1])) / denom
+        c = 1 - a - b
+        
+        # Mask for points inside the triangle
+        mask = (a >= 0) & (b >= 0) & (c >= 0)
+        
+        # Get texture coordinates
+        #uv_coords = (sub_grid[mask][[1,0]] * (texture_size - 1)).to(torch.int)
+        uv_coords = (sub_grid[mask] * (texture_size - 1)).to(torch.int)
+        
+        # Interpolate colors
+        interpolated_colors = (a[:, :, None] * colors[0] + b[:, :, None] * colors[1] + c[:, :, None] * colors[2])[mask]
+        
+        #print(f"############sub_grid: {sub_grid.shape}; a: {a.shape}; b: {b.shape}; mask: {mask.shape}; uv_coords: {uv_coords.shape}; interpolated_colors: {interpolated_colors.shape}")
+        
+        return uv_coords, interpolated_colors
+    
+    # Map vertex colors to the UV coordinates
+    import comfy.utils
+    comfy_pbar = comfy.utils.ProgressBar(faces.shape[0])
+    for i, face in enumerate(faces):
+        uvs = verts_uvs[face]
+        uvs_idx = verts_uvs_idx[face]
+        colors = verts_colors[face]
+        uv_coords, interpolated_colors = interpolate_triangle(grid, uvs_idx, uvs, colors)
+        #uv_coords, interpolated_colors = interpolate_triangle(grid, uvs, colors)
+        
+        # Map interpolated colors to the texture map
+        #for uv, color in zip(uv_coords, interpolated_colors):
+        #    x, y = int(uv[0] * (texture_size - 1)), int(uv[1] * (texture_size - 1))
+        #    texture_map[y, x] = color
+        
+        texture_map[uv_coords[:, 1], uv_coords[:, 0]] = interpolated_colors
+    
+        comfy_pbar.update_absolute(i + 1)
+    
+    return texture_map
+
+def interpolate_texture_map(mesh, texture_size: int = 256, batch_size: int = 64):
+    # Get UV coordinates and faces
+    if mesh.vt is None:
+        mesh.auto_uv()
+    verts_uvs = mesh.vt
+    verts_uvs_idx = (mesh.vt * (texture_size - 1)).to(torch.int)
+    faces = mesh.f
+    verts_colors = mesh.vc
+    
+    # Create a blank texture map
+    texture_map = torch.zeros((texture_size, texture_size, 3), device=verts_colors.device)
+    
+    # Create a grid of UV coordinates
+    grid_x, grid_y = torch.meshgrid(torch.linspace(0, 1, texture_size, device=verts_colors.device), torch.linspace(0, 1, texture_size, device=verts_colors.device))
+    grid = torch.stack([grid_x, grid_y], dim=-1)
+    
+    batch_idx_range = torch.arange(0, batch_size**2, 1, device=verts_colors.device, dtype=torch.int)
+    
+    # Divide faces into squre batchs
+    all_face_verts = verts_uvs_idx[faces]
+    for uv_i in range(0, texture_size-1, batch_size):
+        for uv_j in range(0, texture_size-1, batch_size):
+            faces_mask = (uv_i <= all_face_verts[:, :, 0]) & (all_face_verts[:, :, 0] <= uv_i + batch_size) & (uv_j <= all_face_verts[:, :, 1]) & (all_face_verts[:, :, 1] <= uv_j + batch_size)
+            faces_mask, _ = torch.max(faces_mask, dim=1)
+            faces_mask = faces_mask.nonzero().squeeze(-1)
+            batch_faces = faces[faces_mask]
+            
+            uvs = verts_uvs[batch_faces]
+            colors = verts_colors[batch_faces]
+            
+            v0, v1, v2 = uvs[:, 0], uvs[:, 1], uvs[:, 2]
+            v0_0, v0_1 = v0[:, 0], v0[:, 1]
+            v1_0, v1_1 = v1[:, 0], v1[:, 1]
+            v2_0, v2_1 = v2[:, 0], v2[:, 1]
+            
+            sub_grid = grid[uv_i:uv_i + batch_size, uv_j:uv_j + batch_size].reshape(-1, 2).unsqueeze(1)
+            
+            denom = (v1_1 - v2_1) * (v0_0 - v2_0) + (v2_0 - v1_0) * (v0_1 - v2_1)
+            a = ((v1_1 - v2_1) * (sub_grid[:, :, 0] - v2_0) + (v2_0 - v1_0) * (sub_grid[:, :, 1] - v2_1)) / denom
+            b = ((v2_1 - v0_1) * (sub_grid[:, :, 0] - v2_0) + (v0_0 - v2_0) * (sub_grid[:, :, 1] - v2_1)) / denom
+            c = 1 - a - b
+            
+            # Mask for points inside the triangle
+            mask = (a >= 0) & (b >= 0) & (c >= 0)
+            mask, mask_idx = torch.max(mask, dim=1)
+            
+            # Get texture coordinates
+            sub_grid = sub_grid.squeeze(1)
+            uv_coords = (sub_grid[mask] * (texture_size - 1)).to(torch.int)
+            
+            # Interpolate colors
+            a, b, c = a[batch_idx_range, mask_idx][mask], b[batch_idx_range, mask_idx][mask], c[batch_idx_range, mask_idx][mask]
+            colors = colors[mask_idx][mask]
+            interpolated_colors = (a[:, None] * colors[:, 0] + (b[:, None] * colors[:, 1]) + (c[:, None] * colors[:, 2]))
+            texture_map[uv_coords[:, 1], uv_coords[:, 0]] = interpolated_colors
+    
+    return texture_map
