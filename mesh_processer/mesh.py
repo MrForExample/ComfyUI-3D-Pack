@@ -540,10 +540,7 @@ class Mesh:
             vmapping (np.ndarray, optional): the mapping relationship from f to ft. Defaults to None.
         """
         if vmapping is None:
-            ft = self.ft.view(-1).long()
-            f = self.f.view(-1).long()
-            vmapping = torch.zeros(self.vt.shape[0], dtype=torch.long, device=self.device)
-            vmapping[ft] = f # scatter, randomly choose one if index is not unique
+            vmapping = self.get_default_vmapping()
 
         self.v = self.v[vmapping]
         if self.vc is not None:
@@ -553,6 +550,20 @@ class Mesh:
         if self.vn is not None:
             self.vn = self.vn[vmapping]
             self.fn = self.ft
+            
+        print(f"########## !!!!!!!!!! vmapping: {vmapping.shape}; self.vt.shape: {self.vt.shape}; self.v: {self.v.shape}; self.f: {self.f.shape}")
+
+    def get_default_vmapping(self):
+        """map from ft to f
+
+        Returns:
+            vmapping: tensor array
+        """
+        ft = self.ft.view(-1).long()
+        f = self.f.view(-1).long()
+        vmapping = torch.zeros(self.vt.shape[0], dtype=torch.long, device=self.device)
+        vmapping[ft] = f # scatter, randomly choose one if index is not unique
+        return vmapping
 
     def to(self, device):
         """move all tensor attributes to device.

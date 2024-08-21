@@ -43,7 +43,6 @@ from .mesh_processer.mesh_utils import (
     calculate_max_sh_degree_from_gs_ply,
     marching_cubes_density_to_mesh,
     color_func_to_albedo,
-    K_nearest_neighbors_func,
     interpolate_texture_map,
 )
 
@@ -3018,10 +3017,15 @@ class ExplicitTarget_Color_Projection:
         
         new_meshes = multiview_color_projection(meshes, pil_image_list, weights=weights, resolution=projection_resolution, device=DEVICE, complete_unseen=complete_unseen_rgb, confidence_threshold=confidence_threshold, cameras_list=cam_list)
         vertices, faces, vertex_colors = from_py3d_mesh(new_meshes)
-        vertices = vertices / 2 * 1.35
 
-        mesh = Mesh(v=vertices, f=faces, vc=vertex_colors, device=DEVICE)
-        mesh.auto_normal()
+        print(f"###############faces: {faces.shape} \nmesh.f: {mesh.f.shape} \nvertices: {vertices.shape} \nmesh.v: {mesh.v.shape} \nmesh.vt: {mesh.vt.shape}")
+
+        mesh = Mesh(v=vertices, f=faces, 
+                    vn=None if mesh.vn is None else mesh.vn.clone(), fn=None if mesh.fn is None else mesh.fn.clone(), 
+                    vt=None if mesh.vt is None else mesh.vt.clone(), ft=None if mesh.ft is None else mesh.ft.clone(), 
+                    vc=vertex_colors, device=DEVICE)
+        if mesh.vn is None:
+            mesh.auto_normal()
         return (mesh,)
     
 class Convert_Vertex_Color_To_Texture:
@@ -3031,8 +3035,7 @@ class Convert_Vertex_Color_To_Texture:
             "required": {
                 "mesh": ("MESH",),
                 "texture_resolution": ("INT", {"default": 1024, "min": 128, "max": 8192}),
-                "K_nearest_neighbors": ("INT", {"default": 3, "min": 1, "max": 0xffffffffffffffff}),
-                "force_cuda_rast": ("BOOLEAN", {"default": False}),
+                "batch_size": ("INT", {"default": 128, "min": 1, "max": 0xffffffffffffffff}),
             },
         }
 
@@ -3045,24 +3048,15 @@ class Convert_Vertex_Color_To_Texture:
     FUNCTION = "run_convert_func"
     CATEGORY = "Comfy3D/Algorithm"
     
-    def run_convert_func(self, mesh, texture_resolution, K_nearest_neighbors, force_cuda_rast):
+    def run_convert_func(self, mesh, texture_resolution, batch_size):
         
         if mesh.vc is not None:
-            #self.v = mesh.v.detach()
-            #self.vc = mesh.vc.detach()
-            #self.K = K_nearest_neighbors
-            #mesh.albedo = color_func_to_albedo(mesh, self.get_color_func, texture_resolution, device=DEVICE, force_cuda_rast=force_cuda_rast)
-
-            mesh.albedo = interpolate_texture_map(mesh, texture_resolution)
+            albedo_img = interpolate_texture_map(mesh, texture_resolution, batch_size)
+            mesh.albedo = troch_image_dilate(albedo_img)
         else:
             cstr(f"[{self.__class__.__name__}] skip this node since there is no vertex color found in mesh").msg.print()
         
         return (mesh,)
-    
-    def get_color_func(self, xs):
-        _, idx, dist = K_nearest_neighbors_func(self.v, self.K, xs, return_dist=True, skip_first_index=False)
-        colors = torch.sum(self.vc[idx] * (dist / torch.sum(dist, dim=-1, keepdim=True)).unsqueeze(-1), dim=1)
-        return colors
     
 class Load_CharacterGen_MVDiffusion_Model:
     checkpoints_dir = "CharacterGen"

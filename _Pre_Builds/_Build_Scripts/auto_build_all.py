@@ -45,7 +45,7 @@ def get_dependency_dir(dependency):
     
 def setup_build_env():
     # Set CMake argumens fo build packages based on CUDA
-    os.environ["CMAKE_ARGS"]="-DBUILD_opencv_world=ON -DWITH_CUDA=ON -DCUDA_FAST_MATH=ON -DWITH_CUBLAS=ON -DCUDA_ARCH_PTX=9.0 -DWITH_NVCUVID=ON"
+    os.environ["CMAKE_ARGS"] = "-DBUILD_opencv_world=ON -DWITH_CUDA=ON -DCUDA_FAST_MATH=ON -DWITH_CUBLAS=ON -DCUDA_ARCH_PTX=9.0 -DWITH_NVCUVID=ON"
     subprocess.run([PYTHON_PATH, "-s", "-m", "pip", "install", "-r", BUILD_REQUIREMENTS_FILE_ABS_PATH])
     
     install_remote_packages(build_config.build_base_packages)
