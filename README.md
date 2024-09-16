@@ -245,7 +245,7 @@ This is an extensive node suite that enables ComfyUI to process 3D inputs (Mesh 
   azimuth: in (-180, 180), from +z to +x is (0, 90)
   ```
 * If you encounter OpenGL errors (e.g., `[F glutil.cpp:338] eglInitialize() failed`), then set `force_cuda_rasterize` to true on corresponding node
-* If after the installation, your ComfyUI get stucked at starting or running, you could following the instruction in following link to solve the problem: [Code Hangs Indefinitely When Evaluating Neuron Models on GPU](https://github.com/lava-nc/lava-dl/discussions/211)
+* If after the installation, your ComfyUI gets stuck at starting or running, you can follow the instructions in the following link to solve the problem: [Code Hangs Indefinitely When Evaluating Neuron Models on GPU](https://github.com/lava-nc/lava-dl/discussions/211)
 
 ## Supporters
 - [MrNeRF](https://twitter.com/janusch_patas)
