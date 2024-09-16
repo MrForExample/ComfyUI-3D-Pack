@@ -23,6 +23,8 @@ window.addEventListener("resize", handleResize);
 
 var lastTimestamp = "";
 var needUpdate = false;
+let currentURL;
+var url = location.protocol + '//' + location.host;
 
 function frameUpdate() {
 
@@ -57,14 +59,14 @@ async function main(filepath="") {
     if (/^.+\.[a-zA-Z]+$/.test(filepath)){
 
         let params = {"filepath": filepath};
-        const url = api.apiURL('/viewfile?' + new URLSearchParams(params));
+        currentURL = url + '/viewfile?' + new URLSearchParams(params);
         var splat = null;
 
         var fileExt = filepath.split('.').pop().toLowerCase();
         if (fileExt == "ply"){
-            splat = await SPLAT.PLYLoader.LoadAsync(url, scene, onProgress);
+            splat = await SPLAT.PLYLoader.LoadAsync(currentURL, scene, onProgress);
         } else if (fileExt == "splat") {
-            splat = await SPLAT.Loader.LoadAsync(url, scene, onProgress);
+            splat = await SPLAT.Loader.LoadAsync(currentURL, scene, onProgress);
         } else {
             throw new Error(`File extension name has to be either .ply or .splat, got .${fileExt}`);
         }
