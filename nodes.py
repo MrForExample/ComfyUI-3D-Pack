@@ -1,4 +1,5 @@
 import os
+import gc
 import math
 import copy
 from enum import Enum
@@ -43,7 +44,7 @@ from .mesh_processer.mesh_utils import (
     calculate_max_sh_degree_from_gs_ply,
     marching_cubes_density_to_mesh,
     color_func_to_albedo,
-    interpolate_texture_map,
+    interpolate_texture_map_attr,
 )
 
 from FlexiCubes.flexicubes_trainer import FlexiCubesTrainer
@@ -78,7 +79,7 @@ from Unique3D.custum_3d_diffusion.custum_pipeline.unifield_pipeline_img2mvimg im
 from Unique3D.custum_3d_diffusion.custum_pipeline.unifield_pipeline_img2img import StableDiffusionImageCustomPipeline
 from Unique3D.scripts.mesh_init import fast_geo
 from Unique3D.scripts.utils import from_py3d_mesh, to_py3d_mesh, to_pyml_mesh, simple_clean_mesh
-from Unique3D.scripts.project_mesh import multiview_color_projection, get_cameras_list, get_orbit_cameras_list
+from Unique3D.scripts.project_mesh import multiview_color_projection, multiview_color_projection_texture, get_cameras_list, get_orbit_cameras_list
 from Unique3D.mesh_reconstruction.recon import reconstruct_stage1
 from Unique3D.mesh_reconstruction.refine import run_mesh_refine
 from CharacterGen.character_inference import Inference2D_API, Inference3D_API
@@ -86,6 +87,8 @@ from CharacterGen.Stage_3D.lrm.utils.config import load_config as load_config_cg
 import craftsman
 from craftsman.systems.base import BaseSystem
 from craftsman.utils.config import ExperimentConfig as ExperimentConfigCraftsman, load_config as load_config_craftsman
+from CRM_T2I_V2.model.crm.sampler import CRMSamplerV2
+from CRM_T2I_V2.model.t2i_adapter_v2 import T2IAdapterV2
 
 from .shared_utils.image_utils import (
     prepare_torch_img, torch_imgs_to_pils, troch_image_dilate, 
@@ -232,6 +235,8 @@ class Load_3D_Mesh:
                 "renormal":  ("BOOLEAN", {"default": True},),
                 "retex":  ("BOOLEAN", {"default": False},),
                 "optimizable": ("BOOLEAN", {"default": False},),
+                "clean": ("BOOLEAN", {"default": False},),
+                "resize_bound": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1000.0, "step": 0.001}),
             },
         }
 
@@ -244,7 +249,7 @@ class Load_3D_Mesh:
     FUNCTION = "load_mesh"
     CATEGORY = "Comfy3D/Import|Export"
     
-    def load_mesh(self, mesh_file_path, resize, renormal, retex, optimizable):
+    def load_mesh(self, mesh_file_path, resize, renormal, retex, optimizable, clean, resize_bound):
         mesh = None
         
         if not os.path.isabs(mesh_file_path):
@@ -254,7 +259,7 @@ class Load_3D_Mesh:
             folder, filename = os.path.split(mesh_file_path)
             if filename.lower().endswith(SUPPORTED_3D_EXTENSIONS):
                 with torch.inference_mode(not optimizable):
-                    mesh = Mesh.load(mesh_file_path, resize, renormal, retex)
+                    mesh = Mesh.load(mesh_file_path, resize, renormal, retex, clean, resize_bound)
             else:
                 cstr(f"[{self.__class__.__name__}] File name {filename} does not end with supported 3D file extensions: {SUPPORTED_3D_EXTENSIONS}").error.print()
         else:        
@@ -390,7 +395,7 @@ class Image_Add_Pure_Color_Background:
         image_pils = torch_imgs_to_pils(images, masks)
         image_pils = pils_rgba_to_rgb(image_pils, (R, G, B))
 
-        images = pils_to_torch_imgs(image_pils, images.device)
+        images = pils_to_torch_imgs(image_pils, images.dtype, images.device)
         return (images,)
     
 class Resize_Image_Foreground:
@@ -420,7 +425,7 @@ class Resize_Image_Foreground:
         image_pils = torch_imgs_to_pils(images, masks)
         image_pils = pils_resize_foreground(image_pils, foreground_ratio)
         
-        images = pils_to_torch_imgs(image_pils, images.device, force_rgb=False)
+        images = pils_to_torch_imgs(image_pils, images.dtype, images.device, force_rgb=False)
         images, masks = images[:, :, :, 0:-1], images[:, :, :, -1]
         return (images, masks,)
     
@@ -495,7 +500,7 @@ class Split_Image_Grid:
 
             image_pils = pil_split_image(image_pil, rows, clos)
 
-            images.append(pils_to_torch_imgs(image_pils, image.device))
+            images.append(pils_to_torch_imgs(image_pils, image.dtype, image.device))
             
         images = torch.cat(images, dim=0)
         return (images,)
@@ -552,7 +557,7 @@ class Rotate_Normal_Maps_Horizontally:
             from Unique3D.scripts.utils import rotate_normals_torch
             pil_image_list = torch_imgs_to_pils(normal_maps, normal_masks)
             pil_image_list = rotate_normals_torch(pil_image_list, return_types='pil', rotate_direction=int(clockwise))
-            normal_maps = pils_to_torch_imgs(pil_image_list, normal_maps.device)
+            normal_maps = pils_to_torch_imgs(pil_image_list, normal_maps.dtype, normal_maps.device)
         return (normal_maps,)
     
 class Fast_Clean_Mesh:
@@ -1002,7 +1007,7 @@ class Mesh_Orbit_Renderer:
         
         if 'normal' in extra_outputs:
             all_rendered_normals = extra_outputs['normal']
-            all_rendered_viewcos = extra_outputs['viewcos'].repeat(1, 1, 1, 3)
+            all_rendered_viewcos = extra_outputs['viewcos']
         else:
             all_rendered_normals = None
             all_rendered_viewcos = None
@@ -2177,7 +2182,7 @@ class CRM_Images_MVDiffusion_Model:
             seed,
             mv_guidance_scale, 
             num_inference_steps
-        )
+        ).to(dtype=reference_image.dtype, device=reference_image.device)
 
         orbit_radius = [4.0] * 6
         orbit_center = [0.0] * 6
@@ -2372,8 +2377,9 @@ class Zero123Plus_Diffusion_Model:
         ).images[0]
 
         multiview_images = np.asarray(output_image, dtype=np.float32) / 255.0
-        multiview_images = torch.from_numpy(multiview_images).permute(2, 0, 1).contiguous().float()     # (3, 960, 640)
+        multiview_images = torch.from_numpy(multiview_images).permute(2, 0, 1).contiguous()     # (3, 960, 640)
         multiview_images = rearrange(multiview_images, 'c (n h) (m w) -> (n m) h w c', n=3, m=2)        # (6, 320, 320, 3)
+        multiview_images = multiview_images.to(dtype=reference_image.dtype, device=reference_image.device)
 
         orbit_radius = [4.0] * 6
         orbit_center = [0.0] * 6
@@ -2579,9 +2585,9 @@ class Era3D_MVDiffusion_Model:
         images_pred = out[bsz:] 
         
         # [N, 3, H, W] -> [N, H, W, 3]
-        multiview_images = images_pred.permute(0, 2, 3, 1).to(reference_image.dtype)   
-        multiview_normals = normals_pred.permute(0, 2, 3, 1).to(reference_image.dtype)   
-
+        multiview_images = images_pred.permute(0, 2, 3, 1).to(reference_image.dtype, reference_image.device)   
+        multiview_normals = normals_pred.permute(0, 2, 3, 1).to(reference_image.dtype, reference_image.device)
+        
         azimuths = [0, 45, 90, 180, -90, -45]
         elevations = [0.0] * 6
         radius = [radius] * 6
@@ -2856,7 +2862,7 @@ class Unique3D_MVDiffusion_Model:
         ).images
 
         # [N, H, W, 3]
-        multiview_images = pils_to_torch_imgs(image_pils, reference_image.device)
+        multiview_images = pils_to_torch_imgs(image_pils, reference_image.dtype, reference_image.device)
 
         orbit_radius = [radius] * 4
         orbit_center = [0.0] * 4
@@ -2963,6 +2969,7 @@ class ExplicitTarget_Color_Projection:
                 "render_orbit_camera_fovy": ("FLOAT", {"default": 47.5, "min": 0.0, "max": 180.0, "step": 0.1}),
                 "projection_weights": ("STRING", {"default": "2.0, 0.2, 1.0, 0.2"}),
                 "confidence_threshold": ("FLOAT", {"default": 0.02, "min": 0.001, "max": 1.0, "step": 0.001}),
+                "texture_projecton":  ("BOOLEAN", {"default": False},),
             },
             "optional": {
                 "reference_orbit_camera_poses": ("ORBIT_CAMPOSES",),    # [orbit radius, elevation, azimuth, orbit center X,  orbit center Y,  orbit center Z]
@@ -2988,6 +2995,7 @@ class ExplicitTarget_Color_Projection:
         render_orbit_camera_fovy,
         projection_weights,
         confidence_threshold,
+        texture_projecton,
         reference_orbit_camera_poses=None,
     ):
         pil_image_list = torch_imgs_to_pils(reference_images, reference_masks)
@@ -3015,17 +3023,20 @@ class ExplicitTarget_Color_Projection:
         else:
             weights = None
         
-        new_meshes = multiview_color_projection(meshes, pil_image_list, weights=weights, resolution=projection_resolution, device=DEVICE, complete_unseen=complete_unseen_rgb, confidence_threshold=confidence_threshold, cameras_list=cam_list)
-        vertices, faces, vertex_colors = from_py3d_mesh(new_meshes)
+        if texture_projecton:
+            albedo_img = multiview_color_projection_texture(meshes, mesh, pil_image_list, weights=weights, resolution=projection_resolution, device=DEVICE, complete_unseen=complete_unseen_rgb, confidence_threshold=confidence_threshold, cameras_list=cam_list)
+            mesh.albedo = troch_image_dilate(albedo_img)
+        else:
+            new_meshes = multiview_color_projection(meshes, pil_image_list, weights=weights, resolution=projection_resolution, device=DEVICE, complete_unseen=complete_unseen_rgb, confidence_threshold=confidence_threshold, cameras_list=cam_list)
+            vertices, faces, vertex_colors = from_py3d_mesh(new_meshes)
 
-        print(f"###############faces: {faces.shape} \nmesh.f: {mesh.f.shape} \nvertices: {vertices.shape} \nmesh.v: {mesh.v.shape} \nmesh.vt: {mesh.vt.shape}")
-
-        mesh = Mesh(v=vertices, f=faces, 
-                    vn=None if mesh.vn is None else mesh.vn.clone(), fn=None if mesh.fn is None else mesh.fn.clone(), 
-                    vt=None if mesh.vt is None else mesh.vt.clone(), ft=None if mesh.ft is None else mesh.ft.clone(), 
-                    vc=vertex_colors, device=DEVICE)
-        if mesh.vn is None:
-            mesh.auto_normal()
+            mesh = Mesh(v=vertices, f=faces, 
+                        vn=None if mesh.vn is None else mesh.vn.clone(), fn=None if mesh.fn is None else mesh.fn.clone(), 
+                        vt=None if mesh.vt is None else mesh.vt.clone(), ft=None if mesh.ft is None else mesh.ft.clone(), 
+                        vc=vertex_colors, device=DEVICE)
+            if mesh.vn is None:
+                mesh.auto_normal()
+                
         return (mesh,)
     
 class Convert_Vertex_Color_To_Texture:
@@ -3051,7 +3062,7 @@ class Convert_Vertex_Color_To_Texture:
     def run_convert_func(self, mesh, texture_resolution, batch_size):
         
         if mesh.vc is not None:
-            albedo_img = interpolate_texture_map(mesh, texture_resolution, batch_size)
+            albedo_img, _ = interpolate_texture_map_attr(mesh, texture_resolution, batch_size, interpolate_color=True)
             mesh.albedo = troch_image_dilate(albedo_img)
         else:
             cstr(f"[{self.__class__.__name__}] skip this node since there is no vertex color found in mesh").msg.print()
@@ -3148,7 +3159,7 @@ class CharacterGen_MVDiffusion_Model:
         multiview_images = character_mv_gen_pipe.inference(
             single_image, target_image_width, target_image_height, prompt=prompt, prompt_neg=prompt_neg, 
             guidance_scale=guidance_scale, num_inference_steps=num_inference_steps, seed=seed
-        )
+        ).to(dtype=reference_image.dtype, device=reference_image.device)
         
         orbit_radius = [radius] * 4
         orbit_center = [0.0] * 4
@@ -3369,3 +3380,150 @@ class OrbitPoses_JK:
         orbit_camposes = compose_orbit_camposes(orbit_radius, orbit_elevations, orbit_azimuths, orbit_center_x, orbit_center_y, orbit_center_z)
 
         return (orbit_camposes,)
+    
+class Load_CRM_T2I_V2_Models:
+    crm_checkpoints_dir = "CRM"
+    t2i_v2_checkpoints_dir = "T2I_V2"
+    default_crm_ckpt_name = ["pixel-diffusion.pth"]
+    default_crm_conf_name = ["sd_v2_base_ipmv_zero_SNR.yaml"]
+    default_crm_repo_id = "Zhengyi/CRM"
+    config_path = "CRM_T2I_V2_configs"
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        cls.crm_checkpoints_dir_abs = os.path.join(CKPT_ROOT_PATH, cls.crm_checkpoints_dir)
+        all_crm_models_names = get_list_filenames(cls.crm_checkpoints_dir_abs, SUPPORTED_CHECKPOINTS_EXTENSIONS)
+        for ckpt_name in cls.default_crm_ckpt_name:
+            if ckpt_name not in all_crm_models_names:
+                all_crm_models_names += [ckpt_name]
+                
+        cls.t2i_v2_checkpoints_dir_abs = os.path.join(CKPT_ROOT_PATH, cls.t2i_v2_checkpoints_dir)
+            
+        cls.config_root_path_abs = os.path.join(CONFIG_ROOT_PATH, cls.config_path)
+        return {
+            "required": {
+                "crm_model_name": (all_crm_models_names, ),
+                "crm_config_path": (cls.default_crm_conf_name, ),
+            },
+        }
+    
+    RETURN_TYPES = (
+        "T2IADAPTER_V2",
+        "CRM_MVDIFFUSION_SAMPLER_V2",
+    )
+    RETURN_NAMES = (
+        "t2iadapter_v2",
+        "crm_mvdiffusion_sampler_v2",
+    )
+    FUNCTION = "load_CRM"
+    CATEGORY = "Comfy3D/Import|Export"
+    
+    def load_CRM(self, crm_model_name, crm_config_path):
+        
+        from CRM_T2I_V2.imagedream.ldm.util import (
+            instantiate_from_config,
+            get_obj_from_str,
+        )
+        
+        t2iadapter_v2 = T2IAdapterV2.from_pretrained(self.t2i_v2_checkpoints_dir_abs).to(DEVICE).to(WEIGHT_DTYPE)
+
+        crm_config_path = os.path.join(self.config_root_path_abs, crm_config_path)
+        
+        ckpt_path = resume_or_download_model_from_hf(self.crm_checkpoints_dir_abs, self.default_crm_repo_id, crm_model_name, self.__class__.__name__)
+            
+        crm_config = OmegaConf.load(crm_config_path)
+
+        crm_mvdiffusion_model = instantiate_from_config(crm_config.model)
+        crm_mvdiffusion_model.load_state_dict(torch.load(ckpt_path, map_location="cpu"), strict=False)
+        crm_mvdiffusion_model = crm_mvdiffusion_model.to(DEVICE).to(WEIGHT_DTYPE)
+        crm_mvdiffusion_model.device = DEVICE
+        
+        crm_mvdiffusion_sampler_v2 = get_obj_from_str(crm_config.sampler.target)(
+            crm_mvdiffusion_model, device=DEVICE, dtype=WEIGHT_DTYPE, **crm_config.sampler.params
+        )
+        
+        cstr(f"[{self.__class__.__name__}] loaded model ckpt from {ckpt_path}").msg.print()
+        
+        return (t2iadapter_v2, crm_mvdiffusion_sampler_v2, )
+    
+class CRM_T2I_V2_Models:
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "t2iadapter_v2": ("T2IADAPTER_V2",),
+                "crm_mvdiffusion_sampler_v2": ("CRM_MVDIFFUSION_SAMPLER_V2",),
+                "reference_image": ("IMAGE",),
+                "reference_mask": ("MASK",),
+                "normal_maps": ("IMAGE",),
+                "prompt": ("STRING", {
+                    "default": "3D assets",
+                    "multiline": True
+                }),
+                "prompt_neg": ("STRING", {
+                    "default": "uniform low no texture ugly, boring, bad anatomy, blurry, pixelated,  obscure, unnatural colors, poor lighting, dull, and unclear.", 
+                    "multiline": True
+                }),
+                "seed": ("INT", {"default": 1234, "min": 0, "max": 0xffffffffffffffff}),
+                "mv_guidance_scale": ("FLOAT", {"default": 5.5, "min": 0.0, "step": 0.01}),
+                "num_inference_steps": ("INT", {"default": 50, "min": 1}),
+                
+            },
+        }
+    
+    RETURN_TYPES = (
+        "IMAGE",
+        "ORBIT_CAMPOSES",   
+    )
+    RETURN_NAMES = (
+        "multiview_images",
+        "orbit_camposes",
+    )
+    FUNCTION = "run_model"
+    CATEGORY = "Comfy3D/Algorithm"
+    
+    def run_model(
+        self,
+        t2iadapter_v2,
+        crm_mvdiffusion_sampler_v2, 
+        reference_image, # [N, 256, 256, 3]
+        reference_mask,  # [N, 256, 256]
+        normal_maps,     # [N * 6, 512, 512, 3]
+        prompt, 
+        prompt_neg, 
+        seed,
+        mv_guidance_scale, 
+        num_inference_steps, 
+    ):  
+        # Convert tensores to pil images
+        batch_reference_images = [CRMSamplerV2.process_pixel_img(img) for img in torch_imgs_to_pils(reference_image, reference_mask)]
+        
+        # Adapter conditioning.
+        normal_maps = normal_maps.permute(0, 3, 1, 2).to(DEVICE, dtype=WEIGHT_DTYPE)    # [N, H, W, 3] -> [N, 3, H, W]
+        down_intrablock_additional_residuals = t2iadapter_v2(normal_maps)
+        down_intrablock_additional_residuals = [
+            sample.to(dtype=WEIGHT_DTYPE).chunk(reference_image.shape[0]) for sample in down_intrablock_additional_residuals
+        ]   # List[ List[ feature maps tensor for one down sample block and for one ip image, ... ], ... ]
+
+        # Inference
+        multiview_images = CRMSamplerV2.stage1_sample(
+            crm_mvdiffusion_sampler_v2,
+            batch_reference_images,
+            prompt,
+            prompt_neg,
+            seed,
+            mv_guidance_scale, 
+            num_inference_steps,
+            additional_residuals=down_intrablock_additional_residuals
+        ).to(dtype=reference_image.dtype, device=reference_image.device)
+            
+        gc.collect()
+        torch.cuda.empty_cache()
+
+        orbit_radius = [4.0] * 6
+        orbit_center = [0.0] * 6
+        orbit_elevations, orbit_azimuths = ORBITPOSE_PRESET_DICT["CRM(6)"]
+        orbit_camposes = compose_orbit_camposes(orbit_radius, orbit_elevations, orbit_azimuths, orbit_center, orbit_center, orbit_center)
+        
+        return (multiview_images, orbit_camposes)

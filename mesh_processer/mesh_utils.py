@@ -583,7 +583,7 @@ def K_nearest_neighbors_func(
         else:
             return nn[0, :, :, :], idx[0, :, :], dist[0, :, :]
 
-def interpolate_texture_map(mesh, texture_size: int = 256, batch_size: int = 64):
+def interpolate_texture_map_attr(mesh, texture_size: int = 256, batch_size: int = 64, interpolate_color=True, interpolate_position=False):
     # Get UV coordinates and faces
     if mesh.vt is None:
         mesh.auto_uv()
@@ -593,13 +593,21 @@ def interpolate_texture_map(mesh, texture_size: int = 256, batch_size: int = 64)
     faces = mesh.ft
     verts_uvs = mesh.vt * texture_size_minus_one
     verts_uvs_idx = verts_uvs.to(torch.long)
-    
+
+    vmapping = mesh.get_default_vt_to_v_mapping()
     # Get vertex colors
-    vmapping = mesh.get_default_vmapping()
-    verts_colors = mesh.vc[vmapping]
-    
-    # Create a blank texture map
-    texture_map = torch.zeros((texture_size, texture_size, 3), device=verts_colors.device)
+    interpolate_color = interpolate_color and mesh.vc is not None
+    texture_map = mesh.albedo
+    if interpolate_color:
+        verts_colors = mesh.vc[vmapping]
+        # Create a blank texture map
+        texture_map = torch.zeros((texture_size, texture_size, 3), device=verts_colors.device)
+
+    # Get vertex positions
+    position_map = None
+    if interpolate_position:
+        verts_positions = mesh.v[vmapping]
+        position_map = torch.zeros((texture_size, texture_size, 3), device=verts_colors.device)
     
     # Create a grid of UV coordinates
     grid_x, grid_y = torch.meshgrid(torch.linspace(0, texture_size_minus_one, texture_size, dtype=verts_uvs.dtype, device=verts_colors.device), torch.linspace(0, texture_size_minus_one, texture_size, dtype=verts_uvs.dtype, device=verts_colors.device))
@@ -617,7 +625,10 @@ def interpolate_texture_map(mesh, texture_size: int = 256, batch_size: int = 64)
             batch_faces = faces[faces_mask]
             
             uvs = verts_uvs[batch_faces]
-            colors = verts_colors[batch_faces]
+            if interpolate_color:
+                colors = verts_colors[batch_faces]
+            if interpolate_position:
+                positions = verts_positions[batch_faces]
                         
             v0, v1, v2 = uvs[:, 0], uvs[:, 1], uvs[:, 2]
             v0_0, v0_1 = v0[:, 0], v0[:, 1]
@@ -635,15 +646,21 @@ def interpolate_texture_map(mesh, texture_size: int = 256, batch_size: int = 64)
             # Mask for points inside the triangle
             mask = (a >= 0) & (b >= 0) & (c >= 0)
             mask, mask_idx = torch.max(mask, dim=1)
-                        
+            
             # Get texture coordinates
             sub_grid = sub_grid.squeeze(1)
             uv_coords = sub_grid[mask].to(torch.long)
             
             # Interpolate colors
             a, b, c = a[batch_idx_range, mask_idx][mask], b[batch_idx_range, mask_idx][mask], c[batch_idx_range, mask_idx][mask]
-            colors = colors[mask_idx][mask]
-            interpolated_colors = (a[:, None] * colors[:, 0] + (b[:, None] * colors[:, 1]) + (c[:, None] * colors[:, 2]))
-            texture_map[uv_coords[:, 1], uv_coords[:, 0]] = interpolated_colors
-    
-    return texture_map
+            
+            if interpolate_color:
+                colors = colors[mask_idx][mask]
+                interpolated_colors = (a[:, None] * colors[:, 0] + (b[:, None] * colors[:, 1]) + (c[:, None] * colors[:, 2]))
+                texture_map[uv_coords[:, 1], uv_coords[:, 0]] = interpolated_colors
+            if interpolate_position:
+                positions = positions[mask_idx][mask]
+                interpolated_positions = (a[:, None] * positions[:, 0] + (b[:, None] * positions[:, 1]) + (c[:, None] * positions[:, 2]))
+                position_map[uv_coords[:, 1], uv_coords[:, 0]] = interpolated_positions
+            
+    return texture_map, position_map

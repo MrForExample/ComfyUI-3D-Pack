@@ -65,15 +65,15 @@ class Mesh:
         self.ori_scale = 1
 
     @classmethod
-    def load(cls, path, resize=True, clean=False, renormal=True, retex=False, bound=0.9, front_dir='+z', **kwargs):
+    def load(cls, path, resize=True, renormal=True, retex=False, clean=False, bound=0.5, front_dir='+z', **kwargs):
         """load mesh from path.
 
         Args:
             path (str): path to mesh file, supports ply, obj, glb.
-            clean (bool, optional): perform mesh cleaning at load (e.g., merge close vertices). Defaults to False.
             resize (bool, optional): auto resize the mesh using ``bound`` into [-bound, bound]^3. Defaults to True.
             renormal (bool, optional): re-calc the vertex normals. Defaults to True.
             retex (bool, optional): re-calc the uv coordinates, will overwrite the existing uv coordinates. Defaults to False.
+            clean (bool, optional): perform mesh cleaning at load (e.g., merge close vertices). Defaults to False.
             bound (float, optional): bound to resize. Defaults to 0.9.
             front_dir (str, optional): front-view direction of the mesh, should be [+-][xyz][ 123]. Defaults to '+z'.
             device (torch.device, optional): torch device. Defaults to None.
@@ -540,20 +540,24 @@ class Mesh:
             vmapping (np.ndarray, optional): the mapping relationship from f to ft. Defaults to None.
         """
         if vmapping is None:
-            vmapping = self.get_default_vmapping()
+            vt2v_mapping = self.get_default_vt_to_v_mapping()
+        else:
+            vt2v_mapping = vmapping
 
-        self.v = self.v[vmapping]
+        self.v = self.v[vt2v_mapping]
         if self.vc is not None:
-            self.vc = self.vc[vmapping]
+            self.vc = self.vc[vt2v_mapping]
         self.f = self.ft
         # assume fn == f
         if self.vn is not None:
-            self.vn = self.vn[vmapping]
+            if vmapping is None:
+                vt2vn_mapping = self.get_default_vt_to_vn_mapping()
+            else:
+                vt2vn_mapping = vmapping
+            self.vn = self.vn[vt2vn_mapping]
             self.fn = self.ft
-            
-        print(f"########## !!!!!!!!!! vmapping: {vmapping.shape}; self.vt.shape: {self.vt.shape}; self.v: {self.v.shape}; self.f: {self.f.shape}")
 
-    def get_default_vmapping(self):
+    def get_default_vt_to_v_mapping(self):
         """map from ft to f
 
         Returns:
@@ -563,6 +567,18 @@ class Mesh:
         f = self.f.view(-1).long()
         vmapping = torch.zeros(self.vt.shape[0], dtype=torch.long, device=self.device)
         vmapping[ft] = f # scatter, randomly choose one if index is not unique
+        return vmapping
+    
+    def get_default_vt_to_vn_mapping(self):
+        """map from ft to f
+
+        Returns:
+            vmapping: tensor array
+        """
+        ft = self.ft.view(-1).long()
+        fn = self.fn.view(-1).long()
+        vmapping = torch.zeros(self.vt.shape[0], dtype=torch.long, device=self.device)
+        vmapping[ft] = fn # scatter, randomly choose one if index is not unique
         return vmapping
 
     def to(self, device):
