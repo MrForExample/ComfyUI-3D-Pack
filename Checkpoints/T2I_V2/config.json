@@ -1,0 +1,21 @@
+{
+  "_class_name": "T2IAdapterV2",
+  "_diffusers_version": "0.30.0",
+  "_name_or_path": "C:\\Users\\reall\\Softwares\\Blender 3.6\\_Projects\\train_output_save_v2\\checkpoint-210000\\t2iadapter",
+  "adapter_type": "full_adapter",
+  "channels": [
+    320,
+    640,
+    1280,
+    1280
+  ],
+  "conditioning_embedding_out_channels": [
+    16,
+    32,
+    64,
+    128,
+    256
+  ],
+  "in_channels": 3,
+  "num_res_blocks": 2
+}

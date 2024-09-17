@@ -2,7 +2,7 @@ from typing import List
 import torch
 import numpy as np
 from PIL import Image
-from pytorch3d.renderer.cameras import look_at_view_transform, OrthographicCameras, CamerasBase
+from pytorch3d.renderer.cameras import look_at_view_transform, OrthographicCameras, PerspectiveCameras, CamerasBase
 from pytorch3d.renderer.mesh.rasterizer import Fragments
 from pytorch3d.structures import Meshes
 from pytorch3d.renderer import (
@@ -12,13 +12,14 @@ from pytorch3d.renderer import (
     FoVOrthographicCameras,
 )
 from pytorch3d.renderer import MeshRasterizer
+from mesh_processer.mesh import Mesh
 
 def get_camera(world_to_cam, fov_in_degrees=60, focal_length=1 / (2**0.5), cam_type='fov'):
     # pytorch3d expects transforms as row-vectors, so flip rotation: https://github.com/facebookresearch/pytorch3d/issues/1183
     R = world_to_cam[:3, :3].t()[None, ...]
     T = world_to_cam[:3, 3][None, ...]
     if cam_type == 'fov':
-        camera = FoVPerspectiveCameras(device=world_to_cam.device, R=R, T=T, fov=fov_in_degrees, degrees=True)
+        camera = FoVPerspectiveCameras(device=world_to_cam.device, R=R, T=T, fov=fov_in_degrees, degrees=True, znear=0.1)
     else:
         focal_length = 1 / focal_length
         camera = FoVOrthographicCameras(device=world_to_cam.device, R=R, T=T, min_x=-focal_length, max_x=focal_length, min_y=-focal_length, max_y=focal_length)
@@ -266,12 +267,10 @@ def multiview_color_projection(meshes: Meshes, image_list: List[Image.Image], ca
         elif len(image_list) == 2:
             weights = [1.0, 1.0]
         else:
-            raise ValueError("weights is None, and can not be guessed from image_list")
+            weights = [1. for _ in range(len(cameras_list))]
     
     # 2. run projection
     meshes = meshes.clone().to(device)
-    if weights is None:
-        weights = [1. for _ in range(len(cameras_list))]
     assert len(cameras_list) == len(image_list) == len(weights)
     original_color = meshes.textures.verts_features_packed()
     assert not torch.isnan(original_color).any()
@@ -310,13 +309,267 @@ def multiview_color_projection(meshes: Meshes, image_list: List[Image.Image], ca
     del meshes
     return ret_mesh
 
+def project_color_onto_texture(meshes: Meshes, glctx, verts_coordinates, verts_normals, uv, ft, texture_map, cameras: CamerasBase, pil_image: Image.Image, use_alpha=True, eps=0.05, resolution=1024, device="cuda", ) -> dict:
+    """
+    Projects color from a given image onto a 3D mesh.
+
+    Args:
+        meshes (pytorch3d.structures.Meshes): The 3D mesh object.
+        cameras (pytorch3d.renderer.cameras.CamerasBase): The camera object.
+        pil_image (PIL.Image.Image): The input image.
+        use_alpha (bool, optional): Whether to use the alpha channel of the image. Defaults to True.
+        eps (float, optional): The threshold for selecting visible faces. Defaults to 0.05.
+        resolution (int, optional): The resolution of the projection. Defaults to 1024.
+        device (str, optional): The device to use for computation. Defaults to "cuda".
+        debug (bool, optional): Whether to save debug images. Defaults to False.
+
+    Returns:
+        dict: A dictionary containing the following keys:
+            - "new_texture" (TexturesVertex): The updated texture with interpolated colors.
+            - "valid_mask" (Tensor of [M,3]): The indices of the pixels on texture being projected.
+            - "valid_colors" (Tensor of [M,3]): The interpolated colors for the valid pixels.
+    """
+    print(f"########## project_color_onto_texture:")
+    
+    image = torch.from_numpy(np.array(pil_image.convert("RGBA")) / 255.).permute((2, 0, 1)).float().to(device)     # in CHW format of [0, 1.]
+    print(f"########## image: {image.shape}")
+    
+    meshes = meshes.to(device)
+    cameras = cameras.to(device)
+    unique_faces_idx = get_visible_faces(meshes, cameras, resolution=resolution)
+    print(f"########## unique_faces_idx: {unique_faces_idx.shape}")
+
+    # visible faces
+    faces_normals = meshes.faces_normals_packed()[unique_faces_idx]
+    faces_normals = faces_normals / faces_normals.norm(dim=1, keepdim=True)
+    world_points = cameras.unproject_points(torch.tensor([[[0., 0., 0.1], [0., 0., 0.2]]]).to(device))[0]
+    view_direction = world_points[1] - world_points[0]
+    view_direction = view_direction / view_direction.norm(dim=0, keepdim=True)
+    
+    print(f"########## view_direction: {view_direction}")
+
+    # find invalid faces
+    cos_angles = (faces_normals * view_direction).sum(dim=1)
+    assert cos_angles.mean() < 0, f"The view direction is not correct. cos_angles.mean()={cos_angles.mean()}"
+    selected_faces_idx = unique_faces_idx[cos_angles < -eps]
+    
+    print(f"########## selected_faces_idx: {selected_faces_idx.shape}")
+
+    # find visible UV pixels and get their positions
+    selected_faces = ft[selected_faces_idx]   # [N, 3]
+    uv = torch.cat((uv, torch.zeros_like(uv[..., :1]), torch.ones_like(uv[..., :1])), dim=-1).unsqueeze(0) # [1, N, 4]
+    rast_uv, rast_uv_db = dr.rasterize(glctx, uv, selected_faces, resolution=(resolution, resolution))
+    texture_mask = (rast_uv[...,3:4] > 0).squeeze(0).squeeze(-1)
+    pos_2d, _ = dr.interpolate(verts_coordinates, rast_uv, selected_faces)
+    pos_2d = pos_2d.squeeze(0)
+    
+    print(f"########## pos_2d: {pos_2d.shape}; texture_mask: {texture_mask.shape}")
+
+    # compute color
+    pt_tensor = cameras.transform_points(pos_2d)[..., :2] # NDC space points
+    print(f"$$$$$$$$$$$$$$$$$$$$$$$ {(~((pt_tensor.isnan()|(pt_tensor<-1)|(1<pt_tensor)).any(dim=2))).shape}")
+    valid_mask = texture_mask & (~((pt_tensor.isnan()|(pt_tensor<-1)|(1<pt_tensor)).any(dim=2)))  # checked, correct
+    valid_pt = pt_tensor[valid_mask]
+    valid_color = torch.nn.functional.grid_sample(image[None, ...].flip((-1, -2)), valid_pt[None, :, None, :], align_corners=False, padding_mode="reflection", mode="bilinear")[0, :, :, 0].T.clamp(0, 1)   # [N, 4], note that bicubic may give invalid value
+    alpha, valid_color = valid_color[..., 3:], valid_color[..., :3]
+    if not use_alpha:
+        alpha = torch.ones_like(alpha)
+        
+    print(f"########## valid_mask: {valid_mask.shape}; valid_pt: {valid_pt.shape}; valid_color: {valid_color.shape}")
+
+    # modify color
+    texture_map[valid_mask] = valid_color * alpha + texture_map[valid_mask] * (1 - alpha)
+    
+    # calculate cosine angle
+    normal_2d, _ = dr.interpolate(verts_normals, rast_uv, selected_faces)
+    normal_2d = normal_2d.squeeze(0)
+    valid_normal_map = normal_2d[valid_mask]
+    valid_normal_map = valid_normal_map / valid_normal_map.norm(dim=1, keepdim=True).clamp_min(0.001)
+    cos_angles = (valid_normal_map * view_direction).sum(dim=1)
+    
+    print(f"########## normal_2d: {normal_2d.shape}; valid_normal_map: {valid_normal_map.shape}; cos_angles: {cos_angles.shape}")
+    
+    return {
+        "new_texture": texture_map,
+        "valid_mask": valid_mask,
+        "valid_colors": valid_color,
+        "valid_alpha": alpha,
+        "cos_angles": cos_angles,
+    }
+
+def complete_unseen_texture_color(meshes: Meshes, valid_index: torch.Tensor) -> dict:
+    """
+    meshes: the mesh with vertex color to be completed.
+    valid_index: the index of the valid vertices, where valid means colors are fixed. [V, 1]
+    """
+    valid_index = valid_index.to(meshes.device)
+    colors = meshes.textures.verts_features_packed()    # [V, 3]
+    V = colors.shape[0]
+    
+    invalid_index = torch.ones_like(colors[:, 0]).bool()    # [V]
+    invalid_index[valid_index] = False
+    invalid_index = torch.arange(V).to(meshes.device)[invalid_index]
+    
+    L = meshes.laplacian_packed()
+    E = torch.sparse_coo_tensor(torch.tensor([list(range(V))] * 2), torch.ones((V,)), size=(V, V)).to(meshes.device)
+    L = L + E
+    # E = torch.eye(V, layout=torch.sparse_coo, device=meshes.device)
+    # L = L + E
+    colored_count = torch.ones_like(colors[:, 0])   # [V]
+    colored_count[invalid_index] = 0
+    L_invalid = torch.index_select(L, 0, invalid_index)    # sparse [IV, V]
+    
+    total_colored = colored_count.sum()
+    coloring_round = 0
+    stage = "uncolored"
+    from tqdm import tqdm
+    pbar = tqdm(miniters=100)
+    while stage == "uncolored" or coloring_round > 0:
+        new_color = torch.matmul(L_invalid, colors * colored_count[:, None])    # [IV, 3]
+        new_count = torch.matmul(L_invalid, colored_count)[:, None]             # [IV, 1]
+        colors[invalid_index] = torch.where(new_count > 0, new_color / new_count, colors[invalid_index])
+        colored_count[invalid_index] = (new_count[:, 0] > 0).float()
+        
+        new_total_colored = colored_count.sum()
+        if new_total_colored > total_colored:
+            total_colored = new_total_colored
+            coloring_round += 1
+        else:
+            stage = "colored"
+            coloring_round -= 1
+        pbar.update(1)
+        if coloring_round > 10000:
+            print("coloring_round > 10000, break")
+            break
+    assert not torch.isnan(colors).any()
+    meshes.textures = TexturesVertex(verts_features=[colors])
+    return meshes
+
+def multiview_color_projection_texture(meshes: Meshes, original_mesh: Mesh, image_list: List[Image.Image], cameras_list: List[CamerasBase]=None, camera_focal: float = 2 / 1.35, weights=None, eps=0.05, resolution=1024, device="cuda", reweight_with_cosangle="square", use_alpha=True, confidence_threshold=0.1, complete_unseen=False, below_confidence_strategy="smooth", force_cuda_rast=False) -> Mesh:
+    """
+    Projects color from a given image onto a 3D mesh.
+
+    Args:
+        meshes (pytorch3d.structures.Meshes): The 3D mesh object, only one mesh.
+        image_list (PIL.Image.Image): List of images.
+        cameras_list (list): List of cameras.
+        camera_focal (float, optional): The focal length of the camera, if cameras_list is not passed. Defaults to 2 / 1.35.
+        weights (list, optional): List of weights for each image, for ['front', 'front_right', 'right', 'back', 'left', 'front_left']. Defaults to None.
+        eps (float, optional): The threshold for selecting visible faces. Defaults to 0.05.
+        resolution (int, optional): The resolution of the projection. Defaults to 1024.
+        device (str, optional): The device to use for computation. Defaults to "cuda".
+        reweight_with_cosangle (str, optional): Whether to reweight the color with the angle between the view direction and the vertex normal. Defaults to None.
+        use_alpha (bool, optional): Whether to use the alpha channel of the image. Defaults to True.
+        confidence_threshold (float, optional): The threshold for the confidence of the projected color, if final projection weight is less than this, we will use the original color. Defaults to 0.1.
+        complete_unseen (bool, optional): Whether to complete the unseen vertex color using laplacian. Defaults to False.
+
+    Returns:
+        Meshes: the colored mesh
+    """
+    # 1. preprocess inputs
+    if image_list is None:
+        raise ValueError("image_list is None")
+    if cameras_list is None:
+        if len(image_list) == 8:
+            cameras_list = get_8view_cameras(device, focal=camera_focal)
+        elif len(image_list) == 6:
+            cameras_list = get_6view_cameras(device, focal=camera_focal)
+        elif len(image_list) == 4:
+            cameras_list = get_4view_cameras(device, focal=camera_focal)
+        elif len(image_list) == 2:
+            cameras_list = get_2view_cameras(device, focal=camera_focal)
+        else:
+            raise ValueError("cameras_list is None, and can not be guessed from image_list")
+    if weights is None:
+        if len(image_list) == 8:
+            weights = [2.0, 0.05, 0.2, 0.02, 1.0, 0.02, 0.2, 0.05]
+        elif len(image_list) == 6:
+            weights = [2.0, 0.05, 0.2, 1.0, 0.2, 0.05]
+        elif len(image_list) == 4:
+            weights = [2.0, 0.2, 1.0, 0.2]
+        elif len(image_list) == 2:
+            weights = [1.0, 1.0]
+        else:
+            weights = [1. for _ in range(len(cameras_list))]
+    
+    # 2. run projection
+    meshes = meshes.clone().to(device)
+    assert len(cameras_list) == len(image_list) == len(weights)
+    original_color = torch.zeros([resolution, resolution, 3], dtype=original_mesh.v.dtype, device=device)
+    assert not torch.isnan(original_color).any()
+    texture_counts = torch.zeros_like(original_color[..., :1])
+    texture_values = torch.zeros_like(original_color)
+    max_texture_counts = torch.zeros_like(original_color[..., :1])
+    max_texture_values = torch.zeros_like(original_color)
+    
+    if force_cuda_rast:
+        glctx = dr.RasterizeCudaContext()
+    else:
+        glctx = dr.RasterizeGLContext()
+        
+    print(f"########## original_color: {original_color.shape}; texture_values: {texture_values.shape}")
+
+    print(f"########## original_mesh.v: {original_mesh.v.shape}; original_mesh.vt: {original_mesh.vt.shape}; original_mesh.vn: {original_mesh.vn.shape}; original_mesh.f: {original_mesh.f.shape}; meshes.faces_normals_packed: {meshes.faces_normals_packed().shape}")
+
+    vt2v_mapping = original_mesh.get_default_vt_to_v_mapping()
+    verts_coordinates = original_mesh.v[vt2v_mapping]
+    vt2vn_mapping = original_mesh.get_default_vt_to_vn_mapping()
+    verts_normals = original_mesh.vn[vt2vn_mapping]
+    uv = original_mesh.vt * 2.0 - 1.0 # uvs to range [-1, 1]
+    
+    print(f"########## verts_coordinates: {verts_coordinates.shape}; verts_normals: {verts_normals.shape}")
+    
+    for camera, image, weight in zip(cameras_list, image_list, weights):
+        ret = project_color_onto_texture(meshes, glctx, verts_coordinates, verts_normals, uv, original_mesh.ft, original_color.clone(), camera, image, eps=eps, resolution=resolution, device=device, use_alpha=use_alpha)
+        if reweight_with_cosangle == "linear":
+            weight = (ret['cos_angles'].abs() * weight)[:, None]
+        elif reweight_with_cosangle == "square":
+            weight = (ret['cos_angles'].abs() ** 2 * weight)[:, None]
+        if use_alpha:
+            weight = weight * ret['valid_alpha']
+        assert weight.min() > -0.0001
+        texture_counts[ret['valid_mask']] += weight
+        texture_values[ret['valid_mask']] += ret['valid_colors'] * weight
+        max_texture_values[ret['valid_mask']] = torch.where(weight > max_texture_counts[ret['valid_mask']], ret['valid_colors'], max_texture_values[ret['valid_mask']])
+        max_texture_counts[ret['valid_mask']] = torch.max(max_texture_counts[ret['valid_mask']], weight)
+
+    # Method2
+    texture_values = torch.where(texture_counts > confidence_threshold, texture_values / texture_counts, texture_values)
+    if below_confidence_strategy == "smooth":
+        texture_values = torch.where(texture_counts <= confidence_threshold, (original_color * (confidence_threshold - texture_counts) + texture_values) / confidence_threshold, texture_values)
+    elif below_confidence_strategy == "original":
+        texture_values = torch.where(texture_counts <= confidence_threshold, original_color, texture_values)
+    else:
+        raise ValueError(f"below_confidence_strategy={below_confidence_strategy} is not supported")
+    assert not torch.isnan(texture_values).any()
+    
+    return texture_values
+    
+    #meshes.textures = TexturesVertex(verts_features=[texture_values])
+    #
+    #if complete_unseen:
+    #    meshes = complete_unseen_texture_color(meshes, torch.arange(texture_values.shape[0]).to(device)[texture_counts[:, 0] >= confidence_threshold])
+    #ret_mesh = meshes.detach()
+    #del meshes
+    #return ret_mesh
+
+def get_orbit_cameras_list(orbit_camera_poses, device, fov_in_degrees=60):
+    ret = []
+    for i in range(len(orbit_camera_poses)):
+        campose = orbit_camera_poses[i]
+        R, T = look_at_view_transform(campose[0], -campose[1], campose[2])
+        w2c = torch.cat([R[0].T, T[0, :, None]], dim=1)
+        camera: PerspectiveCameras = get_camera(w2c, fov_in_degrees=fov_in_degrees, cam_type='fov').to(device)
+        ret.append(camera)
+    return ret
+
 def get_cameras_list(azim_list, device, focal=2/1.35, dist=1.1):
     ret = []
     for azim in azim_list:
         R, T = look_at_view_transform(dist, 0, azim)
         w2c = torch.cat([R[0].T, T[0, :, None]], dim=1)
-        cameras: OrthographicCameras = get_camera(w2c, focal_length=focal, cam_type='orthogonal').to(device)
-        ret.append(cameras)
+        camera: OrthographicCameras = get_camera(w2c, focal_length=focal, cam_type='orthogonal').to(device)
+        ret.append(camera)
     return ret
 
 def get_8view_cameras(device, focal=2/1.35):

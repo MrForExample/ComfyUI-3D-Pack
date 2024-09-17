@@ -80,7 +80,7 @@ try:
     cstr("Successfully installed Comfy3D! Let's Accelerate!").msg.print()
     
 except Exception as e:
-    cstr("Comfy3D install failed: Dependency installation has failed. Please install manually: https://github.com/MrForExample/ComfyUI-3D-Pack/tree/main/_Pre_Builds/README.md.").error.print()
     traceback.print_exc()
+    cstr("Comfy3D install failed: Dependency installation has failed. Please install manually: https://github.com/MrForExample/ComfyUI-3D-Pack/tree/main/_Pre_Builds/README.md.").error.print()
 
 

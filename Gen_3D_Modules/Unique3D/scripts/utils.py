@@ -81,14 +81,18 @@ def to_pyml_mesh(vertices,faces):
     return m1
 
 
-def to_py3d_mesh(vertices, faces, normals=None):
+def to_py3d_mesh(vertices, faces, normals=None, vertices_color=None):
     from pytorch3d.structures import Meshes
     from pytorch3d.renderer.mesh.textures import TexturesVertex
     mesh = Meshes(verts=[vertices], faces=[faces], textures=None)
-    if normals is None:
-        normals = mesh.verts_normals_packed()
-    # set normals as vertext colors
-    mesh.textures = TexturesVertex(verts_features=[normals / 2 + 0.5])
+
+    if vertices_color is None:
+        # set normals as vertext colors
+        if normals is None:
+            normals = mesh.verts_normals_packed()
+        mesh.textures = TexturesVertex(verts_features=[normals / 2 + 0.5])
+    else:
+        mesh.textures = TexturesVertex(verts_features=[vertices_color])
     return mesh
 
 

@@ -1,21 +1,12 @@
-import os
 import math
 import random
 import numpy as np
-from typing import Optional
 from torchtyping import TensorType
 from plyfile import PlyData, PlyElement
 
 import torch
 from torch import nn
 import torch.nn.functional as F
-
-pytorch3d_capable = True
-try:
-    import pytorch3d
-    from pytorch3d.ops import knn_points
-except ImportError:
-    pytorch3d_capable = False
     
 from kornia.geometry.conversions import (
     quaternion_to_rotation_matrix,
@@ -31,7 +22,7 @@ from kiui.op import inverse_sigmoid
 
 from shared_utils.sh_utils import eval_sh, SH2RGB, RGB2SH
 from mesh_processer.mesh import Mesh, PointCloud
-from mesh_processer.mesh_utils import construct_list_of_gs_attributes, write_gs_ply, read_gs_ply
+from mesh_processer.mesh_utils import construct_list_of_gs_attributes, write_gs_ply, read_gs_ply, K_nearest_neighbors_func
 
 def get_expon_lr_func(
     lr_init, lr_final, lr_delay_steps=0, lr_delay_mult=1.0, max_steps=1000000
@@ -169,31 +160,6 @@ def find_points_within_radius(query_points, vertex_points, d):
         result.append(indices_within_radius)
 
     return result
-
-@torch.no_grad()
-def K_nearest_neighbors(
-    points: torch.Tensor,
-    K: int,
-    query: Optional[torch.Tensor] = None,
-    return_dist=False,
-):
-    if not pytorch3d_capable:
-        raise ImportError("pytorch3d is not installed, which is required for KNN")
-    
-    # query/points: Tensor of shape (N, P1/P2, D) giving a batch of N point clouds, each containing up to P1/P2 points of dimension D
-    if query is None:
-        query = points
-    dist, idx, nn = knn_points(query[None, ...], points[None, ...], K=K, return_nn=True)
-
-    # idx: Tensor of shape (N, P1, K)
-    # nn: Tensor of shape (N, P1, K, D)
-
-    # take the index 1 since index 0 is the point itself
-    if not return_dist:
-        return nn[0, :, 1:, :], idx[0, :, 1:]
-    else:
-        return nn[0, :, 1:, :], idx[0, :, 1:], dist[0, :, 1:]
-
 
 def distance_to_gaussian_surface(points, svec, rotmat, query):
     """
@@ -773,7 +739,7 @@ class GaussianModel:
         return new_params
 
     def densify_by_compatness(self, K=1):        
-        _, idx = K_nearest_neighbors(self._xyz, K=K+1)
+        _, idx = K_nearest_neighbors_func(self._xyz, K=K+1)
         
         new_params_list = []
         for i in range(K):

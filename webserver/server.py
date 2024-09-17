@@ -26,7 +26,7 @@ def set_web_conf(new_web_conf):
     global web_conf
     web_conf = new_web_conf
 
-@server.PromptServer.instance.routes.get("/extensions/ComfyUI-3D-Pack/html/viewfile")
+@server.PromptServer.instance.routes.get("/viewfile")
 async def view_file(request):
     query = request.rel_url.query
     # Security check to see if query client is local

@@ -22,6 +22,8 @@ def torch_imgs_to_pils(images, masks=None, alpha_min=0.1):
         images = images.unsqueeze(0)
 
     if masks is not None:
+        masks = masks.to(dtype=images.dtype, device=images.device)
+        
         if len(masks.shape) == 2:
             masks = masks.unsqueeze(0)
 
@@ -55,7 +57,7 @@ def troch_image_dilate(img):
     img = (img.clip(0, 255) / 255).astype(np.float32)
     return torch.from_numpy(img)
 
-def pils_to_torch_imgs(pils: Union[Image.Image, List[Image.Image]], device="cuda", force_rgb=True):
+def pils_to_torch_imgs(pils: Union[Image.Image, List[Image.Image]], dtype=torch.float16, device="cuda", force_rgb=True):
     if isinstance(pils, Image.Image):
         pils = [pils]
     
@@ -66,7 +68,7 @@ def pils_to_torch_imgs(pils: Union[Image.Image, List[Image.Image]], device="cuda
 
         images.append(TF.to_tensor(pil).permute(1, 2, 0))
 
-    images = torch.stack(images, dim=0).to(device)
+    images = torch.stack(images, dim=0).to(dtype=dtype, device=device)
 
     return images
 

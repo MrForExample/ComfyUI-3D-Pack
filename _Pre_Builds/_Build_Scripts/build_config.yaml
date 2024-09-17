@@ -17,11 +17,11 @@ build_base_packages: ["torch", "torchvision"]
 # All packages will be automatically installed at beginning of install.py follwing orders from top to bottom 
 remote_packages:
   torch:
-    version: "2.3.0"
+    version: "2.4.0"
     url: "https://download.pytorch.org/whl/${cuda_version}"
   
   torchvision:
-    version: "0.18.0"
+    version: "0.19.0"
     url: "https://download.pytorch.org/whl/${cuda_version}"
 
   torch-scatter:
@@ -29,5 +29,5 @@ remote_packages:
     url: "https://data.pyg.org/whl/torch-${remote_packages.torch.version}+${cuda_version}.html"
 
   xformers:
-    version: "0.0.26.post1"
+    version: "0.0.27.post2"
     url: "https://download.pytorch.org/whl/${cuda_version}"

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-
+from collections import OrderedDict
 import numpy as np
 import math
 from scipy.spatial.transform import Rotation as R
@@ -7,6 +7,22 @@ from scipy.spatial.transform import Rotation as R
 import torch
 
 from kiui.cam import orbit_camera
+
+#{Key: [elevation, azimuth], ...}
+ORBITPOSE_PRESET_DICT = OrderedDict([
+    ("Custom",           [[0.0, 90.0, 0.0, 0.0, -90.0, 0.0], [-90.0, 0.0, 180.0, 90.0, 0.0, 0.0]]),
+    ("CRM(6)",           [[0.0, 90.0, 0.0, 0.0, -90.0, 0.0], [-90.0, 0.0, 180.0, 90.0, 0.0, 0.0]]),
+    ("Wonder3D(6)",      [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 45.0, 90.0, 180.0, -90.0, -45.0]]),
+    ("Zero123Plus(6)",   [[-20.0, 10.0, -20.0, 10.0, -20.0, 10.0], [30.0, 90.0, 150.0, -150.0, -90.0, -30.0]]),
+    ("Era3D(6)",         [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 45.0, 90.0, 180.0, -90.0, -45.0]]),
+    ("MVDream(4)",       [[0.0, 0.0, 0.0, 0.0], [0.0, 90.0, 180.0, -90.0]]),
+    ("Unique3D(4)",      [[0.0, 0.0, 0.0, 0.0], [0.0, 90.0, 180.0, -90.0]]),
+    ("CharacterGen(4)",  [[0.0, 0.0, 0.0, 0.0], [-90.0, 180.0, 90.0, 0.0]]),
+])
+ELEVATION_MIN = -89.999
+ELEVATION_MAX = 89.999
+AZIMUTH_MIN = -180.0
+AZIMUTH_MAX = 180.0
 
 def dot(x, y):
     if isinstance(x, np.ndarray):
@@ -256,3 +272,17 @@ class BaseCameraController(ABC):
             
         # [Number of Poses, 3, H, W], [Number of Poses, 1, H, W] both in [0, 1]
         return torch.stack(all_rendered_images, dim=0), torch.stack(all_rendered_masks, dim=0), extra_outputs
+    
+def compose_orbit_camposes(orbit_radius, orbit_elevations, orbit_azimuths, orbit_center_x, orbit_center_y, orbit_center_z):
+    orbit_camposes = []
+    
+    campose_num = len(orbit_radius)
+    for i in range(campose_num):
+        orbit_camposes.append([
+            orbit_radius[i], 
+            np.clip(orbit_elevations[i], ELEVATION_MIN, ELEVATION_MAX), 
+            np.clip(orbit_azimuths[i], AZIMUTH_MIN, AZIMUTH_MAX),
+            orbit_center_x[i], orbit_center_y[i], orbit_center_z[i]
+        ])
+        
+    return orbit_camposes

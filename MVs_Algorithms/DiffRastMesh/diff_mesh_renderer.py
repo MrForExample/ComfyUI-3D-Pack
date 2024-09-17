@@ -132,8 +132,7 @@ class DiffRastRenderer(nn.Module):
             normal = safe_normalize(normal[0])
 
             # rotated normal (where [0, 0, 1] always faces camera)
-            rot_normal = normal @ pose[:3, :3]
-            viewcos = rot_normal[..., [2]]
+            viewcos = normal @ pose[:3, :3]
 
         # antialias
         albedo = dr.antialias(albedo, rast, v_clip, self.mesh.f).squeeze(0).contiguous() # [H, W, 3]
@@ -155,6 +154,6 @@ class DiffRastRenderer(nn.Module):
             results['depth'] = depth
         if 'normal' in optional_render_types:
             results['normal'] = (normal + 1) / 2
-            results['viewcos'] = viewcos
+            results['viewcos'] = (viewcos + 1) / 2
 
         return results
