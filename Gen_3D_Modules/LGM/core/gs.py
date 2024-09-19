@@ -4,11 +4,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from diff_gaussian_rasterization import (
-    GaussianRasterizationSettings,
-    GaussianRasterizer,
-)
-
 from LGM.core.options import Options
 
 import kiui
@@ -29,6 +24,10 @@ class GaussianRenderer:
         self.proj_matrix[2, 3] = 1
         
     def render(self, gaussians, cam_view, cam_view_proj, cam_pos, bg_color=None, scale_modifier=1):
+        from diff_gaussian_rasterization import (
+            GaussianRasterizationSettings,
+            GaussianRasterizer,
+        )
         # gaussians: [B, N, 14]
         # cam_view, cam_view_proj: [B, V, 4, 4]
         # cam_pos: [B, V, 3]

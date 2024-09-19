@@ -26,6 +26,7 @@ open_clip_torch
 torchmetrics
 pytorch_msssim
 pytorch-lightning
+peft
 
 # for process images & videos
 rembg
@@ -43,7 +44,7 @@ gpytoolbox
 PyMCubes
 
 # configs & extra
-torchtyping
+torchtyping>=0.1.5
 tqdm
 jaxtyping
 packaging

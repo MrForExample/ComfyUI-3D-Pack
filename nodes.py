@@ -89,6 +89,7 @@ from craftsman.systems.base import BaseSystem
 from craftsman.utils.config import ExperimentConfig as ExperimentConfigCraftsman, load_config as load_config_craftsman
 from CRM_T2I_V2.model.crm.sampler import CRMSamplerV2
 from CRM_T2I_V2.model.t2i_adapter_v2 import T2IAdapterV2
+from CRM_T2I_V3.model.crm.sampler import CRMSamplerV3
 
 from .shared_utils.image_utils import (
     prepare_torch_img, torch_imgs_to_pils, troch_image_dilate, 
@@ -2970,6 +2971,7 @@ class ExplicitTarget_Color_Projection:
                 "projection_weights": ("STRING", {"default": "2.0, 0.2, 1.0, 0.2"}),
                 "confidence_threshold": ("FLOAT", {"default": 0.02, "min": 0.001, "max": 1.0, "step": 0.001}),
                 "texture_projecton":  ("BOOLEAN", {"default": False},),
+                "texture_type":  (["Albedo", "Metallic_and_Roughness"],),
             },
             "optional": {
                 "reference_orbit_camera_poses": ("ORBIT_CAMPOSES",),    # [orbit radius, elevation, azimuth, orbit center X,  orbit center Y,  orbit center Z]
@@ -2996,6 +2998,7 @@ class ExplicitTarget_Color_Projection:
         projection_weights,
         confidence_threshold,
         texture_projecton,
+        texture_type,
         reference_orbit_camera_poses=None,
     ):
         pil_image_list = torch_imgs_to_pils(reference_images, reference_masks)
@@ -3024,8 +3027,15 @@ class ExplicitTarget_Color_Projection:
             weights = None
         
         if texture_projecton:
-            albedo_img = multiview_color_projection_texture(meshes, mesh, pil_image_list, weights=weights, resolution=projection_resolution, device=DEVICE, complete_unseen=complete_unseen_rgb, confidence_threshold=confidence_threshold, cameras_list=cam_list)
-            mesh.albedo = troch_image_dilate(albedo_img)
+            target_img = multiview_color_projection_texture(meshes, mesh, pil_image_list, weights=weights, resolution=projection_resolution, device=DEVICE, complete_unseen=complete_unseen_rgb, confidence_threshold=confidence_threshold, cameras_list=cam_list)
+            target_img = troch_image_dilate(target_img)
+            
+            if texture_type == "Albedo":
+                mesh.albedo = target_img
+            elif texture_type == "Metallic_and_Roughness":
+                mesh.metallicRoughness = target_img
+            else:
+                cstr(f"[{self.__class__.__name__}] Unknow texture type: {texture_type}").error.print()
         else:
             new_meshes = multiview_color_projection(meshes, pil_image_list, weights=weights, resolution=projection_resolution, device=DEVICE, complete_unseen=complete_unseen_rgb, confidence_threshold=confidence_threshold, cameras_list=cam_list)
             vertices, faces, vertex_colors = from_py3d_mesh(new_meshes)
@@ -3425,7 +3435,7 @@ class Load_CRM_T2I_V2_Models:
             get_obj_from_str,
         )
         
-        t2iadapter_v2 = T2IAdapterV2.from_pretrained(self.t2i_v2_checkpoints_dir_abs).to(DEVICE).to(WEIGHT_DTYPE)
+        t2iadapter_v2 = T2IAdapterV2.from_pretrained(self.t2i_v2_checkpoints_dir_abs).to(DEVICE, dtype=WEIGHT_DTYPE)
 
         crm_config_path = os.path.join(self.config_root_path_abs, crm_config_path)
         
@@ -3435,8 +3445,11 @@ class Load_CRM_T2I_V2_Models:
 
         crm_mvdiffusion_model = instantiate_from_config(crm_config.model)
         crm_mvdiffusion_model.load_state_dict(torch.load(ckpt_path, map_location="cpu"), strict=False)
-        crm_mvdiffusion_model = crm_mvdiffusion_model.to(DEVICE).to(WEIGHT_DTYPE)
         crm_mvdiffusion_model.device = DEVICE
+        
+        crm_mvdiffusion_model.clip_model = crm_mvdiffusion_model.clip_model.to(DEVICE, dtype=WEIGHT_DTYPE)
+        crm_mvdiffusion_model.vae_model = crm_mvdiffusion_model.vae_model.to(DEVICE, dtype=WEIGHT_DTYPE)
+        crm_mvdiffusion_model = crm_mvdiffusion_model.to(DEVICE).to(WEIGHT_DTYPE)
         
         crm_mvdiffusion_sampler_v2 = get_obj_from_str(crm_config.sampler.target)(
             crm_mvdiffusion_model, device=DEVICE, dtype=WEIGHT_DTYPE, **crm_config.sampler.params
@@ -3521,9 +3534,213 @@ class CRM_T2I_V2_Models:
         gc.collect()
         torch.cuda.empty_cache()
 
-        orbit_radius = [4.0] * 6
+        orbit_radius = [1.63634] * 6
         orbit_center = [0.0] * 6
         orbit_elevations, orbit_azimuths = ORBITPOSE_PRESET_DICT["CRM(6)"]
         orbit_camposes = compose_orbit_camposes(orbit_radius, orbit_elevations, orbit_azimuths, orbit_center, orbit_center, orbit_center)
         
         return (multiview_images, orbit_camposes)
+    
+class Load_CRM_T2I_V3_Models:
+    crm_checkpoints_dir = "CRM"
+    crm_t2i_v3_checkpoints_dir = "CRM_T2I_V3"
+    t2i_v2_checkpoints_dir = "T2I_V2"
+    default_crm_t2i_v3_ckpt_name = ["pixel-diffusion_lora_80k_Hyper.pth"]
+    default_crm_ckpt_name = ["pixel-diffusion_Hyper.pth"]
+    default_crm_conf_name = ["sd_v2_base_ipmv_zero_SNR_Hyper.yaml"]
+    default_crm_repo_id = "Zhengyi/CRM"
+    config_path = "CRM_T2I_V3_configs"
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        cls.crm_checkpoints_dir_abs = os.path.join(CKPT_ROOT_PATH, cls.crm_checkpoints_dir)
+        all_crm_models_names = get_list_filenames(cls.crm_checkpoints_dir_abs, SUPPORTED_CHECKPOINTS_EXTENSIONS)
+        for ckpt_name in cls.default_crm_ckpt_name:
+            if ckpt_name not in all_crm_models_names:
+                all_crm_models_names += [ckpt_name]
+                
+        cls.crm_t2i_v3_checkpoints_dir_abs = os.path.join(CKPT_ROOT_PATH, cls.crm_t2i_v3_checkpoints_dir)
+        all_crm_t2i_v3_models_names = get_list_filenames(cls.crm_t2i_v3_checkpoints_dir_abs, SUPPORTED_CHECKPOINTS_EXTENSIONS)
+        for ckpt_name in cls.default_crm_t2i_v3_ckpt_name:
+            if ckpt_name not in all_crm_t2i_v3_models_names:
+                all_crm_t2i_v3_models_names += [ckpt_name] 
+                
+        cls.t2i_v2_checkpoints_dir_abs = os.path.join(CKPT_ROOT_PATH, cls.t2i_v2_checkpoints_dir)
+            
+        cls.config_root_path_abs = os.path.join(CONFIG_ROOT_PATH, cls.config_path)
+        return {
+            "required": {
+                "crm_model_name": (all_crm_models_names, ),
+                "crm_t2i_v3_model_name": (all_crm_t2i_v3_models_names, ),
+                "crm_config_path": (cls.default_crm_conf_name, ),
+                "rank": ("INT", {"default": 64, "min": 1}),
+                "use_dora": ("BOOLEAN", {"default": False}),
+            },
+        }
+    
+    RETURN_TYPES = (
+        "T2IADAPTER_V2",
+        "CRM_MVDIFFUSION_SAMPLER_V3",
+    )
+    RETURN_NAMES = (
+        "t2iadapter_v2",
+        "crm_mvdiffusion_sampler_v3",
+    )
+    FUNCTION = "load_CRM"
+    CATEGORY = "Comfy3D/Import|Export"
+    
+    def load_CRM(self, crm_model_name, crm_t2i_v3_model_name, crm_config_path, rank, use_dora):
+        
+        from CRM_T2I_V3.imagedream.ldm.util import (
+            instantiate_from_config,
+            get_obj_from_str,
+        )
+        
+        t2iadapter_v2 = T2IAdapterV2.from_pretrained(self.t2i_v2_checkpoints_dir_abs).to(DEVICE, dtype=WEIGHT_DTYPE)
+
+        crm_config_path = os.path.join(self.config_root_path_abs, crm_config_path)
+        
+        ckpt_path = resume_or_download_model_from_hf(self.crm_checkpoints_dir_abs, self.default_crm_repo_id, crm_model_name, self.__class__.__name__)
+            
+        crm_config = OmegaConf.load(crm_config_path)
+
+        crm_mvdiffusion_model = instantiate_from_config(crm_config.model)
+        crm_mvdiffusion_model.load_state_dict(torch.load(ckpt_path, map_location="cpu"), strict=False)
+        crm_mvdiffusion_model.device = DEVICE
+        
+        crm_mvdiffusion_model.clip_model = crm_mvdiffusion_model.clip_model.to(DEVICE, dtype=WEIGHT_DTYPE)
+        crm_mvdiffusion_model.vae_model = crm_mvdiffusion_model.vae_model.to(DEVICE, dtype=WEIGHT_DTYPE)
+        crm_mvdiffusion_model = crm_mvdiffusion_model.to(DEVICE).to(WEIGHT_DTYPE)
+        
+        crm_mvdiffusion_sampler_v3 = get_obj_from_str(crm_config.sampler.target)(
+            crm_mvdiffusion_model, device=DEVICE, dtype=WEIGHT_DTYPE, **crm_config.sampler.params
+        )
+        
+        unet = crm_mvdiffusion_model.model
+        mvdiffusion_model = unet.diffusion_model
+        self.inject_lora(mvdiffusion_model, rank, use_dora)
+        
+        pretrained_lora_model_path = os.path.join(self.crm_t2i_v3_checkpoints_dir_abs, crm_t2i_v3_model_name)
+        unet.load_state_dict(torch.load(pretrained_lora_model_path, map_location="cpu"), strict=False)
+        
+        cstr(f"[{self.__class__.__name__}] loaded model ckpt from {ckpt_path} and {pretrained_lora_model_path}").msg.print()
+        
+        return (t2iadapter_v2, crm_mvdiffusion_sampler_v3, )
+    
+    def inject_lora(self, mvdiffusion_model, rank=64, use_dora=False):
+        from peft import LoraConfig, inject_adapter_in_model
+        # Add new LoRA weights to the original attention layers
+        unet_lora_config = LoraConfig(
+            r=rank,
+            use_dora=use_dora,
+            lora_alpha=rank,
+            init_lora_weights="gaussian",
+            target_modules=["to_k", "to_k_ip", "to_q", "to_v", "to_v_ip", "to_out.0"],
+        )
+        
+        inject_adapter_in_model(unet_lora_config, mvdiffusion_model.input_blocks, "DoRA" if use_dora else "LoRA")
+        inject_adapter_in_model(unet_lora_config, mvdiffusion_model.middle_block, "DoRA" if use_dora else "LoRA")
+        inject_adapter_in_model(unet_lora_config, mvdiffusion_model.output_blocks, "DoRA" if use_dora else "LoRA")
+
+class CRM_T2I_V3_Models:
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "t2iadapter_v2": ("T2IADAPTER_V2",),
+                "crm_mvdiffusion_sampler_v3": ("CRM_MVDIFFUSION_SAMPLER_V3",),
+                "reference_image": ("IMAGE",),
+                "reference_mask": ("MASK",),
+                "normal_maps": ("IMAGE",),
+                "prompt": ("STRING", {
+                    "default": "3D assets",
+                    "multiline": True
+                }),
+                "prompt_neg": ("STRING", {
+                    "default": "uniform low no texture ugly, boring, bad anatomy, blurry, pixelated,  obscure, unnatural colors, poor lighting, dull, and unclear.", 
+                    "multiline": True
+                }),
+                "seed": ("INT", {"default": 1234, "min": 0, "max": 0xffffffffffffffff}),
+                "mv_guidance_scale": ("FLOAT", {"default": 5.5, "min": 0.0, "step": 0.01}),
+                "num_inference_steps": ("INT", {"default": 50, "min": 1}),
+                
+            },
+        }
+    
+    RETURN_TYPES = (
+        "IMAGE",
+        "IMAGE",
+        "IMAGE",
+        "ORBIT_CAMPOSES",   
+    )
+    RETURN_NAMES = (
+        "multiview_albedos",
+        "multiview_metalness",
+        "multiview_roughness",
+        "orbit_camposes",
+    )
+    FUNCTION = "run_model"
+    CATEGORY = "Comfy3D/Algorithm"
+    
+    def run_model(
+        self,
+        t2iadapter_v2,
+        crm_mvdiffusion_sampler_v3, 
+        reference_image, # [N, 256, 256, 3]
+        reference_mask,  # [N, 256, 256]
+        normal_maps,     # [N * 6, 512, 512, 3]
+        prompt, 
+        prompt_neg, 
+        seed,
+        mv_guidance_scale, 
+        num_inference_steps, 
+    ):  
+        # Convert tensores to pil images
+        batch_reference_images = [CRMSamplerV3.process_pixel_img(img) for img in torch_imgs_to_pils(reference_image, reference_mask)]
+        
+        # Adapter conditioning.
+        normal_maps = normal_maps.permute(0, 3, 1, 2).to(DEVICE, dtype=WEIGHT_DTYPE)    # [N, H, W, 3] -> [N, 3, H, W]
+        down_intrablock_additional_residuals = t2iadapter_v2(normal_maps)
+        down_intrablock_additional_residuals = [
+            sample.to(dtype=WEIGHT_DTYPE).chunk(reference_image.shape[0]) for sample in down_intrablock_additional_residuals
+        ]   # List[ List[ feature maps tensor for one down sample block and for one ip image, ... ], ... ]
+
+        all_multiview_images = [[], [], []] # [list of albedo mvs, list of metalness mvs, list of roughness mvs]
+
+        # Inference
+        multiview_images = CRMSamplerV3.stage1_sample(
+            crm_mvdiffusion_sampler_v3,
+            batch_reference_images,
+            prompt,
+            prompt_neg,
+            seed,
+            mv_guidance_scale, 
+            num_inference_steps,
+            additional_residuals=down_intrablock_additional_residuals
+        )
+        
+        num_mvs = crm_mvdiffusion_sampler_v3.num_frames - 1 # 6
+        num_branches = crm_mvdiffusion_sampler_v3.model.model.diffusion_model.num_branches # 3
+        ip_batch_size = reference_image.shape[0]
+        i_mvs = 0
+        for i_branch in range(num_branches):
+            for _ in range(ip_batch_size):
+                batch_of_mv_imgs = torch.stack(multiview_images[i_mvs:i_mvs+num_mvs], axis=0)
+                i_mvs += num_mvs
+            
+                all_multiview_images[i_branch].append(batch_of_mv_imgs)
+              
+        output_images = [None] * num_branches
+        for i_branch in range(num_branches):
+            output_images[i_branch] = torch.cat(all_multiview_images[i_branch], dim=0).to(reference_image.device, dtype=reference_image.dtype)
+            
+        gc.collect()
+        torch.cuda.empty_cache()
+
+        orbit_radius = [1.63634] * 6
+        orbit_center = [0.0] * 6
+        orbit_elevations, orbit_azimuths = ORBITPOSE_PRESET_DICT["CRM(6)"]
+        orbit_camposes = compose_orbit_camposes(orbit_radius, orbit_elevations, orbit_azimuths, orbit_center, orbit_center, orbit_center)
+        
+        return (output_images[0], output_images[1], output_images[2], orbit_camposes)

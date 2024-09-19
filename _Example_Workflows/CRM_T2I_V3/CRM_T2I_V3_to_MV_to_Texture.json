@@ -1,0 +1,1831 @@
+{
+  "last_node_id": 137,
+  "last_link_id": 223,
+  "nodes": [
+    {
+      "id": 61,
+      "type": "[Comfy3D] Mesh Orbit Renderer",
+      "pos": {
+        "0": 1520,
+        "1": 1000
+      },
+      "size": {
+        "0": 582,
+        "1": 330
+      },
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 118
+        },
+        {
+          "name": "render_orbit_camera_poses",
+          "type": "ORBIT_CAMPOSES",
+          "link": 117
+        }
+      ],
+      "outputs": [
+        {
+          "name": "rendered_mesh_images",
+          "type": "IMAGE",
+          "links": [],
+          "slot_index": 0,
+          "shape": 3
+        },
+        {
+          "name": "rendered_mesh_masks",
+          "type": "MASK",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "all_rendered_depths",
+          "type": "IMAGE",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "all_rendered_normals",
+          "type": "IMAGE",
+          "links": [],
+          "slot_index": 3,
+          "shape": 3
+        },
+        {
+          "name": "all_rendered_viewcos",
+          "type": "IMAGE",
+          "links": [
+            125,
+            126,
+            129
+          ],
+          "slot_index": 4,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Mesh Orbit Renderer"
+      },
+      "widgets_values": [
+        512,
+        512,
+        47.5,
+        0,
+        0,
+        0,
+        false,
+        false,
+        true
+      ]
+    },
+    {
+      "id": 74,
+      "type": "RemapImageRange",
+      "pos": {
+        "0": 2154,
+        "1": 950
+      },
+      "size": {
+        "0": 315,
+        "1": 106
+      },
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 129
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            160
+          ],
+          "slot_index": 0,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "RemapImageRange"
+      },
+      "widgets_values": [
+        0,
+        0.9,
+        true
+      ]
+    },
+    {
+      "id": 71,
+      "type": "[Comfy3D] Get Masks From Normal Maps",
+      "pos": {
+        "0": 2156,
+        "1": 1121
+      },
+      "size": {
+        "0": 304.79998779296875,
+        "1": 26
+      },
+      "flags": {},
+      "order": 10,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "normal_maps",
+          "type": "IMAGE",
+          "link": 126
+        }
+      ],
+      "outputs": [
+        {
+          "name": "normal_masks",
+          "type": "MASK",
+          "links": [
+            128,
+            189
+          ],
+          "slot_index": 0,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Get Masks From Normal Maps"
+      }
+    },
+    {
+      "id": 73,
+      "type": "[Comfy3D] Image Add Pure Color Background",
+      "pos": {
+        "0": 2511,
+        "1": 950
+      },
+      "size": {
+        "0": 315,
+        "1": 126
+      },
+      "flags": {},
+      "order": 14,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 160
+        },
+        {
+          "name": "masks",
+          "type": "MASK",
+          "link": 128
+        }
+      ],
+      "outputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "links": [
+            131,
+            197
+          ],
+          "slot_index": 0,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Image Add Pure Color Background"
+      },
+      "widgets_values": [
+        137,
+        137,
+        137
+      ]
+    },
+    {
+      "id": 104,
+      "type": "UpscaleModelLoader",
+      "pos": {
+        "0": 3268,
+        "1": -80
+      },
+      "size": {
+        "0": 401.14697265625,
+        "1": 68.85823822021484
+      },
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "UPSCALE_MODEL",
+          "type": "UPSCALE_MODEL",
+          "links": [
+            172,
+            200,
+            202
+          ],
+          "slot_index": 0,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "UpscaleModelLoader"
+      },
+      "widgets_values": [
+        "RealESRGAN_x4plus.pth"
+      ]
+    },
+    {
+      "id": 70,
+      "type": "PreviewImage",
+      "pos": {
+        "0": 2879,
+        "1": 1492
+      },
+      "size": {
+        "0": 1056.7071533203125,
+        "1": 267.20068359375
+      },
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 125
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 109,
+      "type": "PreviewImage",
+      "pos": {
+        "0": 2887,
+        "1": 1814
+      },
+      "size": {
+        "0": 1060.749755859375,
+        "1": 269.04522705078125
+      },
+      "flags": {},
+      "order": 23,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 182
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 118,
+      "type": "PreviewImage",
+      "pos": {
+        "0": 2882,
+        "1": 2144
+      },
+      "size": {
+        "0": 1060.749755859375,
+        "1": 269.04522705078125
+      },
+      "flags": {},
+      "order": 24,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 198
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 121,
+      "type": "PreviewImage",
+      "pos": {
+        "0": 2881,
+        "1": 2476
+      },
+      "size": {
+        "0": 1060.749755859375,
+        "1": 269.04522705078125
+      },
+      "flags": {},
+      "order": 26,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 203
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 110,
+      "type": "MaskToImage",
+      "pos": {
+        "0": 3984,
+        "1": 1187
+      },
+      "size": {
+        "0": 210,
+        "1": 26
+      },
+      "flags": {},
+      "order": 15,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mask",
+          "type": "MASK",
+          "link": 183
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            184
+          ],
+          "slot_index": 0,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MaskToImage"
+      }
+    },
+    {
+      "id": 111,
+      "type": "PreviewImage",
+      "pos": {
+        "0": 4245,
+        "1": 1276
+      },
+      "size": {
+        "0": 1060.749755859375,
+        "1": 269.04522705078125
+      },
+      "flags": {},
+      "order": 18,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 184
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 105,
+      "type": "ImageUpscaleWithModel",
+      "pos": {
+        "0": 3772,
+        "1": -76
+      },
+      "size": {
+        "0": 241.79998779296875,
+        "1": 46
+      },
+      "flags": {},
+      "order": 19,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "upscale_model",
+          "type": "UPSCALE_MODEL",
+          "link": 172
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 195
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            174,
+            182
+          ],
+          "slot_index": 0,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ImageUpscaleWithModel"
+      }
+    },
+    {
+      "id": 120,
+      "type": "ImageUpscaleWithModel",
+      "pos": {
+        "0": 3777,
+        "1": 559
+      },
+      "size": {
+        "0": 241.79998779296875,
+        "1": 46
+      },
+      "flags": {},
+      "order": 21,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "upscale_model",
+          "type": "UPSCALE_MODEL",
+          "link": 202
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 201
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            203,
+            206
+          ],
+          "slot_index": 0,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ImageUpscaleWithModel"
+      }
+    },
+    {
+      "id": 75,
+      "type": "PreviewImage",
+      "pos": {
+        "0": 2879,
+        "1": 1185
+      },
+      "size": {
+        "0": 1057.5609130859375,
+        "1": 246
+      },
+      "flags": {},
+      "order": 16,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 131
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 116,
+      "type": "[Comfy3D] CRM T2I V3 Models",
+      "pos": {
+        "0": 3063,
+        "1": 509
+      },
+      "size": {
+        "0": 582,
+        "1": 302
+      },
+      "flags": {},
+      "order": 17,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "t2iadapter_v2",
+          "type": "T2IADAPTER_V2",
+          "link": 191
+        },
+        {
+          "name": "crm_mvdiffusion_sampler_v3",
+          "type": "CRM_MVDIFFUSION_SAMPLER_V3",
+          "link": 192
+        },
+        {
+          "name": "reference_image",
+          "type": "IMAGE",
+          "link": 194
+        },
+        {
+          "name": "reference_mask",
+          "type": "MASK",
+          "link": 193
+        },
+        {
+          "name": "normal_maps",
+          "type": "IMAGE",
+          "link": 197
+        }
+      ],
+      "outputs": [
+        {
+          "name": "multiview_albedos",
+          "type": "IMAGE",
+          "links": [
+            195
+          ],
+          "slot_index": 0,
+          "shape": 3
+        },
+        {
+          "name": "multiview_metalness",
+          "type": "IMAGE",
+          "links": [
+            199
+          ],
+          "slot_index": 1,
+          "shape": 3
+        },
+        {
+          "name": "multiview_roughness",
+          "type": "IMAGE",
+          "links": [
+            201
+          ],
+          "slot_index": 2,
+          "shape": 3
+        },
+        {
+          "name": "orbit_camposes",
+          "type": "ORBIT_CAMPOSES",
+          "links": [],
+          "slot_index": 3,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] CRM T2I V3 Models"
+      },
+      "widgets_values": [
+        "3D assets",
+        "uniform low no texture ugly, boring, bad anatomy, blurry, pixelated,  obscure, unnatural colors, poor lighting, dull, and unclear.",
+        1234,
+        "fixed",
+        5.5,
+        50
+      ]
+    },
+    {
+      "id": 128,
+      "type": "PreviewImage",
+      "pos": {
+        "0": 4945,
+        "1": 263
+      },
+      "size": {
+        "0": 1057.5609130859375,
+        "1": 246
+      },
+      "flags": {},
+      "order": 31,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 208
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 129,
+      "type": "PreviewImage",
+      "pos": {
+        "0": 4572,
+        "1": -370
+      },
+      "size": {
+        "0": 1057.5609130859375,
+        "1": 246
+      },
+      "flags": {},
+      "order": 28,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 213
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 130,
+      "type": "PreviewImage",
+      "pos": {
+        "0": 4580,
+        "1": -68
+      },
+      "size": {
+        "0": 1057.5609130859375,
+        "1": 246
+      },
+      "flags": {},
+      "order": 30,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 214
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 107,
+      "type": "ResizeMask",
+      "pos": {
+        "0": 3602,
+        "1": 981
+      },
+      "size": {
+        "0": 315,
+        "1": 146
+      },
+      "flags": {},
+      "order": 13,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mask",
+          "type": "MASK",
+          "link": 189
+        }
+      ],
+      "outputs": [
+        {
+          "name": "mask",
+          "type": "MASK",
+          "links": [
+            177,
+            183,
+            215
+          ],
+          "slot_index": 0,
+          "shape": 3
+        },
+        {
+          "name": "width",
+          "type": "INT",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "height",
+          "type": "INT",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ResizeMask"
+      },
+      "widgets_values": [
+        1024,
+        1024,
+        false
+      ]
+    },
+    {
+      "id": 127,
+      "type": "ConvertToGrayscale",
+      "pos": {
+        "0": 4263,
+        "1": 556
+      },
+      "size": {
+        "0": 226.79998779296875,
+        "1": 26
+      },
+      "flags": {},
+      "order": 27,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 206
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            207,
+            214
+          ],
+          "slot_index": 0,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ConvertToGrayscale"
+      }
+    },
+    {
+      "id": 125,
+      "type": "MergeImageChannels",
+      "pos": {
+        "0": 4577,
+        "1": 260
+      },
+      "size": {
+        "0": 252,
+        "1": 86
+      },
+      "flags": {},
+      "order": 29,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "red",
+          "type": "IMAGE",
+          "link": 218
+        },
+        {
+          "name": "green",
+          "type": "IMAGE",
+          "link": 207
+        },
+        {
+          "name": "blue",
+          "type": "IMAGE",
+          "link": 205
+        },
+        {
+          "name": "mask",
+          "type": "MASK",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "links": [
+            208,
+            209
+          ],
+          "slot_index": 0,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MergeImageChannels"
+      }
+    },
+    {
+      "id": 126,
+      "type": "ConvertToGrayscale",
+      "pos": {
+        "0": 4266,
+        "1": 300
+      },
+      "size": {
+        "0": 226.79998779296875,
+        "1": 26
+      },
+      "flags": {},
+      "order": 25,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 204
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            205,
+            213,
+            218
+          ],
+          "slot_index": 0,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ConvertToGrayscale"
+      }
+    },
+    {
+      "id": 80,
+      "type": "InvertMask",
+      "pos": {
+        "0": 2784,
+        "1": 581
+      },
+      "size": {
+        "0": 210,
+        "1": 26
+      },
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mask",
+          "type": "MASK",
+          "link": 138
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            193
+          ],
+          "slot_index": 0,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "InvertMask"
+      }
+    },
+    {
+      "id": 95,
+      "type": "[Comfy3D] ExplicitTarget Color Projection",
+      "pos": {
+        "0": 4338,
+        "1": 832
+      },
+      "size": {
+        "0": 418.1999816894531,
+        "1": 262
+      },
+      "flags": {},
+      "order": 22,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 178
+        },
+        {
+          "name": "reference_images",
+          "type": "IMAGE",
+          "link": 174
+        },
+        {
+          "name": "reference_masks",
+          "type": "MASK",
+          "link": 177
+        },
+        {
+          "name": "reference_orbit_camera_poses",
+          "type": "ORBIT_CAMPOSES",
+          "link": 220
+        }
+      ],
+      "outputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "links": [
+            210
+          ],
+          "slot_index": 0,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] ExplicitTarget Color Projection"
+      },
+      "widgets_values": [
+        1024,
+        true,
+        47.5,
+        "2, 0.5, 1, 2, 0.5, 2",
+        0.02,
+        true,
+        "Albedo"
+      ]
+    },
+    {
+      "id": 122,
+      "type": "[Comfy3D] ExplicitTarget Color Projection",
+      "pos": {
+        "0": 4932,
+        "1": 829
+      },
+      "size": {
+        "0": 418.1999816894531,
+        "1": 262
+      },
+      "flags": {},
+      "order": 32,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 210
+        },
+        {
+          "name": "reference_images",
+          "type": "IMAGE",
+          "link": 209
+        },
+        {
+          "name": "reference_masks",
+          "type": "MASK",
+          "link": 215
+        },
+        {
+          "name": "reference_orbit_camera_poses",
+          "type": "ORBIT_CAMPOSES",
+          "link": 221
+        }
+      ],
+      "outputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "links": [
+            212
+          ],
+          "slot_index": 0,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] ExplicitTarget Color Projection"
+      },
+      "widgets_values": [
+        1024,
+        true,
+        47.5,
+        "2, 0.5, 1, 2, 0.5, 2",
+        0.02,
+        true,
+        "Metallic_and_Roughness"
+      ]
+    },
+    {
+      "id": 117,
+      "type": "[Comfy3D] Load CRM T2I V3 Models",
+      "pos": {
+        "0": 2417,
+        "1": 183
+      },
+      "size": {
+        "0": 342.5999755859375,
+        "1": 174
+      },
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "t2iadapter_v2",
+          "type": "T2IADAPTER_V2",
+          "links": [
+            191
+          ],
+          "slot_index": 0,
+          "shape": 3
+        },
+        {
+          "name": "crm_mvdiffusion_sampler_v3",
+          "type": "CRM_MVDIFFUSION_SAMPLER_V3",
+          "links": [
+            192
+          ],
+          "slot_index": 1,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Load CRM T2I V3 Models"
+      },
+      "widgets_values": [
+        "pixel-diffusion_Hyper.pth",
+        "pixel-diffusion_lora_80k_Hyper.pth",
+        "sd_v2_base_ipmv_zero_SNR_Hyper.yaml",
+        64,
+        false
+      ]
+    },
+    {
+      "id": 56,
+      "type": "[Comfy3D] OrbitPoses JK",
+      "pos": {
+        "0": 1070,
+        "1": 1171
+      },
+      "size": {
+        "0": 315,
+        "1": 202
+      },
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "orbit_camposes",
+          "type": "ORBIT_CAMPOSES",
+          "links": [
+            117,
+            219
+          ],
+          "slot_index": 0,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] OrbitPoses JK"
+      },
+      "widgets_values": [
+        "Custom",
+        "1.63634, 1.63634, 1.63634, 1.63634, 1.63634, 1.63634",
+        "0.0, 90.0, 0.0, 0.0, -90.0, 0.0",
+        "-90.0, 0.0, 180.0, 90.0, 0.0, 0.0",
+        "0.0, 0.0, 0.0, 0.0, 0.0, 0.0",
+        "0.0, 0.0, 0.0, 0.0, 0.0, 0.0",
+        "0.0, 0.0, 0.0, 0.0, 0.0, 0.0"
+      ]
+    },
+    {
+      "id": 135,
+      "type": "Reroute",
+      "pos": {
+        "0": 1582,
+        "1": 793
+      },
+      "size": [
+        75,
+        26
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "",
+          "type": "*",
+          "link": 219
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "ORBIT_CAMPOSES",
+          "links": [
+            220,
+            221
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "showOutputText": false,
+        "horizontal": false
+      }
+    },
+    {
+      "id": 119,
+      "type": "ImageUpscaleWithModel",
+      "pos": {
+        "0": 3789,
+        "1": 278
+      },
+      "size": {
+        "0": 241.79998779296875,
+        "1": 46
+      },
+      "flags": {},
+      "order": 20,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "upscale_model",
+          "type": "UPSCALE_MODEL",
+          "link": 200
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 199
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            198,
+            204
+          ],
+          "slot_index": 0,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ImageUpscaleWithModel"
+      }
+    },
+    {
+      "id": 19,
+      "type": "[Comfy3D] Load 3D Mesh",
+      "pos": {
+        "0": 1066,
+        "1": 868
+      },
+      "size": {
+        "0": 315,
+        "1": 202
+      },
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "links": [
+            118,
+            178,
+            222
+          ],
+          "slot_index": 0,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Load 3D Mesh"
+      },
+      "widgets_values": [
+        "C:\\Users\\reall\\Softwares\\ComfyUI_windows_portable\\ComfyUI\\input\\Meshes\\Cup_none_0.glb",
+        true,
+        false,
+        false,
+        true,
+        false,
+        0.5
+      ]
+    },
+    {
+      "id": 137,
+      "type": "[Comfy3D] Save 3D Mesh",
+      "pos": {
+        "0": 1410,
+        "1": 604
+      },
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 222
+        }
+      ],
+      "outputs": [
+        {
+          "name": "save_path",
+          "type": "STRING",
+          "links": [
+            223
+          ],
+          "slot_index": 0,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Save 3D Mesh"
+      },
+      "widgets_values": [
+        "Test_CRM_T21_V3\\cup_original.obj"
+      ]
+    },
+    {
+      "id": 136,
+      "type": "[Comfy3D] Preview 3DMesh",
+      "pos": {
+        "0": 1779,
+        "1": 200
+      },
+      "size": [
+        600,
+        500
+      ],
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh_file_path",
+          "type": "STRING",
+          "link": 223,
+          "widget": {
+            "name": "mesh_file_path"
+          }
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Preview 3DMesh"
+      },
+      "widgets_values": [
+        "",
+        null
+      ]
+    },
+    {
+      "id": 98,
+      "type": "[Comfy3D] Preview 3DMesh",
+      "pos": {
+        "0": 5790,
+        "1": 829
+      },
+      "size": [
+        600,
+        500
+      ],
+      "flags": {},
+      "order": 34,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh_file_path",
+          "type": "STRING",
+          "link": 166,
+          "widget": {
+            "name": "mesh_file_path"
+          }
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Preview 3DMesh"
+      },
+      "widgets_values": [
+        "",
+        null
+      ]
+    },
+    {
+      "id": 97,
+      "type": "[Comfy3D] Save 3D Mesh",
+      "pos": {
+        "0": 5423,
+        "1": 830
+      },
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 33,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 212
+        }
+      ],
+      "outputs": [
+        {
+          "name": "save_path",
+          "type": "STRING",
+          "links": [
+            166
+          ],
+          "slot_index": 0,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Save 3D Mesh"
+      },
+      "widgets_values": [
+        "Test_CRM_T21_V3\\cup_new.obj"
+      ]
+    },
+    {
+      "id": 77,
+      "type": "VHS_LoadImagesPath",
+      "pos": {
+        "0": 2455,
+        "1": 421
+      },
+      "size": [
+        282.3397521972656,
+        194
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            194
+          ],
+          "slot_index": 0,
+          "shape": 3
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            138
+          ],
+          "slot_index": 1,
+          "shape": 3
+        },
+        {
+          "name": "INT",
+          "type": "INT",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VHS_LoadImagesPath"
+      },
+      "widgets_values": {
+        "directory": "C:\\Users\\reall\\Softwares\\ComfyUI_windows_portable\\ComfyUI\\input\\Test_CRM_T2I_V2\\RGBA",
+        "image_load_cap": 1,
+        "skip_first_images": 3,
+        "select_every_nth": 1,
+        "choose folder to upload": "image",
+        "videopreview": {
+          "hidden": false,
+          "paused": false,
+          "params": {
+            "frame_load_cap": 1,
+            "skip_first_images": 3,
+            "filename": "C:\\Users\\reall\\Softwares\\ComfyUI_windows_portable\\ComfyUI\\input\\Test_CRM_T2I_V2\\RGBA",
+            "type": "path",
+            "format": "folder",
+            "select_every_nth": 1
+          }
+        }
+      }
+    }
+  ],
+  "links": [
+    [
+      117,
+      56,
+      0,
+      61,
+      1,
+      "ORBIT_CAMPOSES"
+    ],
+    [
+      118,
+      19,
+      0,
+      61,
+      0,
+      "MESH"
+    ],
+    [
+      125,
+      61,
+      4,
+      70,
+      0,
+      "IMAGE"
+    ],
+    [
+      126,
+      61,
+      4,
+      71,
+      0,
+      "IMAGE"
+    ],
+    [
+      128,
+      71,
+      0,
+      73,
+      1,
+      "MASK"
+    ],
+    [
+      129,
+      61,
+      4,
+      74,
+      0,
+      "IMAGE"
+    ],
+    [
+      131,
+      73,
+      0,
+      75,
+      0,
+      "IMAGE"
+    ],
+    [
+      138,
+      77,
+      1,
+      80,
+      0,
+      "MASK"
+    ],
+    [
+      160,
+      74,
+      0,
+      73,
+      0,
+      "IMAGE"
+    ],
+    [
+      166,
+      97,
+      0,
+      98,
+      0,
+      "STRING"
+    ],
+    [
+      172,
+      104,
+      0,
+      105,
+      0,
+      "UPSCALE_MODEL"
+    ],
+    [
+      174,
+      105,
+      0,
+      95,
+      1,
+      "IMAGE"
+    ],
+    [
+      177,
+      107,
+      0,
+      95,
+      2,
+      "MASK"
+    ],
+    [
+      178,
+      19,
+      0,
+      95,
+      0,
+      "MESH"
+    ],
+    [
+      182,
+      105,
+      0,
+      109,
+      0,
+      "IMAGE"
+    ],
+    [
+      183,
+      107,
+      0,
+      110,
+      0,
+      "MASK"
+    ],
+    [
+      184,
+      110,
+      0,
+      111,
+      0,
+      "IMAGE"
+    ],
+    [
+      189,
+      71,
+      0,
+      107,
+      0,
+      "MASK"
+    ],
+    [
+      191,
+      117,
+      0,
+      116,
+      0,
+      "T2IADAPTER_V2"
+    ],
+    [
+      192,
+      117,
+      1,
+      116,
+      1,
+      "CRM_MVDIFFUSION_SAMPLER_V3"
+    ],
+    [
+      193,
+      80,
+      0,
+      116,
+      3,
+      "MASK"
+    ],
+    [
+      194,
+      77,
+      0,
+      116,
+      2,
+      "IMAGE"
+    ],
+    [
+      195,
+      116,
+      0,
+      105,
+      1,
+      "IMAGE"
+    ],
+    [
+      197,
+      73,
+      0,
+      116,
+      4,
+      "IMAGE"
+    ],
+    [
+      198,
+      119,
+      0,
+      118,
+      0,
+      "IMAGE"
+    ],
+    [
+      199,
+      116,
+      1,
+      119,
+      1,
+      "IMAGE"
+    ],
+    [
+      200,
+      104,
+      0,
+      119,
+      0,
+      "UPSCALE_MODEL"
+    ],
+    [
+      201,
+      116,
+      2,
+      120,
+      1,
+      "IMAGE"
+    ],
+    [
+      202,
+      104,
+      0,
+      120,
+      0,
+      "UPSCALE_MODEL"
+    ],
+    [
+      203,
+      120,
+      0,
+      121,
+      0,
+      "IMAGE"
+    ],
+    [
+      204,
+      119,
+      0,
+      126,
+      0,
+      "IMAGE"
+    ],
+    [
+      205,
+      126,
+      0,
+      125,
+      2,
+      "IMAGE"
+    ],
+    [
+      206,
+      120,
+      0,
+      127,
+      0,
+      "IMAGE"
+    ],
+    [
+      207,
+      127,
+      0,
+      125,
+      1,
+      "IMAGE"
+    ],
+    [
+      208,
+      125,
+      0,
+      128,
+      0,
+      "IMAGE"
+    ],
+    [
+      209,
+      125,
+      0,
+      122,
+      1,
+      "IMAGE"
+    ],
+    [
+      210,
+      95,
+      0,
+      122,
+      0,
+      "MESH"
+    ],
+    [
+      212,
+      122,
+      0,
+      97,
+      0,
+      "MESH"
+    ],
+    [
+      213,
+      126,
+      0,
+      129,
+      0,
+      "IMAGE"
+    ],
+    [
+      214,
+      127,
+      0,
+      130,
+      0,
+      "IMAGE"
+    ],
+    [
+      215,
+      107,
+      0,
+      122,
+      2,
+      "MASK"
+    ],
+    [
+      218,
+      126,
+      0,
+      125,
+      0,
+      "IMAGE"
+    ],
+    [
+      219,
+      56,
+      0,
+      135,
+      0,
+      "*"
+    ],
+    [
+      220,
+      135,
+      0,
+      95,
+      3,
+      "ORBIT_CAMPOSES"
+    ],
+    [
+      221,
+      135,
+      0,
+      122,
+      3,
+      "ORBIT_CAMPOSES"
+    ],
+    [
+      222,
+      19,
+      0,
+      137,
+      0,
+      "MESH"
+    ],
+    [
+      223,
+      137,
+      0,
+      136,
+      0,
+      "STRING"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 1,
+      "offset": [
+        -1538.267952713111,
+        -277.7717649833498
+      ]
+    }
+  },
+  "version": 0.4
+}

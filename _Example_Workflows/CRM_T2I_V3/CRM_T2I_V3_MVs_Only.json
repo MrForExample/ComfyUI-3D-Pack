@@ -1,0 +1,585 @@
+{
+  "last_node_id": 18,
+  "last_link_id": 25,
+  "nodes": [
+    {
+      "id": 16,
+      "type": "[Comfy3D] Load CRM T2I V3 Models",
+      "pos": {
+        "0": 636,
+        "1": 218
+      },
+      "size": {
+        "0": 342.5999755859375,
+        "1": 174
+      },
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "t2iadapter_v2",
+          "type": "T2IADAPTER_V2",
+          "links": [
+            18
+          ],
+          "slot_index": 0,
+          "shape": 3
+        },
+        {
+          "name": "crm_mvdiffusion_sampler_v3",
+          "type": "CRM_MVDIFFUSION_SAMPLER_V3",
+          "links": [
+            19
+          ],
+          "slot_index": 1,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Load CRM T2I V3 Models"
+      },
+      "widgets_values": [
+        "pixel-diffusion_Hyper.pth",
+        "pixel-diffusion_lora_80k_Hyper.pth",
+        "sd_v2_base_ipmv_zero_SNR_Hyper.yaml",
+        64,
+        false
+      ]
+    },
+    {
+      "id": 11,
+      "type": "ImageScale",
+      "pos": {
+        "0": 695,
+        "1": 662
+      },
+      "size": {
+        "0": 315,
+        "1": 130
+      },
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 10
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            22
+          ],
+          "slot_index": 0,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ImageScale"
+      },
+      "widgets_values": [
+        "lanczos",
+        512,
+        512,
+        "disabled"
+      ]
+    },
+    {
+      "id": 6,
+      "type": "InvertMask",
+      "pos": {
+        "0": 691,
+        "1": 569
+      },
+      "size": {
+        "0": 210,
+        "1": 26
+      },
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mask",
+          "type": "MASK",
+          "link": 4
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            20
+          ],
+          "slot_index": 0,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "InvertMask"
+      }
+    },
+    {
+      "id": 2,
+      "type": "VHS_LoadImagesPath",
+      "pos": {
+        "0": 340,
+        "1": 506
+      },
+      "size": [
+        282.3397521972656,
+        194
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            17,
+            21
+          ],
+          "slot_index": 0,
+          "shape": 3
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            4
+          ],
+          "slot_index": 1,
+          "shape": 3
+        },
+        {
+          "name": "INT",
+          "type": "INT",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VHS_LoadImagesPath"
+      },
+      "widgets_values": {
+        "directory": "C:\\Users\\reall\\Softwares\\ComfyUI_windows_portable\\ComfyUI\\input\\Test_CRM_T2I_V2\\RGBA",
+        "image_load_cap": 2,
+        "skip_first_images": 0,
+        "select_every_nth": 1,
+        "choose folder to upload": "image",
+        "videopreview": {
+          "hidden": false,
+          "paused": false,
+          "params": {
+            "frame_load_cap": 2,
+            "skip_first_images": 0,
+            "filename": "C:\\Users\\reall\\Softwares\\ComfyUI_windows_portable\\ComfyUI\\input\\Test_CRM_T2I_V2\\RGBA",
+            "type": "path",
+            "format": "folder",
+            "select_every_nth": 1
+          }
+        }
+      }
+    },
+    {
+      "id": 9,
+      "type": "PreviewImage",
+      "pos": {
+        "0": 1814,
+        "1": 348
+      },
+      "size": {
+        "0": 702.0960083007812,
+        "1": 256.3641052246094
+      },
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 23
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 17,
+      "type": "PreviewImage",
+      "pos": {
+        "0": 1815,
+        "1": 658
+      },
+      "size": {
+        "0": 702.0960083007812,
+        "1": 256.3641052246094
+      },
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 24
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 3,
+      "type": "VHS_LoadImagesPath",
+      "pos": {
+        "0": 334,
+        "1": 778
+      },
+      "size": [
+        273.16973876953125,
+        194
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            10,
+            16
+          ],
+          "slot_index": 0,
+          "shape": 3
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "INT",
+          "type": "INT",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VHS_LoadImagesPath"
+      },
+      "widgets_values": {
+        "directory": "C:\\Users\\reall\\Softwares\\ComfyUI_windows_portable\\ComfyUI\\input\\Test_CRM_T2I_V2\\Normal",
+        "image_load_cap": 13,
+        "skip_first_images": 0,
+        "select_every_nth": 1,
+        "choose folder to upload": "image",
+        "videopreview": {
+          "hidden": false,
+          "paused": false,
+          "params": {
+            "frame_load_cap": 13,
+            "skip_first_images": 0,
+            "filename": "C:\\Users\\reall\\Softwares\\ComfyUI_windows_portable\\ComfyUI\\input\\Test_CRM_T2I_V2\\Normal",
+            "type": "path",
+            "format": "folder",
+            "select_every_nth": 1
+          }
+        }
+      }
+    },
+    {
+      "id": 13,
+      "type": "PreviewImage",
+      "pos": {
+        "0": 1057,
+        "1": 916
+      },
+      "size": {
+        "0": 698.6766967773438,
+        "1": 269.9477844238281
+      },
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 16
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 14,
+      "type": "PreviewImage",
+      "pos": {
+        "0": 645,
+        "1": 978
+      },
+      "size": {
+        "0": 364.8351135253906,
+        "1": 534.6976928710938
+      },
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 17
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 15,
+      "type": "[Comfy3D] CRM T2I V3 Models",
+      "pos": {
+        "0": 1097,
+        "1": 467
+      },
+      "size": {
+        "0": 582,
+        "1": 302
+      },
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "t2iadapter_v2",
+          "type": "T2IADAPTER_V2",
+          "link": 18
+        },
+        {
+          "name": "crm_mvdiffusion_sampler_v3",
+          "type": "CRM_MVDIFFUSION_SAMPLER_V3",
+          "link": 19
+        },
+        {
+          "name": "reference_image",
+          "type": "IMAGE",
+          "link": 21
+        },
+        {
+          "name": "reference_mask",
+          "type": "MASK",
+          "link": 20
+        },
+        {
+          "name": "normal_maps",
+          "type": "IMAGE",
+          "link": 22
+        }
+      ],
+      "outputs": [
+        {
+          "name": "multiview_albedos",
+          "type": "IMAGE",
+          "links": [
+            23
+          ],
+          "slot_index": 0,
+          "shape": 3
+        },
+        {
+          "name": "multiview_metalness",
+          "type": "IMAGE",
+          "links": [
+            24
+          ],
+          "slot_index": 1,
+          "shape": 3
+        },
+        {
+          "name": "multiview_roughness",
+          "type": "IMAGE",
+          "links": [
+            25
+          ],
+          "slot_index": 2,
+          "shape": 3
+        },
+        {
+          "name": "orbit_camposes",
+          "type": "ORBIT_CAMPOSES",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] CRM T2I V3 Models"
+      },
+      "widgets_values": [
+        "3D assets",
+        "uniform low no texture ugly, boring, bad anatomy, blurry, pixelated,  obscure, unnatural colors, poor lighting, dull, and unclear.",
+        1234,
+        "fixed",
+        5.5,
+        50
+      ]
+    },
+    {
+      "id": 18,
+      "type": "PreviewImage",
+      "pos": {
+        "0": 1821,
+        "1": 971
+      },
+      "size": {
+        "0": 702.0960083007812,
+        "1": 256.3641052246094
+      },
+      "flags": {},
+      "order": 10,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 25
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    }
+  ],
+  "links": [
+    [
+      4,
+      2,
+      1,
+      6,
+      0,
+      "MASK"
+    ],
+    [
+      10,
+      3,
+      0,
+      11,
+      0,
+      "IMAGE"
+    ],
+    [
+      16,
+      3,
+      0,
+      13,
+      0,
+      "IMAGE"
+    ],
+    [
+      17,
+      2,
+      0,
+      14,
+      0,
+      "IMAGE"
+    ],
+    [
+      18,
+      16,
+      0,
+      15,
+      0,
+      "T2IADAPTER_V2"
+    ],
+    [
+      19,
+      16,
+      1,
+      15,
+      1,
+      "CRM_MVDIFFUSION_SAMPLER_V3"
+    ],
+    [
+      20,
+      6,
+      0,
+      15,
+      3,
+      "MASK"
+    ],
+    [
+      21,
+      2,
+      0,
+      15,
+      2,
+      "IMAGE"
+    ],
+    [
+      22,
+      11,
+      0,
+      15,
+      4,
+      "IMAGE"
+    ],
+    [
+      23,
+      15,
+      0,
+      9,
+      0,
+      "IMAGE"
+    ],
+    [
+      24,
+      15,
+      1,
+      17,
+      0,
+      "IMAGE"
+    ],
+    [
+      25,
+      15,
+      2,
+      18,
+      0,
+      "IMAGE"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.6830134553650706,
+      "offset": [
+        -316.447151491684,
+        -175.13875989569115
+      ]
+    }
+  },
+  "version": 0.4
+}
