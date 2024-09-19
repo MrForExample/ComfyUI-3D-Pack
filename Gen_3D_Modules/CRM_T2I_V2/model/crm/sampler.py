@@ -67,7 +67,7 @@ class CRMSamplerV2:
         
         # remove reference views
         mask = torch.arange(1, stage1_images.shape[0]+1, 1) % 7 != 0
-        return stage1_images[mask] # (N, H, W, 3) in [0, 255]
+        return stage1_images[mask] # (N, H, W, 3) in [0, 1]
     
     @classmethod
     def stage2_sample(

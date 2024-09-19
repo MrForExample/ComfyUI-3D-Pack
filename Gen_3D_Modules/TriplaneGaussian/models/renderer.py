@@ -1,7 +1,5 @@
 from dataclasses import dataclass, field
 from collections import defaultdict
-from diff_gaussian_rasterization import GaussianRasterizationSettings, GaussianRasterizer
-from plyfile import PlyData, PlyElement
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -208,6 +206,7 @@ class GS3DRenderer(BaseModule):
         background_color: Optional[Float[Tensor, "3"]],
         ret_mask: bool = True,
         ):
+        from diff_gaussian_rasterization import GaussianRasterizationSettings, GaussianRasterizer
         # Create zero tensor. We will use it to make pytorch return gradients of the 2D (screen-space) means
         screenspace_points = torch.zeros_like(gs.xyz, dtype=gs.xyz.dtype, requires_grad=True, device=self.device) + 0
         try:

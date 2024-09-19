@@ -12,12 +12,6 @@ from kornia.geometry.conversions import (
     quaternion_to_rotation_matrix,
 )
 
-from diff_gaussian_rasterization import (
-    GaussianRasterizationSettings,
-    GaussianRasterizer,
-)
-from simple_knn._C import distCUDA2
-
 from kiui.op import inverse_sigmoid
 
 from shared_utils.sh_utils import eval_sh, SH2RGB, RGB2SH
@@ -411,6 +405,8 @@ class GaussianModel:
             self.active_sh_degree += 1
 
     def create_from_pcd(self, pcd : PointCloud, spatial_lr_scale : float = 1):
+        from simple_knn._C import distCUDA2
+        
         self.spatial_lr_scale = spatial_lr_scale
         fused_point_cloud = torch.tensor(np.asarray(pcd.points)).float().cuda()
         fused_color = RGB2SH(torch.tensor(np.asarray(pcd.colors)).float().cuda())
@@ -841,6 +837,11 @@ class GaussianSplattingRenderer:
         compute_cov3D_python=False,
         convert_SHs_python=False,
     ):
+        from diff_gaussian_rasterization import (
+            GaussianRasterizationSettings,
+            GaussianRasterizer,
+        )
+        
         # Set up rasterization configuration
         tanfovx = math.tan(viewpoint_camera.FoVx * 0.5)
         tanfovy = math.tan(viewpoint_camera.FoVy * 0.5)

@@ -35,6 +35,9 @@ def get_python_version():
     # Output: only first two version numbers, e.g. 3.12.4 -> py312
     return "py" + "".join(platform.python_version().split('.')[:-1])
 
+def get_pytorch_version():
+    return "torch" + build_config.remote_packages["torch"].version
+
 def get_cuda_version():
     # Output: e.g. "cu121" or cu118
     result = subprocess.run(["nvcc", "--version"], text=True, capture_output=True)
@@ -47,6 +50,7 @@ def get_cuda_version():
 
 OS_TYPE = get_os_type()
 PYTHON_VERSION = get_python_version()
+PYTORCH_VERSION = get_pytorch_version()
 CUDA_VERSION = get_cuda_version()
 build_config.cuda_version = CUDA_VERSION
 
@@ -58,6 +62,9 @@ def get_platform_config_name():
     
     # Add Python Version
     platform_config_name += "_" + PYTHON_VERSION
+    
+    # Add Pytorch Version
+    platform_config_name += "_" + PYTORCH_VERSION
     
     # Add CUDA Version
     platform_config_name += "_" + CUDA_VERSION
