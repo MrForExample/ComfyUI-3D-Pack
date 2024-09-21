@@ -43,7 +43,7 @@ try:
     
     def install_local_wheels(builds_dir):
         for wheel_path in glob.glob(os.path.join(builds_dir, "**/*.whl"), recursive=True):
-            subprocess.run([PYTHON_PATH, "-s", "-m", "pip", "install", wheel_path])
+            subprocess.run([PYTHON_PATH, "-s", "-m", "pip", "install", "--no-deps", "--force-reinstall", wheel_path])
             cstr(f"pip install {wheel_path} to {PYTHON_PATH}").msg.print()
     
     # Install packages that needs specify remote url
