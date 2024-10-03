@@ -35,27 +35,22 @@ function createVisualizer(node, inputName, typeName, inputData, app) {
         name: "preview3d",
         callback: () => {},
         draw : function(ctx, node, widgetWidth, widgetY, widgetHeight) {
-            const margin = 10
-            const top_offset = 5
+            const margin = 30
+            const top_offset = LiteGraph.NODE_TITLE_HEIGHT+margin
             const visible = app.canvas.ds.scale > 0.5 && this.type === typeName
-            const w = widgetWidth - margin * 4
-            const clientRectBound = ctx.canvas.getBoundingClientRect()
-            const transform = new DOMMatrix()
-                .scaleSelf(
-                    clientRectBound.width / ctx.canvas.width,
-                    clientRectBound.height / ctx.canvas.height
-                )
-                .multiplySelf(ctx.getTransform())
-                .translateSelf(margin, margin + widgetY)
-            
+   
+            const [x, y] = node.getBounding();
+            const [left, top] = app.canvasPosToClientPos([x, y]);
+            const width = node.width * app.canvas.ds.scale;
+            const height = (node.height - top_offset ) * app.canvas.ds.scale;
+   
             Object.assign(this.visualizer.style, {
-                left: `${transform.a * margin + transform.e}px`,
-                top: `${transform.d + transform.f + top_offset}px`,
-                width: `${(w * transform.a)}px`,
-                height: `${(w * transform.d - widgetHeight - (margin * 15) * transform.d)}px`,
+                left: `${left}px`,
+                top: `${top+(top_offset * app.canvas.ds.scale)}px`,
+                width: `${width}px`,
+                height: `${height}px`,
                 position: "absolute",
                 overflow: "hidden",
-                zIndex: app.graph._nodes.indexOf(node),
             })
 
             Object.assign(this.visualizer.children[0].style, {
