@@ -8,7 +8,7 @@ These instructions are based on the assumption that you have Docker installed on
 
 All tests were performed using Docker version 26.1.3 and Docker Compose version 2.27.0 under Ubuntu 22.04.
 
-These instructions are focused on running the Unique3D workflows, you can use the same steps to run the other workflows, but you need to check the model requirements for each workflow at the [README.md](../README.md) file.
+These instructions are focused on running the Unique3D workflows, you can use the same steps to run the other workflows, but you need to check the model requirements for each workflow at the [README.md](./README.md) file.
 
 ### Requirements
 

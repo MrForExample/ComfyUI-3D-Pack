@@ -1,5 +1,5 @@
 import * as SPLAT from 'gsplat';
-import { api } from '/scripts/api.js'
+//import { api } from '/scripts/api.js'
 import {getRGBValue} from '/extensions/ComfyUI-3D-Pack/js/sharedFunctions.js';
 
 const visualizer = document.getElementById("visualizer");
