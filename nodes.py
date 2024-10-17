@@ -2562,11 +2562,11 @@ class Era3D_MVDiffusion_Model:
         # Get input data
         img_batch = dataset.__getitem__(0)
 
-        imgs_in = torch.cat([img_batch['imgs_in']]*2, dim=0).to(DEVICE).to(WEIGHT_DTYPE)    # (B*Nv, 3, H, W) B==1
+        imgs_in = torch.cat([img_batch['imgs_in']]*2, dim=0).to(DEVICE, dtype=WEIGHT_DTYPE)    # (B*Nv, 3, H, W) B==1
         #num_views = imgs_in.shape[1]
 
         normal_prompt_embeddings, clr_prompt_embeddings = img_batch['normal_prompt_embeddings'], img_batch['color_prompt_embeddings'] 
-        prompt_embeddings = torch.cat([normal_prompt_embeddings, clr_prompt_embeddings], dim=0).to(DEVICE).to(WEIGHT_DTYPE)    # (B*Nv, N, C) B==1
+        prompt_embeddings = torch.cat([normal_prompt_embeddings, clr_prompt_embeddings], dim=0).to(DEVICE, dtype=WEIGHT_DTYPE)    # (B*Nv, N, C) B==1
 
         generator = torch.Generator(device=era3d_pipe.unet.device).manual_seed(seed)
 
@@ -2586,8 +2586,8 @@ class Era3D_MVDiffusion_Model:
         images_pred = out[bsz:] 
         
         # [N, 3, H, W] -> [N, H, W, 3]
-        multiview_images = images_pred.permute(0, 2, 3, 1).to(reference_image.dtype, reference_image.device)   
-        multiview_normals = normals_pred.permute(0, 2, 3, 1).to(reference_image.dtype, reference_image.device)
+        multiview_images = images_pred.permute(0, 2, 3, 1).to(reference_image.dtype, dtype=reference_image.device)   
+        multiview_normals = normals_pred.permute(0, 2, 3, 1).to(reference_image.dtype, dtype=reference_image.device)
         
         azimuths = [0, 45, 90, 180, -90, -45]
         elevations = [0.0] * 6
@@ -3449,7 +3449,7 @@ class Load_CRM_T2I_V2_Models:
         
         crm_mvdiffusion_model.clip_model = crm_mvdiffusion_model.clip_model.to(DEVICE, dtype=WEIGHT_DTYPE)
         crm_mvdiffusion_model.vae_model = crm_mvdiffusion_model.vae_model.to(DEVICE, dtype=WEIGHT_DTYPE)
-        crm_mvdiffusion_model = crm_mvdiffusion_model.to(DEVICE).to(WEIGHT_DTYPE)
+        crm_mvdiffusion_model = crm_mvdiffusion_model.to(DEVICE, dtype=WEIGHT_DTYPE)
         
         crm_mvdiffusion_sampler_v2 = get_obj_from_str(crm_config.sampler.target)(
             crm_mvdiffusion_model, device=DEVICE, dtype=WEIGHT_DTYPE, **crm_config.sampler.params
@@ -3545,7 +3545,7 @@ class Load_CRM_T2I_V3_Models:
     crm_checkpoints_dir = "CRM"
     crm_t2i_v3_checkpoints_dir = "CRM_T2I_V3"
     t2i_v2_checkpoints_dir = "T2I_V2"
-    default_crm_t2i_v3_ckpt_name = ["pixel-diffusion_lora_80k_Hyper.pth"]
+    default_crm_t2i_v3_ckpt_name = ["pixel-diffusion_lora_80k_rank_60_Hyper.pth", "pixel-diffusion_dora_90k_rank_128_Hyper.pth"]
     default_crm_ckpt_name = ["pixel-diffusion_Hyper.pth"]
     default_crm_conf_name = ["sd_v2_base_ipmv_zero_SNR_Hyper.yaml"]
     default_crm_repo_id = "Zhengyi/CRM"
@@ -3610,7 +3610,7 @@ class Load_CRM_T2I_V3_Models:
         
         crm_mvdiffusion_model.clip_model = crm_mvdiffusion_model.clip_model.to(DEVICE, dtype=WEIGHT_DTYPE)
         crm_mvdiffusion_model.vae_model = crm_mvdiffusion_model.vae_model.to(DEVICE, dtype=WEIGHT_DTYPE)
-        crm_mvdiffusion_model = crm_mvdiffusion_model.to(DEVICE).to(WEIGHT_DTYPE)
+        crm_mvdiffusion_model = crm_mvdiffusion_model.to(DEVICE, dtype=WEIGHT_DTYPE)
         
         crm_mvdiffusion_sampler_v3 = get_obj_from_str(crm_config.sampler.target)(
             crm_mvdiffusion_model, device=DEVICE, dtype=WEIGHT_DTYPE, **crm_config.sampler.params
