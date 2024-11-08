@@ -18,7 +18,7 @@ This is an extensive node suite that enables ComfyUI to process 3D inputs (Mesh 
 - [Pre-builds](https://github.com/MrForExample/Comfy3D_Pre_Builds) are available for:
   - Windows 10/11, Ubuntu 22.04
   - Python 3.10/3.11/3.12
-  - CUDA 12.1/11.8
+  - CUDA 12.4/12.1/11.8
   - torch 2.3.0+cu121/cu118, torchvision 0.18.0+cu121/cu118
 - [install.py](install.py) will download & install Pre-builds automatically according to your runtime environment, if it couldn't find corresponding Pre-builds, then [build script](_Pre_Builds/_Build_Scripts/auto_build_all.py) will start automatically, if automatic build doesn't work for you, then please check out [Semi-Automatic Build Guide](_Pre_Builds/README.md#build-required-packages-semi-automatically)
 - If you have any missing node in any open Comfy3D workflow, try simply click [Install Missing Custom Nodes](https://github.com/ltdrdata/ComfyUI-Manager?tab=readme-ov-file#support-of-missing-nodes-installation) in ComfyUI-Manager
