@@ -2,3 +2,4 @@ https://github.com/ashawkey/diff-gaussian-rasterization.git
 https://github.com/NVlabs/nvdiffrast.git
 https://github.com/ashawkey/kiuikit.git
 https://github.com/facebookresearch/pytorch3d.git
+https://github.com/rusty1s/pytorch_scatter.git

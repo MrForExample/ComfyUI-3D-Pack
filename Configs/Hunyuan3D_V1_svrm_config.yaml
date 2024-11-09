@@ -1,0 +1,32 @@
+model:
+  base_learning_rate: 3.0e-05
+  target: Hunyuan3D_V1.svrm.ldm.models.svrm.SVRMModel
+  params:
+
+    img_encoder_config:
+      target: Hunyuan3D_V1.svrm.ldm.modules.encoders.dinov2_mod.FrozenDinoV2ImageEmbedder
+      params:
+        version: dinov2_vitb14
+    
+    img_to_triplane_config:
+      target: Hunyuan3D_V1.svrm.ldm.modules.translator.img_to_triplane.ImgToTriplaneModel
+      params:
+        pos_emb_size: 64
+        pos_emb_dim: 1024
+        cam_cond_dim: 20
+        n_heads: 16
+        d_head: 64
+        depth: 16
+        context_dim: 768
+        triplane_dim: 120
+        use_fp16: true
+        use_bf16: false
+        upsample_time: 2
+        
+    render_config:
+      target: Hunyuan3D_V1.svrm.ldm.modules.rendering_neus.synthesizer.TriplaneSynthesizer
+      params:
+        triplane_dim: 120
+        samples_per_ray: 128
+
+

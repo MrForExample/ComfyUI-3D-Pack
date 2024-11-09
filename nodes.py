@@ -90,6 +90,9 @@ from craftsman.utils.config import ExperimentConfig as ExperimentConfigCraftsman
 from CRM_T2I_V2.model.crm.sampler import CRMSamplerV2
 from CRM_T2I_V2.model.t2i_adapter_v2 import T2IAdapterV2
 from CRM_T2I_V3.model.crm.sampler import CRMSamplerV3
+from Hunyuan3D_V1.mvd.hunyuan3d_mvd_std_pipeline import HunYuan3D_MVD_Std_Pipeline
+from Hunyuan3D_V1.mvd.hunyuan3d_mvd_lite_pipeline import Hunyuan3D_MVD_Lite_Pipeline
+from Hunyuan3D_V1.infer import Views2Mesh
 
 from .shared_utils.image_utils import (
     prepare_torch_img, torch_imgs_to_pils, troch_image_dilate, 
@@ -111,6 +114,8 @@ DIFFUSERS_PIPE_DICT = OrderedDict([
     ("Era3DPipeline", StableUnCLIPImg2ImgPipeline),
     ("Unique3DImage2MVCustomPipeline", StableDiffusionImage2MVCustomPipeline),
     ("Unique3DImageCustomPipeline", StableDiffusionImageCustomPipeline),
+    ("HunYuan3DMVDStdPipeline", HunYuan3D_MVD_Std_Pipeline),
+    ("Hunyuan3DMVDLitePipeline", Hunyuan3D_MVD_Lite_Pipeline),
 ])
 
 DIFFUSERS_SCHEDULER_DICT = OrderedDict([
@@ -1568,6 +1573,7 @@ class Wonder3D_MVDiffusion_Model:
     FUNCTION = "run_mvdiffusion"
     CATEGORY = "Comfy3D/Algorithm"
     
+    @torch.no_grad()
     def run_mvdiffusion(
         self, 
         mvdiffusion_pipe, 
@@ -3744,3 +3750,130 @@ class CRM_T2I_V3_Models:
         orbit_camposes = compose_orbit_camposes(orbit_radius, orbit_elevations, orbit_azimuths, orbit_center, orbit_center, orbit_center)
         
         return (output_images[0], output_images[1], output_images[2], orbit_camposes)
+
+class Hunyuan3D_V1_MVDiffusion_Model:
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "mvdiffusion_pipe": ("DIFFUSERS_PIPE",),
+                "reference_image": ("IMAGE",),
+                "reference_mask": ("MASK",),
+                "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
+                "mv_guidance_scale": ("FLOAT", {"default": 2.0, "min": 0.0, "step": 0.01}),
+                "num_inference_steps": ("INT", {"default": 50, "min": 1}),
+            }
+        }
+    
+    RETURN_TYPES = (
+        "IMAGE",
+        "IMAGE",
+    )
+    RETURN_NAMES = (
+        "multiview_image_grid",
+        "condition_image",
+    )
+    FUNCTION = "run_mvdiffusion"
+    CATEGORY = "Comfy3D/Algorithm"
+    
+    @torch.no_grad()
+    def run_mvdiffusion(
+        self, 
+        mvdiffusion_pipe, 
+        reference_image, # [1, H, W, 3]
+        reference_mask,  # [1, H, W]
+        seed,
+        mv_guidance_scale, 
+        num_inference_steps, 
+    ):
+        single_image = torch_imgs_to_pils(reference_image, reference_mask)[0]
+
+        generator = torch.Generator(device=mvdiffusion_pipe.device).manual_seed(seed)
+        views_grid_pil, cond_pil = mvdiffusion_pipe(single_image, 
+            num_inference_steps=num_inference_steps,
+            guidance_scale=mv_guidance_scale, 
+            generat=generator
+        ).images
+        
+        multiview_image_grid = pils_to_torch_imgs(views_grid_pil, reference_image.dtype, reference_image.device)
+        condition_image = pils_to_torch_imgs(cond_pil, reference_image.dtype, reference_image.device)
+
+        return (multiview_image_grid, condition_image)
+    
+class Load_Hunyuan3D_V1_Reconstruction_Model:
+    checkpoints_dir = "svrm/svrm.safetensors"
+    default_repo_id = "tencent/Hunyuan3D-1"
+    config_path = "Hunyuan3D_V1_svrm_config.yaml"
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        cls.config_root_path_abs = os.path.join(CONFIG_ROOT_PATH, cls.config_path)
+        return {
+            "required": {
+                "force_download": ("BOOLEAN", {"default": False}),
+                "use_lite": ("BOOLEAN", {"default": True}),
+            },
+        }
+    
+    RETURN_TYPES = (
+        "HUNYUAN3D_V1_RECONSTRUCTION_MODEL",
+    )
+    RETURN_NAMES = (
+        "hunyuan3d_v1_reconstruction_model",
+    )
+    FUNCTION = "load_model"
+    CATEGORY = "Comfy3D/Import|Export"
+    
+    def load_model(self, force_download, use_lite):
+        # Download checkpoints
+        ckpt_download_dir = os.path.join(CKPT_DIFFUSERS_PATH, self.default_repo_id)
+        snapshot_download(repo_id=self.default_repo_id, local_dir=ckpt_download_dir, force_download=force_download, repo_type="model", ignore_patterns=["*.json", "*.py"])
+        # Load pre-trained models
+        mv23d_ckt_path = os.path.join(ckpt_download_dir, self.checkpoints_dir)
+        hunyuan3d_v1_reconstruction_model = Views2Mesh(self.config_root_path_abs, mv23d_ckt_path, DEVICE, use_lite=use_lite)
+        
+        cstr(f"[{self.__class__.__name__}] loaded model ckpt from {mv23d_ckt_path}").msg.print()
+        return (hunyuan3d_v1_reconstruction_model,)
+    
+class Hunyuan3D_V1_Reconstruction_Model:
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "hunyuan3d_v1_reconstruction_model": ("HUNYUAN3D_V1_RECONSTRUCTION_MODEL",),
+                "multiview_image_grid": ("IMAGE",),
+                "condition_image": ("IMAGE",),
+                "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
+            }
+        }
+
+    RETURN_TYPES = (
+        "MESH",
+    )
+    RETURN_NAMES = (
+        "mesh",
+    )
+    
+    FUNCTION = "run_model"
+    CATEGORY = "Comfy3D/Algorithm"
+    
+    @torch.no_grad()
+    def run_model(self, hunyuan3d_v1_reconstruction_model, multiview_image_grid, condition_image, seed):
+        mv_grid_pil = torch_imgs_to_pils(multiview_image_grid)[0]
+        condition_pil = torch_imgs_to_pils(condition_image)[0]
+        
+        vertices, faces, vtx_colors = hunyuan3d_v1_reconstruction_model(
+            mv_grid_pil,
+            condition_pil,
+            seed=seed,
+        )
+        vertices, faces, vtx_colors = torch.from_numpy(vertices).to(DEVICE), torch.from_numpy(faces).to(torch.int64).to(DEVICE), torch.from_numpy(vtx_colors).to(DEVICE)
+        mesh = Mesh(v=vertices, f=faces.to(torch.int64), vc=vtx_colors, device=DEVICE)
+        mesh.auto_normal()
+        
+        return (mesh,)
+    
+
+    

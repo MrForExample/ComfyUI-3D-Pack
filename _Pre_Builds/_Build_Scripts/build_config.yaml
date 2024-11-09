@@ -1,6 +1,6 @@
 repo_id: "MrForExample/Comfy3D_Pre_Builds"
-supported_cuda_versions: ["12.1", "11.8"]
-cuda_version: "12.1"
+supported_cuda_versions: ["12.4", "12.1", "11.8"]
+cuda_version: "12.4"
 
 # Packages inside this file will be pip downloaded before actual build start
 build_requirements: "build_requirements.txt"
@@ -17,17 +17,18 @@ build_base_packages: ["torch", "torchvision"]
 # All packages will be automatically installed at beginning of install.py follwing orders from top to bottom 
 remote_packages:
   torch:
-    version: "2.4.0"
+    version: "2.5.1"
     url: "https://download.pytorch.org/whl/${cuda_version}"
   
   torchvision:
-    version: "0.19.0"
+    version: "0.20.1"
     url: "https://download.pytorch.org/whl/${cuda_version}"
-
-  torch-scatter:
-    url_option: "--find-links"
-    url: "https://data.pyg.org/whl/torch-${remote_packages.torch.version}+${cuda_version}.html"
 
   xformers:
-    version: "0.0.27.post2"
+    version: "0.0.28.post3"
     url: "https://download.pytorch.org/whl/${cuda_version}"
+
+  # At the time of writing, torch-scatter is not available for PyTorch 2.5.0
+  #torch-scatter:
+  #  url_option: "--find-links"
+  #  url: "https://data.pyg.org/whl/torch-${remote_packages.torch.version}+${cuda_version}.html"
