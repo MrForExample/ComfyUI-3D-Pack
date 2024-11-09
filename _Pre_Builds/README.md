@@ -1,5 +1,5 @@
 ## Automatic Build System
-- **[_Build_Scripts/auto_build_all.py](_Pre_Builds/_Build_Scripts/auto_build_all.py)**: The build pipeline for a single given build  environment (e.g. py311, cu121)
+- **[_Build_Scripts/auto_build_all.py](_Pre_Builds/_Build_Scripts/auto_build_all.py)**: The build pipeline for a single given build  environment (e.g. py312, cu124)
 - **[_Build_Scripts/build_config.yaml](_Pre_Builds/_Build_Scripts/build_config.yaml)**: Core config for build pipeline
 
 ## Build Required Packages Semi-Automatically
@@ -7,28 +7,41 @@
 The following steps are the one that I took to build all required packages for install Comfy3D in Windows 11:
 1. Install [Visual Studio Build Tools 2022/2019](https://visualstudio.microsoft.com/downloads/?q=build+tools) with Workloads: Desktop development with C++ (There are a few JIT torch cpp extension that builds in runtime)
    - Alternatively, according to [@doctorpangloss](https://github.com/MrForExample/ComfyUI-3D-Pack/issues/5), you can setup the c++/cuda build environments in windows by using [chocolatey](https://chocolatey.org/)
-2. Download [CUDA 12.1](https://developer.nvidia.com/cuda-12-1-0-download-archive?target_os=Windows&target_arch=x86_64&target_version=11&target_type=exe_network) and [CUDA 11.8](https://developer.nvidia.com/cuda-11-8-0-download-archive?target_os=Windows&target_arch=x86_64&target_version=11&target_type=exe_network) environment.
+2. Download [CUDA 12.4](https://developer.nvidia.com/cuda-12-4-0-download-archive?target_os=Windows&target_arch=x86_64&target_version=11&target_type=exe_network), [CUDA 12.1](https://developer.nvidia.com/cuda-12-1-0-download-archive?target_os=Windows&target_arch=x86_64&target_version=11&target_type=exe_network) and [CUDA 11.8](https://developer.nvidia.com/cuda-11-8-0-download-archive?target_os=Windows&target_arch=x86_64&target_version=11&target_type=exe_network) environment.
 3. Download [Miniconda](https://docs.conda.io/projects/miniconda/en/latest/) (*Note: [In a few edge cases Miniconda fails but Anaconda could fix the issue](https://github.com/MrForExample/ComfyUI-3D-Pack/issues/49)*)
 4. Create conda environments:
    ```
+    conda create --name Comy3D_py310_cu124 python=3.10
+    conda create --name Comy3D_py311_cu124 python=3.11
+    conda create --name Comy3D_py312_cu124 python=3.12
+
     conda create --name Comy3D_py310_cu121 python=3.10
     conda create --name Comy3D_py311_cu121 python=3.11
     conda create --name Comy3D_py312_cu121 python=3.12
+	
     conda create --name Comy3D_py310_cu118 python=3.10
     conda create --name Comy3D_py311_cu118 python=3.11
     conda create --name Comy3D_py312_cu118 python=3.12
     ```
 5. Download Comfy3D: `git clone https://github.com/MrForExample/ComfyUI-3D-Pack.git`
-6. Swap CUDA Toolkit Versions to 12.1 ([Follow this 3 simple steps guide](https://github.com/bycloudai/SwapCudaVersionWindows))
-7. Build Wheels with cuda 12.1:
+6. Swap CUDA Toolkit Versions to 12.4 ([Follow this 3 simple steps guide](https://github.com/bycloudai/SwapCudaVersionWindows))
+7. Build Wheels with cuda 12.4:
+    ```
+    # Example of using the path to the miniconda envs on my PC, you may need to change the python path
+    C:\Users\reall\Softwares\Miniconda\envs\Comy3D_py310_cu124\python ./ComfyUI-3D-Pack/_Pre_Builds/_Build_Scripts/auto_build_all.py
+    C:\Users\reall\Softwares\Miniconda\envs\Comy3D_py311_cu124\python ./ComfyUI-3D-Pack/_Pre_Builds/_Build_Scripts/auto_build_all.py
+    C:\Users\reall\Softwares\Miniconda\envs\Comy3D_py312_cu124\python ./ComfyUI-3D-Pack/_Pre_Builds/_Build_Scripts/auto_build_all.py
+    ```
+7. Swap CUDA Toolkit Versions to 12.1 ([Follow this 3 simple steps guide](https://github.com/bycloudai/SwapCudaVersionWindows))
+8. Build Wheels with cuda 12.1:
     ```
     # Example of using the path to the miniconda envs on my PC, you may need to change the python path
     C:\Users\reall\Softwares\Miniconda\envs\Comy3D_py310_cu121\python ./ComfyUI-3D-Pack/_Pre_Builds/_Build_Scripts/auto_build_all.py
     C:\Users\reall\Softwares\Miniconda\envs\Comy3D_py311_cu121\python ./ComfyUI-3D-Pack/_Pre_Builds/_Build_Scripts/auto_build_all.py
     C:\Users\reall\Softwares\Miniconda\envs\Comy3D_py312_cu121\python ./ComfyUI-3D-Pack/_Pre_Builds/_Build_Scripts/auto_build_all.py
     ```
-8. Swap CUDA Toolkit Versions to 11.8 ([Follow this 3 simple steps guide](https://github.com/bycloudai/SwapCudaVersionWindows))
-9. Build Wheels with cuda 11.8:
+9. Swap CUDA Toolkit Versions to 11.8 ([Follow this 3 simple steps guide](https://github.com/bycloudai/SwapCudaVersionWindows))
+10. Build Wheels with cuda 11.8:
     ```
     # Example of using the path to the miniconda envs on my PC, you may need to change the python path
     C:\Users\reall\Softwares\Miniconda\envs\Comy3D_py310_cu118\python ./ComfyUI-3D-Pack/_Pre_Builds/_Build_Scripts/auto_build_all.py
