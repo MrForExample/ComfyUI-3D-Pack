@@ -53,9 +53,9 @@ This is an extensive node suite that enables ComfyUI to process 3D inputs (Mesh 
 
 - **Unique3D**: [AiuniAI/Unique3D](https://github.com/AiuniAI/Unique3D)
   - Four stages pipeline: 
-    1. Single image to 4 multi-view images with resulution: 256X256
+    1. Single image to 4 multi-view images with resolution: 256X256
     2. Consistent Multi-view images Upscale to 512X512, super resolution to 2048X2048
-    3. Multi-view images to Normal maps with resulution: 512X512, super resolution to 2048X2048
+    3. Multi-view images to Normal maps with resolution: 512X512, super resolution to 2048X2048
     4. Multi-view images & Normal maps to 3D mesh with texture
   - To use the [All stage Unique3D workflow](./_Example_Workflows/Unique3D/Unique3D_All_Stages.json), Download Models:
     - [sdv1.5-pruned-emaonly](https://huggingface.co/runwayml/stable-diffusion-v1-5/blob/main/v1-5-pruned-emaonly.ckpt) and put it into `Your ComfyUI root directory/ComfyUI/models/checkpoints`
@@ -68,7 +68,7 @@ This is an extensive node suite that enables ComfyUI to process 3D inputs (Mesh 
   <video controls autoplay loop src="https://github.com/MrForExample/ComfyUI-3D-Pack/assets/62230687/45dd6bfc-4f2b-4b1f-baed-13a1b0722896"></video>
 
 - **Era3D MVDiffusion Model**: [pengHTYX/Era3D](https://github.com/pengHTYX/Era3D)
-  - Single image to 6 multi-view images & normal maps with resulution: 512X512
+  - Single image to 6 multi-view images & normal maps with resolution: 512X512
   - *Note: you need at least 16GB vram to run this model*
   - Model weights: https://huggingface.co/pengHTYX/MacLab-Era3D-512-6view/tree/main
 
@@ -84,7 +84,7 @@ This is an extensive node suite that enables ComfyUI to process 3D inputs (Mesh 
 
 
 - **Zero123++**: [SUDO-AI-3D/zero123plus](https://github.com/SUDO-AI-3D/zero123plus)
-  - Single image to 6 view images with resulution: 320X320
+  - Single image to 6 view images with resolution: 320X320
 
 - **Convolutional Reconstruction Model**: [thu-ml/CRM](https://github.com/thu-ml/CRM)
   - Three stages pipeline: 
