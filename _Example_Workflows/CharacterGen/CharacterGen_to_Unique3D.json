@@ -738,7 +738,7 @@
     },
     {
       "id": 350,
-      "type": "IMG_padder",
+      "type": "Eden_IMG_padder",
       "pos": [
         -329.80954879404095,
         -427.3873149879231
@@ -769,7 +769,7 @@
         }
       ],
       "properties": {
-        "Node name for S&R": "IMG_padder"
+        "Node name for S&R": "Eden_IMG_padder"
       },
       "widgets_values": [
         0.25,
@@ -778,7 +778,7 @@
     },
     {
       "id": 351,
-      "type": "IMG_padder",
+      "type": "Eden_IMG_padder",
       "pos": [
         30.190451205959107,
         -427.3873149879231
@@ -809,7 +809,7 @@
         }
       ],
       "properties": {
-        "Node name for S&R": "IMG_padder"
+        "Node name for S&R": "Eden_IMG_padder"
       },
       "widgets_values": [
         0.2,
