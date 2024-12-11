@@ -93,6 +93,8 @@ from CRM_T2I_V3.model.crm.sampler import CRMSamplerV3
 from Hunyuan3D_V1.mvd.hunyuan3d_mvd_std_pipeline import HunYuan3D_MVD_Std_Pipeline
 from Hunyuan3D_V1.mvd.hunyuan3d_mvd_lite_pipeline import Hunyuan3D_MVD_Lite_Pipeline
 from Hunyuan3D_V1.infer import Views2Mesh
+from TRELLIS.trellis.pipelines import TrellisImageTo3DPipeline
+from TRELLIS.trellis.utils import render_utils, postprocessing_utils
 
 from .shared_utils.image_utils import (
     prepare_torch_img, torch_imgs_to_pils, troch_image_dilate, 
@@ -2592,8 +2594,8 @@ class Era3D_MVDiffusion_Model:
         images_pred = out[bsz:] 
         
         # [N, 3, H, W] -> [N, H, W, 3]
-        multiview_images = images_pred.permute(0, 2, 3, 1).to(reference_image.dtype, dtype=reference_image.device)   
-        multiview_normals = normals_pred.permute(0, 2, 3, 1).to(reference_image.dtype, dtype=reference_image.device)
+        multiview_images = images_pred.permute(0, 2, 3, 1).to(reference_image.device, dtype=reference_image.dtype)   
+        multiview_normals = normals_pred.permute(0, 2, 3, 1).to(reference_image.device, dtype=reference_image.dtype)
         
         azimuths = [0, 45, 90, 180, -90, -45]
         elevations = [0.0] * 6
@@ -3846,6 +3848,7 @@ class Hunyuan3D_V1_Reconstruction_Model:
                 "multiview_image_grid": ("IMAGE",),
                 "condition_image": ("IMAGE",),
                 "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
+                "target_face_count": ("INT", {"default": 90000, "min": 1}),
             }
         }
 
@@ -3860,7 +3863,7 @@ class Hunyuan3D_V1_Reconstruction_Model:
     CATEGORY = "Comfy3D/Algorithm"
     
     @torch.no_grad()
-    def run_model(self, hunyuan3d_v1_reconstruction_model, multiview_image_grid, condition_image, seed):
+    def run_model(self, hunyuan3d_v1_reconstruction_model, multiview_image_grid, condition_image, seed, target_face_count):
         mv_grid_pil = torch_imgs_to_pils(multiview_image_grid)[0]
         condition_pil = torch_imgs_to_pils(condition_image)[0]
         
@@ -3868,11 +3871,118 @@ class Hunyuan3D_V1_Reconstruction_Model:
             mv_grid_pil,
             condition_pil,
             seed=seed,
+			target_face_count=target_face_count
         )
         vertices, faces, vtx_colors = torch.from_numpy(vertices).to(DEVICE), torch.from_numpy(faces).to(torch.int64).to(DEVICE), torch.from_numpy(vtx_colors).to(DEVICE)
         mesh = Mesh(v=vertices, f=faces.to(torch.int64), vc=vtx_colors, device=DEVICE)
         mesh.auto_normal()
         
+        return (mesh,)
+    
+class Load_Trellis_Structured_3D_Latents_Models:
+    default_repo_id = "JeffreyXiang/TRELLIS-image-large"
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "repo_id": ("STRING", {"default": cls.default_repo_id, "multiline": False}),
+            },
+        }
+    
+    RETURN_TYPES = (
+        "TRELLIS_PIPE",
+    )
+    RETURN_NAMES = (
+        "trellis_pipe",
+    )
+    FUNCTION = "load_pipe"
+    CATEGORY = "Comfy3D/Import|Export"
+    
+    def load_pipe(self, repo_id):
+        
+        pipe = TrellisImageTo3DPipeline.from_pretrained(repo_id).to(DEVICE)
+        
+        return (pipe, )
+    
+    
+class Trellis_Structured_3D_Latents_Models:
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "trellis_pipe": ("TRELLIS_PIPE",),
+                "reference_image": ("IMAGE",),
+                "reference_mask": ("MASK",),
+                "seed": ("INT", {"default": 1, "min": 0, "max": 0xffffffffffffffff}),
+                "sparse_structure_guidance_scale": ("FLOAT", {"default": 7.5, "min": 0.0, "step": 0.01}),
+                "sparse_structure_sample_steps": ("INT", {"default": 12, "min": 1}),
+                "structured_latent_guidance_scale": ("FLOAT", {"default": 3.0, "min": 0.0, "step": 0.01}),
+                "structured_latent_sample_steps": ("INT", {"default": 12, "min": 1}),
+            }
+        }
+    
+    RETURN_TYPES = (
+        "MESH",
+    )
+    RETURN_NAMES = (
+        "mesh",
+    )
+    FUNCTION = "run_model"
+    CATEGORY = "Comfy3D/Algorithm"
+    
+    @torch.no_grad()
+    def run_model(
+        self, 
+        trellis_pipe, 
+        reference_image, # [1, H, W, 3]
+        reference_mask,  # [1, H, W]
+        seed,
+        sparse_structure_guidance_scale,
+        sparse_structure_sample_steps,
+        structured_latent_guidance_scale,
+        structured_latent_sample_steps,
+    ):
+        single_image = torch_imgs_to_pils(reference_image, reference_mask)[0]
+
+        outputs = trellis_pipe.run(
+            single_image,
+            # Optional parameters
+            seed=seed,
+            formats=["gaussian", "mesh"],
+            sparse_structure_sampler_params={
+                "cfg_strength": sparse_structure_guidance_scale,
+                "steps": sparse_structure_sample_steps,
+            },
+            slat_sampler_params={
+                "cfg_strength": structured_latent_guidance_scale,
+                "steps": structured_latent_sample_steps,
+            },
+        )
+
+        # test
+        import imageio
+        import trimesh
+        video = render_utils.render_video(outputs['gaussian'][0])['color']
+        imageio.mimsave("sampled_gs.mp4", video, fps=30)
+        # GLB files can be extracted from the outputs
+        vertices, faces, uvs, texture = postprocessing_utils.to_glb(
+            outputs['gaussian'][0],
+            outputs['mesh'][0],
+            # Optional parameters
+            simplify=0.95,          # Ratio of triangles to remove in the simplification process
+            texture_size=1024,      # Size of the texture used for the GLB
+        )
+        print(f"Vertices: {vertices.shape}, Faces: {faces.shape}, UVs: {uvs.shape}, Texture: {texture.shape}")
+        texture = Image.fromarray(texture)
+        glb = trimesh.Trimesh(vertices, faces, visual=trimesh.visual.TextureVisuals(uv=uvs, image=texture))
+        glb.export("sampled.glb")
+        
+        vertices, faces, uvs, texture = torch.from_numpy(vertices).to(DEVICE), torch.from_numpy(faces).to(torch.int64).to(DEVICE), torch.from_numpy(uvs).to(DEVICE), torch.from_numpy(texture).to(DEVICE)
+        mesh = Mesh(v=vertices, f=faces, vt=uvs, albedo=texture, device=DEVICE)
+        mesh.auto_normal()
+
         return (mesh,)
     
 

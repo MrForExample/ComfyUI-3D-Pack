@@ -140,12 +140,17 @@ def git_folder_parallel(repo_id: str, folder: str, recursive: bool=True, root_ou
     
 def install_remote_packages(package_names):
     for package_name in package_names:
-        package_attr = build_config.remote_packages[package_name]
-        if hasattr(package_attr, "version"):
-            package_name += f"=={package_attr.version}"
-        url_option = package_attr.url_option if hasattr(package_attr, "url_option") else "--index-url"
-            
-        subprocess.run([
-            PYTHON_PATH, "-s", "-m", "pip", "install", 
-            package_name, url_option, package_attr.url
-        ])
+        if package_name in build_config.remote_packages:
+            package_attr = build_config.remote_packages[package_name]
+            if hasattr(package_attr, "version"):
+                package_name += f"=={package_attr.version}"
+            if hasattr(package_attr, "url"):
+                url_option = package_attr.url_option if hasattr(package_attr, "url_option") else "--index-url"
+                
+                subprocess.run([
+                    PYTHON_PATH, "-s", "-m", "pip", "install", 
+                    package_name, url_option, package_attr.url
+                ])
+                continue
+
+        subprocess.run([PYTHON_PATH, "-s", "-m", "pip", "install", package_name])

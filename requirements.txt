@@ -43,6 +43,9 @@ pymeshlab
 gpytoolbox
 PyMCubes
 libigl
+pyvista
+pymeshfix
+igraph
 
 # configs & extra
 torchtyping>=0.1.5
@@ -52,3 +55,4 @@ packaging
 OmegaConf
 pyhocon
 iopath
+easydict

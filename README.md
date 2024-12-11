@@ -252,6 +252,6 @@ This is an extensive node suite that enables ComfyUI to process 3D inputs (Mesh 
   ```
 * If you encounter OpenGL errors (e.g., `[F glutil.cpp:338] eglInitialize() failed`), then set `force_cuda_rasterize` to true on corresponding node
 * If after the installation, your ComfyUI gets stuck at starting or running, you can follow the instructions in the following link to solve the problem: [Code Hangs Indefinitely When Evaluating Neuron Models on GPU](https://github.com/lava-nc/lava-dl/discussions/211)
-
+* [Fix "nvcc fatal : Could not set up the environment for Microsoft Visual Studio using 'C:/Program Files (x86)/Microsoft V isual Studio/.../vcvars64.bat'](https://github.com/NVlabs/instant-ngp/issues/709#issuecomment-1378155274)
 ## Supporters
 - [MrNeRF](https://twitter.com/janusch_patas)
