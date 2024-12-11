@@ -559,10 +559,11 @@ class Rotate_Normal_Maps_Horizontally:
     CATEGORY = "Comfy3D/Preprocessor"
     
     def make_image_grid(self, normal_maps, normal_masks, clockwise):
+        rotate_direction = 1 if clockwise is True else -1
         if normal_maps.shape[0] > 1:
             from Unique3D.scripts.utils import rotate_normals_torch
             pil_image_list = torch_imgs_to_pils(normal_maps, normal_masks)
-            pil_image_list = rotate_normals_torch(pil_image_list, return_types='pil', rotate_direction=int(clockwise))
+            pil_image_list = rotate_normals_torch(pil_image_list, return_types='pil', rotate_direction=rotate_direction)
             normal_maps = pils_to_torch_imgs(pil_image_list, normal_maps.dtype, normal_maps.device)
         return (normal_maps,)
     
