@@ -79,7 +79,7 @@
     },
     {
       "id": 32,
-      "type": "IMG_padder",
+      "type": "Eden_IMG_padder",
       "pos": [
         210,
         440
@@ -110,7 +110,7 @@
         }
       ],
       "properties": {
-        "Node name for S&R": "IMG_padder"
+        "Node name for S&R": "Eden_IMG_padder"
       },
       "widgets_values": [
         0.25,
@@ -317,7 +317,7 @@
     },
     {
       "id": 33,
-      "type": "IMG_padder",
+      "type": "Eden_IMG_padder",
       "pos": [
         570,
         440
@@ -348,7 +348,7 @@
         }
       ],
       "properties": {
-        "Node name for S&R": "IMG_padder"
+        "Node name for S&R": "Eden_IMG_padder"
       },
       "widgets_values": [
         0.2,
