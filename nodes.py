@@ -96,6 +96,8 @@ from Hunyuan3D_V1.infer import Views2Mesh
 from TRELLIS.trellis.pipelines import TrellisImageTo3DPipeline
 from TRELLIS.trellis.utils import render_utils, postprocessing_utils
 
+os.environ['SPCONV_ALGO'] = 'native'
+
 from .shared_utils.image_utils import (
     prepare_torch_img, torch_imgs_to_pils, troch_image_dilate, 
     pils_rgba_to_rgb, pil_make_image_grid, pil_split_image, pils_to_torch_imgs, pils_resize_foreground
@@ -1859,7 +1861,7 @@ class Convert_3DGS_to_Mesh_with_NeRF_and_Marching_Cubes:
             )
             converter.fit_mesh_uv(training_albedo_iterations, training_albedo_resolution, texture_resolution)
         
-            return(converter.get_mesh(), imgs, alphas)
+        return(converter.get_mesh(), imgs, alphas)
     
 class Load_TripoSR_Model:
     checkpoints_dir = "TripoSR"
@@ -2669,7 +2671,7 @@ class Instant_NGP:
             
             mesh.albedo = color_func_to_albedo(mesh, ngp.get_color, texture_resolution, device=DEVICE, force_cuda_rast=force_cuda_rast)
             
-            return (mesh, )
+        return (mesh, )
         
 class FlexiCubes_MVS:
     
@@ -2964,7 +2966,8 @@ class ExplicitTarget_Mesh_Optimization:
                 vertices, faces = run_mesh_refine(vertices, faces, pil_normal_list, steps=refinement_steps, update_normal_interval=target_update_interval, update_warmup=target_warmup_update_num, )
 
             mesh = Mesh(v=vertices, f=faces, device=DEVICE)
-            return (mesh,)
+
+        return (mesh,)
 
 class ExplicitTarget_Color_Projection:
     @classmethod
@@ -3872,7 +3875,7 @@ class Hunyuan3D_V1_Reconstruction_Model:
             mv_grid_pil,
             condition_pil,
             seed=seed,
-			target_face_count=target_face_count
+            target_face_count=target_face_count
         )
         vertices, faces, vtx_colors = torch.from_numpy(vertices).to(DEVICE), torch.from_numpy(faces).to(torch.int64).to(DEVICE), torch.from_numpy(vtx_colors).to(DEVICE)
         mesh = Mesh(v=vertices, f=faces.to(torch.int64), vc=vtx_colors, device=DEVICE)
@@ -3902,9 +3905,10 @@ class Load_Trellis_Structured_3D_Latents_Models:
     
     def load_pipe(self, repo_id):
         
-        pipe = TrellisImageTo3DPipeline.from_pretrained(repo_id).to(DEVICE)
+        pipe = TrellisImageTo3DPipeline.from_pretrained(repo_id)
+        pipe.to(DEVICE)
         
-        return (pipe, )
+        return (pipe,)
     
     
 class Trellis_Structured_3D_Latents_Models:
@@ -3947,44 +3951,41 @@ class Trellis_Structured_3D_Latents_Models:
     ):
         single_image = torch_imgs_to_pils(reference_image, reference_mask)[0]
 
-        outputs = trellis_pipe.run(
-            single_image,
-            # Optional parameters
-            seed=seed,
-            formats=["gaussian", "mesh"],
-            sparse_structure_sampler_params={
-                "cfg_strength": sparse_structure_guidance_scale,
-                "steps": sparse_structure_sample_steps,
-            },
-            slat_sampler_params={
-                "cfg_strength": structured_latent_guidance_scale,
-                "steps": structured_latent_sample_steps,
-            },
-        )
+        with torch.inference_mode(False):
+            outputs = trellis_pipe.run(
+                single_image,
+                # Optional parameters
+                seed=seed,
+                formats=["gaussian", "mesh"],
+                sparse_structure_sampler_params={
+                    "cfg_strength": sparse_structure_guidance_scale,
+                    "steps": sparse_structure_sample_steps,
+                },
+                slat_sampler_params={
+                    "cfg_strength": structured_latent_guidance_scale,
+                    "steps": structured_latent_sample_steps,
+                },
+            )
 
-        # test
-        import imageio
-        import trimesh
-        video = render_utils.render_video(outputs['gaussian'][0])['color']
-        imageio.mimsave("sampled_gs.mp4", video, fps=30)
-        # GLB files can be extracted from the outputs
-        vertices, faces, uvs, texture = postprocessing_utils.to_glb(
-            outputs['gaussian'][0],
-            outputs['mesh'][0],
-            # Optional parameters
-            simplify=0.95,          # Ratio of triangles to remove in the simplification process
-            texture_size=1024,      # Size of the texture used for the GLB
-        )
-        print(f"Vertices: {vertices.shape}, Faces: {faces.shape}, UVs: {uvs.shape}, Texture: {texture.shape}")
-        texture = Image.fromarray(texture)
-        glb = trimesh.Trimesh(vertices, faces, visual=trimesh.visual.TextureVisuals(uv=uvs, image=texture))
-        glb.export("sampled.glb")
-        
-        vertices, faces, uvs, texture = torch.from_numpy(vertices).to(DEVICE), torch.from_numpy(faces).to(torch.int64).to(DEVICE), torch.from_numpy(uvs).to(DEVICE), torch.from_numpy(texture).to(DEVICE)
-        mesh = Mesh(v=vertices, f=faces, vt=uvs, albedo=texture, device=DEVICE)
-        mesh.auto_normal()
+            # GLB files can be extracted from the outputs
+            vertices, faces, uvs, texture = postprocessing_utils.to_glb(
+                outputs['gaussian'][0],
+                outputs['mesh'][0],
+                # Optional parameters
+                simplify=0.95,          # Ratio of triangles to remove in the simplification process
+                texture_size=1024,      # Size of the texture used for the GLB
+            )
+
+            vertices, faces, uvs, texture = torch.from_numpy(vertices).to(DEVICE), torch.from_numpy(faces).to(torch.int64).to(DEVICE), torch.from_numpy(uvs).to(DEVICE), torch.from_numpy(texture).to(DEVICE)
+            mesh = Mesh(v=vertices, f=faces, vt=uvs, albedo=texture, device=DEVICE)
+            mesh.auto_normal()
 
         return (mesh,)
+
+        import comfy.utils
+        comfy_pbar = comfy.utils.ProgressBar(steps)
+
+        comfy_pbar.update_absolute(i + 1)
     
 
     

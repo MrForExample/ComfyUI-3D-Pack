@@ -15,6 +15,7 @@ opencv-python
 pillow
 nerfacc>=0.5.3
 slangtorch
+git+https://github.com/EasternJournalist/utils3d.git#egg=utils3d
 
 # for use ML models
 diffusers>=0.26.1

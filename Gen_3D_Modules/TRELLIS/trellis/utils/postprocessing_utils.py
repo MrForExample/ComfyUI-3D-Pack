@@ -4,14 +4,12 @@ import torch
 import utils3d
 import nvdiffrast.torch as dr
 from tqdm import tqdm
-import trimesh
-import trimesh.visual
+import comfy.utils
 import xatlas
 import pyvista as pv
 from pymeshfix import _meshfix
 import igraph
 import cv2
-from PIL import Image
 from .random_utils import sphere_hammersley_sequence
 from .render_utils import render_multiview
 from ..representations import Strivec, Gaussian, MeshExtractResult
@@ -313,11 +311,14 @@ def bake_texture(
     views = [utils3d.torch.extrinsics_to_view(torch.tensor(extr).cuda()) for extr in extrinsics]
     projections = [utils3d.torch.intrinsics_to_perspective(torch.tensor(intr).cuda(), near, far) for intr in intrinsics]
 
+    steps = len(views)
+    comfy_pbar = comfy.utils.ProgressBar(steps)
+    
     if mode == 'fast':
         texture = torch.zeros((texture_size * texture_size, 3), dtype=torch.float32).cuda()
         texture_weights = torch.zeros((texture_size * texture_size), dtype=torch.float32).cuda()
         rastctx = utils3d.torch.RastContext(backend='cuda')
-        for observation, view, projection in tqdm(zip(observations, views, projections), total=len(observations), disable=not verbose, desc='Texture baking (fast)'):
+        for i, (observation, view, projection) in enumerate(tqdm(zip(observations, views, projections), total=steps, disable=not verbose, desc='Texture baking (fast)')):
             with torch.no_grad():
                 rast = utils3d.torch.rasterize_triangle_faces(
                     rastctx, vertices[None], faces, observation.shape[1], observation.shape[0], uv=uvs[None], view=view, projection=projection
@@ -333,6 +334,8 @@ def bake_texture(
             texture = texture.scatter_add(0, idx.view(-1, 1).expand(-1, 3), obs)
             texture_weights = texture_weights.scatter_add(0, idx, torch.ones((obs.shape[0]), dtype=torch.float32, device=texture.device))
 
+            comfy_pbar.update_absolute(i + 1)
+
         mask = texture_weights > 0
         texture[mask] /= texture_weights[mask][:, None]
         texture = np.clip(texture.reshape(texture_size, texture_size, 3).cpu().numpy() * 255, 0, 255).astype(np.uint8)
@@ -347,13 +350,15 @@ def bake_texture(
         masks = [m.flip(0) for m in masks]
         _uv = []
         _uv_dr = []
-        for observation, view, projection in tqdm(zip(observations, views, projections), total=len(views), disable=not verbose, desc='Texture baking (opt): UV'):
+        for i, (observation, view, projection) in enumerate(tqdm(zip(observations, views, projections), total=steps, disable=not verbose, desc='Texture baking (opt): UV')):
             with torch.no_grad():
                 rast = utils3d.torch.rasterize_triangle_faces(
                     rastctx, vertices[None], faces, observation.shape[1], observation.shape[0], uv=uvs[None], view=view, projection=projection
                 )
                 _uv.append(rast['uv'].detach())
                 _uv_dr.append(rast['uv_dr'].detach())
+
+                comfy_pbar.update_absolute(i + 1)
 
         texture = torch.nn.Parameter(torch.zeros((1, texture_size, texture_size, 3), dtype=torch.float32).cuda())
         optimizer = torch.optim.Adam([texture], betas=(0.5, 0.9), lr=1e-2)
@@ -369,6 +374,7 @@ def bake_texture(
                    torch.nn.functional.l1_loss(texture[:, :, :-1, :], texture[:, :, 1:, :])
     
         total_steps = 2500
+        comfy_pbar = comfy.utils.ProgressBar(total_steps)
         with tqdm(total=total_steps, disable=not verbose, desc='Texture baking (opt): optimizing') as pbar:
             for step in range(total_steps):
                 optimizer.zero_grad()
@@ -384,6 +390,9 @@ def bake_texture(
                 optimizer.param_groups[0]['lr'] = cosine_anealing(optimizer, step, total_steps, 1e-2, 1e-5)
                 pbar.set_postfix({'loss': loss.item()})
                 pbar.update()
+
+                comfy_pbar.update_absolute(step + 1)
+
         texture = np.clip(texture[0].flip(0).detach().cpu().numpy() * 255, 0, 255).astype(np.uint8)
         mask = 1 - utils3d.torch.rasterize_triangle_faces(
             rastctx, (uvs * 2 - 1)[None], faces, texture_size, texture_size
@@ -404,7 +413,7 @@ def to_glb(
     texture_size: int = 1024,
     debug: bool = False,
     verbose: bool = True,
-) -> trimesh.Trimesh:
+):
     """
     Convert a generated asset to a glb file.
 
@@ -450,9 +459,9 @@ def to_glb(
         lambda_tv=0.01,
         verbose=verbose
     )
-    texture = Image.fromarray(texture)
+    texture = texture.astype(np.float32) / 255
+    uvs[:, 1] = 1 - uvs[:, 1]
 
     # rotate mesh (from z-up to y-up)
     vertices = vertices @ np.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]])
-    mesh = trimesh.Trimesh(vertices, faces, visual=trimesh.visual.TextureVisuals(uv=uvs, image=texture))
-    return mesh
+    return vertices, faces, uvs, texture
