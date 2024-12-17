@@ -47,7 +47,7 @@ try:
             cstr(f"pip install {wheel_path} to {PYTHON_PATH}").msg.print()
     
     # Install packages that needs specify remote url
-    install_remote_packages(build_config.remote_packages.keys())
+    install_remote_packages(build_config.build_base_packages)
     
     # Get the target remote pre-built wheels directory name and path
     platform_config_name = get_platform_config_name()

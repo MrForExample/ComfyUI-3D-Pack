@@ -6,6 +6,10 @@ license_link: https://huggingface.co/tencent/Hunyuan3D-1/blob/main/LICENSE.txt
 language:
 - en
 - zh
+tags:
+- image-to-3d
+- text-to-3d
+pipeline_tag: text-to-3d
 ---
 <!-- ## **Hunyuan3D-1.0** -->
 

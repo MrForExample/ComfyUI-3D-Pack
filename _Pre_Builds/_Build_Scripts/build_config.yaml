@@ -13,7 +13,7 @@ libs_dir_name: "_Libs"
 # Folder used to store built wheels
 wheels_dir_name: "_Build_Wheels"
 
-build_base_packages: ["torch", "torchvision"]
+build_base_packages: ["torch", "torchvision", "xformers", "spconv-${cuda_version}"]
 # All packages will be automatically installed at beginning of install.py follwing orders from top to bottom 
 remote_packages:
   torch:

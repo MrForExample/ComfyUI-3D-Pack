@@ -157,6 +157,7 @@ cython_debug/
 *.pth
 *.safetensors
 *.pkl
+*.pt
 .huggingface
 
 # Ignore test outputs

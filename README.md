@@ -15,26 +15,46 @@ This is an extensive node suite that enables ComfyUI to process 3D inputs (Mesh 
 ## Install:
 **Can be installed directly from [ComfyUI-Manager](https://github.com/ltdrdata/ComfyUI-Manager)🚀**
 
+**Alternatively you can download [Comfy3D-WinPortable](https://github.com/YanWenKun/Comfy3D-WinPortable) made by [YanWenKun](https://github.com/YanWenKun)**
+
 - [Pre-builds](https://github.com/MrForExample/Comfy3D_Pre_Builds) are available for:
-  - Windows 10/11, Ubuntu 22.04
-  - Python 3.10/3.11/3.12
-  - CUDA 12.4/12.1/11.8
-  - torch 2.3.0/2.4.0/2.5.1+cu124/cu121/cu118
+  - Windows 10/11
+  - Python 3.12
+  - CUDA 12.4
+  - torch 2.5.1+cu124
 - [install.py](install.py) will download & install Pre-builds automatically according to your runtime environment, if it couldn't find corresponding Pre-builds, then [build script](_Pre_Builds/_Build_Scripts/auto_build_all.py) will start automatically, if automatic build doesn't work for you, then please check out [Semi-Automatic Build Guide](_Pre_Builds/README.md#build-required-packages-semi-automatically)
 - If you have any missing node in any open Comfy3D workflow, try simply click [Install Missing Custom Nodes](https://github.com/ltdrdata/ComfyUI-Manager?tab=readme-ov-file#support-of-missing-nodes-installation) in ComfyUI-Manager
-- If for some reason your comfy3d can't download pre-trained models automatically, you can always download them manually and put them in to correct folder under [Checkpoints](Checkpoints) directory, but please **DON'T** overwrite any exist .json files
+- In case there is missing python library, you can check [all the python dependencies of my dev environment](my-reqs.txt)
+- If for some reason your comfy3d can't download pre-trained models automatically, you can always download them manually and put them in to correct folder under [Checkpoints](Checkpoints)directory, but please **DON'T** overwrite any exist .json files
 - Docker install please check [DOCKER_INSTRUCTIONS.md](DOCKER_INSTRUCTIONS.md)
-- **Note:** at this moment, you'll still need to install [Visual Studio Build Tools for windows](_Pre_Builds/README.md#build-for-windows) and [install `gcc g++` for Linux](_Pre_Builds/README.md#build-for-linux) in order for `InstantNGP & Convert 3DGS to Mesh with NeRF and Marching_Cubes` nodes to work, since those two nodes used JIT torch cpp extension that builds in runtime, but I plan to replace those nodes soon
+- **Note:** at this moment, you'll still need to install [Visual Studio Build Tools for windows](_Pre_Builds/README.md#build-for-windows) and [install `gcc g++` for Linux](_Pre_Builds/README.md#build-for-linux) in order for `InstantNGP & Convert 3DGS to Mesh with NeRF and Marching_Cubes` nodes to work, since those two nodes used JIT torch cpp extension that builds in runtime, but I plan to replace those nodes
+
+**For manual install**
+```bash
+# Fetch newest version of Comfy3D
+cd Your ComfyUI Root Directory\ComfyUI\custom_nodes\
+git clone https://github.com/MrForExample/ComfyUI-3D-Pack.git
+cd ComfyUI-3D-Pack
+
+# Install all dependencies
+Your ComfyUI Root Directory\python_embeded\python.exe -s -m pip install -r requirements.txt
+Your ComfyUI Root Directory\python_embeded\python.exe install.py
+```
+
 
 ## Features:
-- For use cases please check out [Example Workflows](./_Example_Workflows/). [**Last update: 08/November/2024**]
+- For use cases please check out [Example Workflows](./_Example_Workflows/). [**Last update: 16/December/2024**]
   - **Note:** you need to put [Example Inputs Files & Folders](_Example_Workflows/_Example_Inputs_Files/) under ComfyUI Root Directory\ComfyUI\input folder before you can run the example workflow
   - [tripoSR-layered-diffusion workflow](https://github.com/C0nsumption/Consume-ComfyUI-Workflows/tree/main/assets/tripo_sr/00) by [@Consumption](https://twitter.com/c0nsumption_)
+
+- **TRELLIS**: [microsoft/TRELLIS](https://github.com/microsoft/TRELLIS)
+  - Single image to 3D Mesh with RGB texture
+  - Model weights: https://huggingface.co/JeffreyXiang/TRELLIS-image-large
 
 - **Hunyuan3D_V1** [tencent/Hunyuan3D-1](https://github.com/Tencent/Hunyuan3D-1/)
   - Two stages pipeline:
     1. Single image to multi-views 
-  	2. Multi-views to 3D Mesh with RGB texture
+  	1. Multi-views to 3D Mesh with RGB texture
   - Model weights: https://huggingface.co/tencent/Hunyuan3D-1/tree/main
 
 - **StableFast3D**: [Stability-AI/stable-fast-3d](https://github.com/Stability-AI/stable-fast-3d)
@@ -252,6 +272,6 @@ This is an extensive node suite that enables ComfyUI to process 3D inputs (Mesh 
   ```
 * If you encounter OpenGL errors (e.g., `[F glutil.cpp:338] eglInitialize() failed`), then set `force_cuda_rasterize` to true on corresponding node
 * If after the installation, your ComfyUI gets stuck at starting or running, you can follow the instructions in the following link to solve the problem: [Code Hangs Indefinitely When Evaluating Neuron Models on GPU](https://github.com/lava-nc/lava-dl/discussions/211)
-
+* [Fix "nvcc fatal : Could not set up the environment for Microsoft Visual Studio using 'C:/Program Files (x86)/Microsoft V isual Studio/.../vcvars64.bat'](https://github.com/NVlabs/instant-ngp/issues/709#issuecomment-1378155274)
 ## Supporters
 - [MrNeRF](https://twitter.com/janusch_patas)

@@ -1,0 +1,301 @@
+{
+  "last_node_id": 14,
+  "last_link_id": 16,
+  "nodes": [
+    {
+      "id": 13,
+      "type": "[Comfy3D] Preview 3DMesh",
+      "pos": [
+        2716.44384765625,
+        1007.373779296875
+      ],
+      "size": [
+        600,
+        500
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh_file_path",
+          "type": "STRING",
+          "link": 15,
+          "widget": {
+            "name": "mesh_file_path"
+          }
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Preview 3DMesh"
+      },
+      "widgets_values": [
+        "",
+        null
+      ]
+    },
+    {
+      "id": 4,
+      "type": "InvertMask",
+      "pos": [
+        2206.3349609375,
+        1107.0419921875
+      ],
+      "size": [
+        140,
+        26
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mask",
+          "type": "MASK",
+          "link": 3
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            10
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "InvertMask"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 12,
+      "type": "[Comfy3D] Save 3D Mesh",
+      "pos": [
+        2714.4287109375,
+        881.1815185546875
+      ],
+      "size": [
+        315,
+        58
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 14
+        }
+      ],
+      "outputs": [
+        {
+          "name": "save_path",
+          "type": "STRING",
+          "links": [
+            15
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Save 3D Mesh"
+      },
+      "widgets_values": [
+        "Test_TRELLIS/mesh_0.glb"
+      ]
+    },
+    {
+      "id": 10,
+      "type": "[Comfy3D] Trellis Structured 3D Latents Models",
+      "pos": [
+        2358.921630859375,
+        1006.6513061523438
+      ],
+      "size": [
+        332.93328857421875,
+        218
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "trellis_pipe",
+          "type": "TRELLIS_PIPE",
+          "link": 9
+        },
+        {
+          "name": "reference_image",
+          "type": "IMAGE",
+          "link": 11
+        },
+        {
+          "name": "reference_mask",
+          "type": "MASK",
+          "link": 10
+        }
+      ],
+      "outputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "links": [
+            14
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Trellis Structured 3D Latents Models"
+      },
+      "widgets_values": [
+        685921954948183,
+        "randomize",
+        7.5,
+        12,
+        3,
+        12
+      ]
+    },
+    {
+      "id": 3,
+      "type": "LoadImage",
+      "pos": [
+        1838.76123046875,
+        1029.599609375
+      ],
+      "size": [
+        353.18182373046875,
+        489.7575378417969
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            11
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            3
+          ],
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "squirrel_girl_2.png",
+        "image"
+      ]
+    },
+    {
+      "id": 9,
+      "type": "[Comfy3D] Load Trellis Structured 3D Latents Models",
+      "pos": [
+        1846.1541748046875,
+        909.7863159179688
+      ],
+      "size": [
+        344.3999938964844,
+        58
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "trellis_pipe",
+          "type": "TRELLIS_PIPE",
+          "links": [
+            9
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Load Trellis Structured 3D Latents Models"
+      },
+      "widgets_values": [
+        "JeffreyXiang/TRELLIS-image-large"
+      ]
+    }
+  ],
+  "links": [
+    [
+      3,
+      3,
+      1,
+      4,
+      0,
+      "MASK"
+    ],
+    [
+      9,
+      9,
+      0,
+      10,
+      0,
+      "TRELLIS_PIPE"
+    ],
+    [
+      10,
+      4,
+      0,
+      10,
+      2,
+      "MASK"
+    ],
+    [
+      11,
+      3,
+      0,
+      10,
+      1,
+      "IMAGE"
+    ],
+    [
+      14,
+      10,
+      0,
+      12,
+      0,
+      "MESH"
+    ],
+    [
+      15,
+      12,
+      0,
+      13,
+      0,
+      "STRING"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 1.1,
+      "offset": [
+        -1836.7102119504648,
+        -810.9070600201441
+      ]
+    }
+  },
+  "version": 0.4
+}
