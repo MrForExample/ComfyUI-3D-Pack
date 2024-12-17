@@ -15,6 +15,8 @@ This is an extensive node suite that enables ComfyUI to process 3D inputs (Mesh 
 ## Install:
 **Can be installed directly from [ComfyUI-Manager](https://github.com/ltdrdata/ComfyUI-Manager)🚀**
 
+**Alternatively you can download [Comfy3D-WinPortable](https://github.com/YanWenKun/Comfy3D-WinPortable) made by [YanWenKun](https://github.com/YanWenKun)**
+
 - [Pre-builds](https://github.com/MrForExample/Comfy3D_Pre_Builds) are available for:
   - Windows 10/11
   - Python 3.12
