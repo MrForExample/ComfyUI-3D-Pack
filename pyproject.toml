@@ -1,7 +1,7 @@
 [project]
 name = "comfyui-3d-pack"
 description = "Make ComfyUI generates 3D assets as good & convenient as it generates image/video!"
-version = "0.1.3.alpha"
+version = "0.1.3"
 license = { file = "LICENSE" }
 dynamic = ["dependencies"]
 [tool.setuptools.dynamic]

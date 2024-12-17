@@ -1,7 +1,6 @@
 from typing import Any
 
 import numpy as np
-import rembg
 import torch
 from PIL import Image
 
@@ -41,6 +40,7 @@ def remove_background(
     force: bool = False,
     **rembg_kwargs,
 ) -> Image:
+    import rembg
     do_remove = True
     if image.mode == "RGBA" and image.getextrema()[3][0] < 255:
         do_remove = False

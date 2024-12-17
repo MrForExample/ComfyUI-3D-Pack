@@ -1,6 +1,5 @@
 import os
 import imageio
-import rembg
 import torch
 import numpy as np
 import PIL.Image
@@ -13,6 +12,7 @@ def remove_background(image: PIL.Image.Image,
     force: bool = False,
     **rembg_kwargs,
 ) -> PIL.Image.Image:
+    import rembg
     do_remove = True
     if image.mode == "RGBA" and image.getextrema()[3][0] < 255:
         do_remove = False
