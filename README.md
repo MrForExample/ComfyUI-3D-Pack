@@ -51,11 +51,15 @@ Your ComfyUI Root Directory\python_embeded\python.exe install.py
   - Single image to 3D Mesh with RGB texture
   - Model weights: https://huggingface.co/JeffreyXiang/TRELLIS-image-large
 
+  <video controls autoplay loop src="https://github.com/user-attachments/assets/f569c561-23ea-471f-a9d3-f2e6d1803e00"></video>
+
 - **Hunyuan3D_V1** [tencent/Hunyuan3D-1](https://github.com/Tencent/Hunyuan3D-1/)
   - Two stages pipeline:
-    1. Single image to multi-views 
+    1. Single image to multi-views
   	1. Multi-views to 3D Mesh with RGB texture
   - Model weights: https://huggingface.co/tencent/Hunyuan3D-1/tree/main
+
+  <video controls autoplay loop src="https://github.com/user-attachments/assets/2cc31b81-2107-40fe-a531-a783a3f699fc"></video>
 
 - **StableFast3D**: [Stability-AI/stable-fast-3d](https://github.com/Stability-AI/stable-fast-3d)
   - Single image to 3D Mesh with RGB texture
