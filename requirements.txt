@@ -31,6 +31,7 @@ peft
 
 # for process images & videos
 rembg
+onnxruntime
 imageio
 imageio-ffmpeg
 matplotlib

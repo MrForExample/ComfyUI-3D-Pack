@@ -5,7 +5,6 @@ import torch
 import torch.nn.functional as F
 from torch.autograd import Function
 from torch.amp import custom_bwd, custom_fwd
-from pytorch3d import io
 from pytorch3d.renderer import (
     PointsRasterizationSettings, 
     PointsRasterizer)
