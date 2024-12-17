@@ -404,7 +404,7 @@ def bake_texture(
     return texture
 
 
-def to_glb(
+def finalize_mesh(
     app_rep: Union[Strivec, Gaussian],
     mesh: MeshExtractResult,
     simplify: float = 0.95,

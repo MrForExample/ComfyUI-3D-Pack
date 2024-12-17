@@ -3968,7 +3968,7 @@ class Trellis_Structured_3D_Latents_Models:
             )
 
             # GLB files can be extracted from the outputs
-            vertices, faces, uvs, texture = postprocessing_utils.to_glb(
+            vertices, faces, uvs, texture = postprocessing_utils.finalize_mesh(
                 outputs['gaussian'][0],
                 outputs['mesh'][0],
                 # Optional parameters
@@ -3977,15 +3977,10 @@ class Trellis_Structured_3D_Latents_Models:
             )
 
             vertices, faces, uvs, texture = torch.from_numpy(vertices).to(DEVICE), torch.from_numpy(faces).to(torch.int64).to(DEVICE), torch.from_numpy(uvs).to(DEVICE), torch.from_numpy(texture).to(DEVICE)
-            mesh = Mesh(v=vertices, f=faces, vt=uvs, albedo=texture, device=DEVICE)
+            mesh = Mesh(v=vertices, f=faces, vt=uvs, ft=faces, albedo=texture, device=DEVICE)
             mesh.auto_normal()
 
         return (mesh,)
-
-        import comfy.utils
-        comfy_pbar = comfy.utils.ProgressBar(steps)
-
-        comfy_pbar.update_absolute(i + 1)
     
 
     
