@@ -168,6 +168,8 @@ WEIGHT_DTYPE = torch.float16
 DEVICE_STR = "cuda" if torch.cuda.is_available() else "cpu"
 DEVICE = torch.device(DEVICE_STR)
 
+HF_DOWNLOAD_IGNORE = ["*.json", "*.py", ".png", ".jpg"]
+
 class Preview_3DGS:
 
     @classmethod
@@ -1465,7 +1467,7 @@ class Load_Diffusers_Pipeline:
         
         # resume download pretrained checkpoint
         ckpt_download_dir = os.path.join(CKPT_DIFFUSERS_PATH, repo_id)
-        snapshot_download(repo_id=repo_id, local_dir=ckpt_download_dir, force_download=force_download, repo_type="model", ignore_patterns=["*.json", "*.py"])
+        snapshot_download(repo_id=repo_id, local_dir=ckpt_download_dir, force_download=force_download, repo_type="model", ignore_patterns=HF_DOWNLOAD_IGNORE)
         
         diffusers_pipeline_class = DIFFUSERS_PIPE_DICT[diffusers_pipeline_name]
         
@@ -3117,7 +3119,7 @@ class Load_CharacterGen_MVDiffusion_Model:
     
     def load_model(self, force_download):
         # Download checkpoints
-        snapshot_download(repo_id=self.default_repo_id, local_dir=self.checkpoints_dir_abs, force_download=force_download, repo_type="model", ignore_patterns=["*.json", "*.py"])
+        snapshot_download(repo_id=self.default_repo_id, local_dir=self.checkpoints_dir_abs, force_download=force_download, repo_type="model", ignore_patterns=HF_DOWNLOAD_IGNORE)
         # Load pre-trained models
         character_mv_gen_pipe = Inference2D_API(checkpoint_root_path=self.checkpoints_dir_abs, **OmegaConf.load(self.config_root_path_abs))
         
@@ -3216,7 +3218,7 @@ class Load_CharacterGen_Reconstruction_Model:
     
     def load_model(self, force_download):
         # Download checkpoints
-        snapshot_download(repo_id=self.default_repo_id, local_dir=self.checkpoints_dir_abs, force_download=force_download, repo_type="model", ignore_patterns=["*.json", "*.py"])
+        snapshot_download(repo_id=self.default_repo_id, local_dir=self.checkpoints_dir_abs, force_download=force_download, repo_type="model", ignore_patterns=HF_DOWNLOAD_IGNORE)
         # Load pre-trained models
         character_lrm_pipe = Inference3D_API(checkpoint_root_path=self.checkpoints_dir_abs, cfg=load_config_cg3d(self.config_root_path_abs))
         
@@ -3834,7 +3836,7 @@ class Load_Hunyuan3D_V1_Reconstruction_Model:
     def load_model(self, force_download, use_lite):
         # Download checkpoints
         ckpt_download_dir = os.path.join(CKPT_DIFFUSERS_PATH, self.default_repo_id)
-        snapshot_download(repo_id=self.default_repo_id, local_dir=ckpt_download_dir, force_download=force_download, repo_type="model", ignore_patterns=["*.json", "*.py"])
+        snapshot_download(repo_id=self.default_repo_id, local_dir=ckpt_download_dir, force_download=force_download, repo_type="model", ignore_patterns=HF_DOWNLOAD_IGNORE)
         # Load pre-trained models
         mv23d_ckt_path = os.path.join(ckpt_download_dir, self.checkpoints_dir)
         hunyuan3d_v1_reconstruction_model = Views2Mesh(self.config_root_path_abs, mv23d_ckt_path, DEVICE, use_lite=use_lite)
