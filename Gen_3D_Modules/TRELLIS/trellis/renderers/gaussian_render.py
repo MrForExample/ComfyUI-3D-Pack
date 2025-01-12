@@ -52,10 +52,6 @@ def render(viewpoint_camera, pc : Gaussian, pipe, bg_color : torch.Tensor, scali
     Render the scene. 
     
     Background tensor (bg_color) must be on GPU!
-    
-    Original code use the Differential Gaussian Rasterization from https://github.com/autonomousvision/mip-splatting/tree/main/submodules/diff-gaussian-rasterization
-    Modified to use the GaussianRasterizer from https://github.com/ashawkey/diff-gaussian-rasterization
-    Only changes are the inputs to GaussianRasterizationSettings: kernel_size and subpixel_offset are commented out.
     """
     # lazy import
     if 'GaussianRasterizer' not in globals():
@@ -71,16 +67,16 @@ def render(viewpoint_camera, pc : Gaussian, pipe, bg_color : torch.Tensor, scali
     tanfovx = math.tan(viewpoint_camera.FoVx * 0.5)
     tanfovy = math.tan(viewpoint_camera.FoVy * 0.5)
     
-    #kernel_size = pipe.kernel_size
-    #subpixel_offset = torch.zeros((int(viewpoint_camera.image_height), int(viewpoint_camera.image_width), 2), dtype=torch.float32, device="cuda")
+    kernel_size = pipe.kernel_size
+    subpixel_offset = torch.zeros((int(viewpoint_camera.image_height), int(viewpoint_camera.image_width), 2), dtype=torch.float32, device="cuda")
 
     raster_settings = GaussianRasterizationSettings(
         image_height=int(viewpoint_camera.image_height),
         image_width=int(viewpoint_camera.image_width),
         tanfovx=tanfovx,
         tanfovy=tanfovy,
-        #kernel_size=kernel_size,
-        #subpixel_offset=subpixel_offset,
+        kernel_size=kernel_size,
+        subpixel_offset=subpixel_offset,
         bg=bg_color,
         scale_modifier=scaling_modifier,
         viewmatrix=viewpoint_camera.world_view_transform,
@@ -125,7 +121,7 @@ def render(viewpoint_camera, pc : Gaussian, pipe, bg_color : torch.Tensor, scali
         colors_precomp = override_color
 
     # Rasterize visible Gaussians to image, obtain their radii (on screen). 
-    rendered_image, radii, rendered_depth, rendered_alpha = rasterizer(
+    rendered_image, radii = rasterizer(
         means3D = means3D,
         means2D = means2D,
         shs = shs,

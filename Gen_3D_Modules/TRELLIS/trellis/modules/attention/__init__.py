@@ -1,6 +1,6 @@
 from typing import *
 
-BACKEND = 'xformers' 
+BACKEND = 'flash_attn' 
 DEBUG = False
 
 def __from_env():

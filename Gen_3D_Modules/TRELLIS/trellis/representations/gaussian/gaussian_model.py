@@ -2,6 +2,7 @@ import torch
 import numpy as np
 from plyfile import PlyData, PlyElement
 from .general_utils import inverse_sigmoid, strip_symmetric, build_scaling_rotation
+import utils3d
 
 
 class Gaussian:
@@ -120,14 +121,21 @@ class Gaussian:
         for i in range(self._rotation.shape[1]):
             l.append('rot_{}'.format(i))
         return l
-
-    def save_ply(self, path):
+        
+    def save_ply(self, path, transform=[[1, 0, 0], [0, 0, -1], [0, 1, 0]]):
         xyz = self.get_xyz.detach().cpu().numpy()
         normals = np.zeros_like(xyz)
         f_dc = self._features_dc.detach().transpose(1, 2).flatten(start_dim=1).contiguous().cpu().numpy()
         opacities = inverse_sigmoid(self.get_opacity).detach().cpu().numpy()
         scale = torch.log(self.get_scaling).detach().cpu().numpy()
         rotation = (self._rotation + self.rots_bias[None, :]).detach().cpu().numpy()
+        
+        if transform is not None:
+            transform = np.array(transform)
+            xyz = np.matmul(xyz, transform.T)
+            rotation = utils3d.numpy.quaternion_to_matrix(rotation)
+            rotation = np.matmul(transform, rotation)
+            rotation = utils3d.numpy.matrix_to_quaternion(rotation)
 
         dtype_full = [(attribute, 'f4') for attribute in self.construct_list_of_attributes()]
 
@@ -137,7 +145,7 @@ class Gaussian:
         el = PlyElement.describe(elements, 'vertex')
         PlyData([el]).write(path)
 
-    def load_ply(self, path):
+    def load_ply(self, path, transform=[[1, 0, 0], [0, 0, -1], [0, 1, 0]]):
         plydata = PlyData.read(path)
 
         xyz = np.stack((np.asarray(plydata.elements[0]["x"]),
@@ -171,6 +179,13 @@ class Gaussian:
         rots = np.zeros((xyz.shape[0], len(rot_names)))
         for idx, attr_name in enumerate(rot_names):
             rots[:, idx] = np.asarray(plydata.elements[0][attr_name])
+            
+        if transform is not None:
+            transform = np.array(transform)
+            xyz = np.matmul(xyz, transform)
+            rotation = utils3d.numpy.quaternion_to_matrix(rotation)
+            rotation = np.matmul(rotation, transform)
+            rotation = utils3d.numpy.matrix_to_quaternion(rotation)
             
         # convert to actual gaussian attributes
         xyz = torch.tensor(xyz, dtype=torch.float, device=self.device)

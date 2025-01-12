@@ -95,6 +95,8 @@ from Hunyuan3D_V1.mvd.hunyuan3d_mvd_lite_pipeline import Hunyuan3D_MVD_Lite_Pipe
 from Hunyuan3D_V1.infer import Views2Mesh
 from TRELLIS.trellis.pipelines import TrellisImageTo3DPipeline
 from TRELLIS.trellis.utils import render_utils, postprocessing_utils
+from TRELLIS.trellis.representations import Gaussian
+from easydict import EasyDict as edict
 
 os.environ['SPCONV_ALGO'] = 'native'
 
@@ -3927,14 +3929,19 @@ class Trellis_Structured_3D_Latents_Models:
                 "sparse_structure_sample_steps": ("INT", {"default": 12, "min": 1}),
                 "structured_latent_guidance_scale": ("FLOAT", {"default": 3.0, "min": 0.0, "step": 0.01}),
                 "structured_latent_sample_steps": ("INT", {"default": 12, "min": 1}),
+                "texture_size": ("INT", {"default": 1024, "min": 256, "max": 4096, "step": 256}),
+                "render_resolution": ("INT", {"default": 1024, "min": 256, "max": 4096, "step": 256}),
+                "simplify_ratio": ("FLOAT", {"default": 0.95, "min": 0.80, "max": 0.99, "step": 0.01}),
             }
         }
     
     RETURN_TYPES = (
         "MESH",
+        "IMAGE",
     )
     RETURN_NAMES = (
         "mesh",
+        "texture",
     )
     FUNCTION = "run_model"
     CATEGORY = "Comfy3D/Algorithm"
@@ -3950,6 +3957,9 @@ class Trellis_Structured_3D_Latents_Models:
         sparse_structure_sample_steps,
         structured_latent_guidance_scale,
         structured_latent_sample_steps,
+        texture_size,
+        render_resolution,
+        simplify_ratio,
     ):
         single_image = torch_imgs_to_pils(reference_image, reference_mask)[0]
 
@@ -3969,20 +3979,66 @@ class Trellis_Structured_3D_Latents_Models:
                 },
             )
 
+            ## GLB files can be extracted from the outputs
+            #vertices, faces, uvs, texture = postprocessing_utils.finalize_mesh(
+            #    outputs['gaussian'][0],
+            #    outputs['mesh'][0],
+            #    # Optional parameters
+            #    simplify=0.95,          # Ratio of triangles to remove in the simplification process
+            #    texture_size=1024,      # Size of the texture used for the GLB
+            #)
             # GLB files can be extracted from the outputs
-            vertices, faces, uvs, texture = postprocessing_utils.finalize_mesh(
-                outputs['gaussian'][0],
-                outputs['mesh'][0],
+            
+            
+            gs = outputs['gaussian'][0]
+            mesh = outputs['mesh'][0]
+            
+            vertices = mesh.vertices.cpu().numpy()
+            faces = mesh.faces.cpu().numpy()
+            
+            vertices, faces = postprocessing_utils.postprocess_mesh(
+                vertices,
+                faces,
                 # Optional parameters
-                simplify=0.95,          # Ratio of triangles to remove in the simplification process
-                texture_size=1024,      # Size of the texture used for the GLB
+                simplify_ratio=simplify_ratio,          # Ratio of triangles to remove in the simplification process
             )
+            
+            vertices, faces, uvs = postprocessing_utils.parametrize_mesh(vertices, faces)
+            
+            observations, extrinsics, intrinsics = postprocessing_utils.render_multiview(
+                gs, 
+                resolution=render_resolution, 
+                nviews=100
+            )
+            masks = [np.any(observation > 0, axis=-1) for observation in observations]
+            extrinsics = [extrinsics[i].cpu().numpy() for i in range(len(extrinsics))]
+            intrinsics = [intrinsics[i].cpu().numpy() for i in range(len(intrinsics))]
+            texture = postprocessing_utils.bake_texture(
+                vertices, faces, uvs,
+                observations, masks, extrinsics, intrinsics,
+                texture_size=texture_size, mode='opt',
+                lambda_tv=0.01,
+                verbose=False
+            )
+            
+            #texture =  np.transpose(texture / 255.0, (2,0,1))
+            #texture_raw = texture
+            
+            vertices = vertices @ np.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]])
 
-            vertices, faces, uvs, texture = torch.from_numpy(vertices).to(DEVICE), torch.from_numpy(faces).to(torch.int64).to(DEVICE), torch.from_numpy(uvs).to(DEVICE), torch.from_numpy(texture).to(DEVICE)
-            mesh = Mesh(v=vertices, f=faces, vt=uvs, ft=faces, albedo=texture, device=DEVICE)
+        #    glb = postprocessing_utils.to_glb(
+        #        outputs['gaussian'][0],
+        #        outputs['mesh'][0],
+        #        simplify = 0.95,
+        #        texture_size = 2048,
+        #    )
+            texture_0 = torch.flip(torch.tensor(torch.from_numpy(texture / 255.0).unsqueeze(0)), (1,))
+
+            vertices, faces, uvs = torch.from_numpy(vertices).to(DEVICE), torch.from_numpy(faces).to(torch.int64).to(DEVICE), torch.from_numpy(uvs).to(DEVICE)
+            mesh = Mesh(v=vertices, f=faces, vt=uvs, ft=faces, albedo=texture_0[0], device=DEVICE)
             mesh.auto_normal()
 
-        return (mesh,)
+        return (mesh,texture_0, )
     
 
     
