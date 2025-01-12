@@ -383,10 +383,10 @@ class Save_3D_Mesh:
                 full_output_folder += '/'
             full_output_folder = f"{full_output_folder}{filename}_{counter:05}_/"
             subfolder = f"{subfolder}{filename}_{counter:05}_/"
-            Path(full_output_folder).mkdir(parents=True, exist_ok=True)
             filename_prefix = f"{filename_prefix}.{format}"
         else:
             filename_prefix = f"{filename_prefix}_{counter:05}_.{format}"
+        Path(full_output_folder).mkdir(parents=True, exist_ok=True)
         save_path = os.path.join(full_output_folder, filename_prefix)
         match format:
             case "glb":
@@ -431,10 +431,10 @@ class Save_3DGS:
                 full_output_folder += '/'
             full_output_folder = f"{full_output_folder}{filename}_{counter:05}_/"
             subfolder = f"{subfolder}{filename}_{counter:05}_/"
-            Path(full_output_folder).mkdir(parents=True, exist_ok=True)
             filename_prefix = f"{filename_prefix}.ply"
         else:
             filename_prefix = f"{filename_prefix}_{counter:05}_.ply"
+        Path(full_output_folder).mkdir(parents=True, exist_ok=True)
         save_path = os.path.join(full_output_folder, filename_prefix)
         if save_path is not None:
             gs_ply.write(save_path)
