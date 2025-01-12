@@ -366,10 +366,12 @@ class Save_3D_Mesh:
     RETURN_TYPES = (
         "STRING",
         "STRING",
+        "STRING",
     )
     RETURN_NAMES = (
         "save_path",
-        "folder_path"
+        "folder_full_path",
+        "subfolder",
     )
     FUNCTION = "save_mesh"
     CATEGORY = "Comfy3D/Import|Export"
@@ -380,6 +382,7 @@ class Save_3D_Mesh:
             if not full_output_folder.endswith('/'):
                 full_output_folder += '/'
             full_output_folder = f"{full_output_folder}{filename}_{counter:05}_/"
+            subfolder = f"{subfolder}{filename}_{counter:05}_/"
             Path(full_output_folder).mkdir(parents=True, exist_ok=True)
             filename_prefix = f"{filename_prefix}.{format}"
         else:
@@ -392,7 +395,7 @@ class Save_3D_Mesh:
                 mesh.write_obj(save_path)
             case "ply":
                 mesh.write_ply(save_path)
-        return (save_path, full_output_folder, )
+        return (save_path, full_output_folder, subfolder, )
     
 class Save_3DGS:
 
@@ -401,28 +404,42 @@ class Save_3DGS:
         return {
             "required": {
                 "gs_ply": ("GS_PLY",),
-                "save_path": ("STRING", {"default": '3DGS_%Y-%m-%d-%M-%S-%f.ply', "multiline": False}),
+                "create_subfolders": ("BOOLEAN", {"default": False},),
+                "save_path": ("STRING", {"default": '3DGS', "multiline": False}),
             },
         }
 
     OUTPUT_NODE = True
     RETURN_TYPES = (
         "STRING",
+        "STRING",
+        "STRING",
     )
     RETURN_NAMES = (
         "save_path",
+        "folder_full_path",
+        "subfolder",
     )
     FUNCTION = "save_gs"
     CATEGORY = "Comfy3D/Import|Export"
     
-    def save_gs(self, gs_ply, save_path):
+    def save_gs(self, gs_ply, create_subfolders, save_path):
         
-        save_path = parse_save_filename(save_path, comfy_paths.output_directory, SUPPORTED_3DGS_EXTENSIONS, self.__class__.__name__)
-        
+        full_output_folder, filename, counter, subfolder, filename_prefix = comfy_paths.get_save_image_path(save_path, comfy_paths.output_directory, 0, 0)
+        if create_subfolders:
+            if not full_output_folder.endswith('/'):
+                full_output_folder += '/'
+            full_output_folder = f"{full_output_folder}{filename}_{counter:05}_/"
+            subfolder = f"{subfolder}{filename}_{counter:05}_/"
+            Path(full_output_folder).mkdir(parents=True, exist_ok=True)
+            filename_prefix = f"{filename_prefix}.ply"
+        else:
+            filename_prefix = f"{filename_prefix}_{counter:05}_.ply"
+        save_path = os.path.join(full_output_folder, filename_prefix)
         if save_path is not None:
             gs_ply.write(save_path)
         
-        return (save_path, )
+        return (save_path, full_output_folder, subfolder, )
 
 class Image_Add_Pure_Color_Background:
     @classmethod
@@ -4076,12 +4093,6 @@ class Trellis_Structured_3D_Latents_Models:
             
             vertices = vertices @ np.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]])
 
-        #    glb = postprocessing_utils.to_glb(
-        #        outputs['gaussian'][0],
-        #        outputs['mesh'][0],
-        #        simplify = 0.95,
-        #        texture_size = 2048,
-        #    )
             texture_0 = torch.flip(torch.tensor(torch.from_numpy(texture / 255.0).unsqueeze(0)), (1,))
 
             vertices, faces, uvs = torch.from_numpy(vertices).to(DEVICE), torch.from_numpy(faces).to(torch.int64).to(DEVICE), torch.from_numpy(uvs).to(DEVICE)
