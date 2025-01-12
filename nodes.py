@@ -379,15 +379,15 @@ class Save_3D_Mesh:
     def save_mesh(self, mesh, format, create_subfolders, save_path):
         full_output_folder, filename, counter, subfolder, filename_prefix = comfy_paths.get_save_image_path(save_path, comfy_paths.output_directory, 0, 0)
         if create_subfolders:
-            if not full_output_folder.endswith('/'):
+            if not full_output_folder.endswith('/') and not full_output_folder.endswith('\\'):
                 full_output_folder += '/'
             full_output_folder = f"{full_output_folder}{filename}_{counter:05}_/"
             subfolder = f"{subfolder}{filename}_{counter:05}_/"
-            filename_prefix = f"{filename_prefix}.{format}"
+            filename = f"{filename}.{format}"
         else:
-            filename_prefix = f"{filename_prefix}_{counter:05}_.{format}"
+            filename = f"{filename}_{counter:05}_.{format}"
         Path(full_output_folder).mkdir(parents=True, exist_ok=True)
-        save_path = os.path.join(full_output_folder, filename_prefix)
+        save_path = os.path.join(full_output_folder, filename)
         match format:
             case "glb":
                 mesh.write_glb(save_path)
@@ -427,15 +427,15 @@ class Save_3DGS:
         
         full_output_folder, filename, counter, subfolder, filename_prefix = comfy_paths.get_save_image_path(save_path, comfy_paths.output_directory, 0, 0)
         if create_subfolders:
-            if not full_output_folder.endswith('/'):
+            if not full_output_folder.endswith('/') and not full_output_folder.endswith('\\'):
                 full_output_folder += '/'
             full_output_folder = f"{full_output_folder}{filename}_{counter:05}_/"
             subfolder = f"{subfolder}{filename}_{counter:05}_/"
-            filename_prefix = f"{filename_prefix}.ply"
+            filename = f"{filename}.ply"
         else:
-            filename_prefix = f"{filename_prefix}_{counter:05}_.ply"
+            filename = f"{filename}_{counter:05}_.ply"
         Path(full_output_folder).mkdir(parents=True, exist_ok=True)
-        save_path = os.path.join(full_output_folder, filename_prefix)
+        save_path = os.path.join(full_output_folder, filename)
         if save_path is not None:
             gs_ply.write(save_path)
         
