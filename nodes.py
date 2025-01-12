@@ -7,6 +7,7 @@ from collections import OrderedDict
 import folder_paths as comfy_paths
 from omegaconf import OmegaConf
 import json
+from pathlib import Path
 
 import torch
 from torch.utils.data import DataLoader
@@ -238,6 +239,39 @@ class Preview_3DMesh:
         ]
         return {"ui": {"previews": previews}, "result": ()}
 
+class Preview_3DMesh2:
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "mesh": ("MESH", ),
+            },
+        }
+    
+    OUTPUT_NODE = True
+    RETURN_TYPES = ()
+    FUNCTION = "preview_mesh2"
+    CATEGORY = "Comfy3D/Visualize"
+    
+    def preview_mesh2(self, mesh):
+        
+        mesh_folder_path, filename = os.path.split(mesh_file_path)
+        
+        if not os.path.isabs(mesh_file_path):
+            mesh_file_path = os.path.join(comfy_paths.output_directory, mesh_folder_path)
+        
+        if not filename.lower().endswith(SUPPORTED_3D_EXTENSIONS):
+            cstr(f"[{self.__class__.__name__}] File name {filename} does not end with supported 3D file extensions: {SUPPORTED_3D_EXTENSIONS}").error.print()
+            mesh_file_path = ""
+        
+        previews = [
+            {
+                "filepath": mesh_file_path,
+            }
+        ]
+        return {"ui": {"previews": previews}, "result": ()}
+
 class Load_3D_Mesh:
 
     @classmethod
@@ -322,27 +356,43 @@ class Save_3D_Mesh:
         return {
             "required": {
                 "mesh": ("MESH",),
-                "save_path": ("STRING", {"default": 'Mesh_%Y-%m-%d-%M-%S-%f.glb', "multiline": False}),
+                "format": (["glb", "obj", "ply"], ),
+                "create_subfolders": ("BOOLEAN", {"default": False},),
+                "save_path": ("STRING", {"default": 'Mesh', "multiline": False}),
             },
         }
 
     OUTPUT_NODE = True
     RETURN_TYPES = (
         "STRING",
+        "STRING",
     )
     RETURN_NAMES = (
         "save_path",
+        "folder_path"
     )
     FUNCTION = "save_mesh"
     CATEGORY = "Comfy3D/Import|Export"
     
-    def save_mesh(self, mesh, save_path):
-        save_path = parse_save_filename(save_path, comfy_paths.output_directory, SUPPORTED_3D_EXTENSIONS, self.__class__.__name__)
-        
-        if save_path is not None:
-            mesh.write(save_path)
-
-        return (save_path, )
+    def save_mesh(self, mesh, format, create_subfolders, save_path):
+        full_output_folder, filename, counter, subfolder, filename_prefix = comfy_paths.get_save_image_path(save_path, comfy_paths.output_directory, 0, 0)
+        if create_subfolders:
+            if not full_output_folder.endswith('/'):
+                full_output_folder += '/'
+            full_output_folder = f"{full_output_folder}{filename}_{counter:05}_/"
+            Path(full_output_folder).mkdir(parents=True, exist_ok=True)
+            filename_prefix = f"{filename_prefix}.{format}"
+        else:
+            filename_prefix = f"{filename_prefix}_{counter:05}_.{format}"
+        save_path = os.path.join(full_output_folder, filename_prefix)
+        match format:
+            case "glb":
+                mesh.write_glb(save_path)
+            case "obj":
+                mesh.write_obj(save_path)
+            case "ply":
+                mesh.write_ply(save_path)
+        return (save_path, full_output_folder, )
     
 class Save_3DGS:
 
