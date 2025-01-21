@@ -7,6 +7,7 @@ from collections import OrderedDict
 import folder_paths as comfy_paths
 from omegaconf import OmegaConf
 import json
+from pathlib import Path
 
 import torch
 from torch.utils.data import DataLoader
@@ -95,6 +96,8 @@ from Hunyuan3D_V1.mvd.hunyuan3d_mvd_lite_pipeline import Hunyuan3D_MVD_Lite_Pipe
 from Hunyuan3D_V1.infer import Views2Mesh
 from TRELLIS.trellis.pipelines import TrellisImageTo3DPipeline
 from TRELLIS.trellis.utils import render_utils, postprocessing_utils
+from TRELLIS.trellis.representations import Gaussian
+from easydict import EasyDict as edict
 
 os.environ['SPCONV_ALGO'] = 'native'
 
@@ -320,27 +323,46 @@ class Save_3D_Mesh:
         return {
             "required": {
                 "mesh": ("MESH",),
-                "save_path": ("STRING", {"default": 'Mesh_%Y-%m-%d-%M-%S-%f.glb', "multiline": False}),
+                "format": (["glb", "obj", "ply"], ),
+                "create_subfolders": ("BOOLEAN", {"default": False},),
+                "save_path": ("STRING", {"default": 'Mesh', "multiline": False}),
             },
         }
 
     OUTPUT_NODE = True
     RETURN_TYPES = (
         "STRING",
+        "STRING",
+        "STRING",
     )
     RETURN_NAMES = (
         "save_path",
+        "folder_full_path",
+        "subfolder",
     )
     FUNCTION = "save_mesh"
     CATEGORY = "Comfy3D/Import|Export"
     
-    def save_mesh(self, mesh, save_path):
-        save_path = parse_save_filename(save_path, comfy_paths.output_directory, SUPPORTED_3D_EXTENSIONS, self.__class__.__name__)
-        
-        if save_path is not None:
-            mesh.write(save_path)
-
-        return (save_path, )
+    def save_mesh(self, mesh, format, create_subfolders, save_path):
+        full_output_folder, filename, counter, subfolder, filename_prefix = comfy_paths.get_save_image_path(save_path, comfy_paths.output_directory, 0, 0)
+        if create_subfolders:
+            if not full_output_folder.endswith('/') and not full_output_folder.endswith('\\'):
+                full_output_folder += '/'
+            full_output_folder = f"{full_output_folder}{filename}_{counter:05}_/"
+            subfolder = f"{subfolder}{filename}_{counter:05}_/"
+            filename = f"{filename}.{format}"
+        else:
+            filename = f"{filename}_{counter:05}_.{format}"
+        Path(full_output_folder).mkdir(parents=True, exist_ok=True)
+        save_path = os.path.join(full_output_folder, filename)
+        match format:
+            case "glb":
+                mesh.write_glb(save_path)
+            case "obj":
+                mesh.write_obj(save_path)
+            case "ply":
+                mesh.write_ply(save_path)
+        return (save_path, full_output_folder, subfolder, )
     
 class Save_3DGS:
 
@@ -349,28 +371,42 @@ class Save_3DGS:
         return {
             "required": {
                 "gs_ply": ("GS_PLY",),
-                "save_path": ("STRING", {"default": '3DGS_%Y-%m-%d-%M-%S-%f.ply', "multiline": False}),
+                "create_subfolders": ("BOOLEAN", {"default": False},),
+                "save_path": ("STRING", {"default": '3DGS', "multiline": False}),
             },
         }
 
     OUTPUT_NODE = True
     RETURN_TYPES = (
         "STRING",
+        "STRING",
+        "STRING",
     )
     RETURN_NAMES = (
         "save_path",
+        "folder_full_path",
+        "subfolder",
     )
     FUNCTION = "save_gs"
     CATEGORY = "Comfy3D/Import|Export"
     
-    def save_gs(self, gs_ply, save_path):
+    def save_gs(self, gs_ply, create_subfolders, save_path):
         
-        save_path = parse_save_filename(save_path, comfy_paths.output_directory, SUPPORTED_3DGS_EXTENSIONS, self.__class__.__name__)
-        
+        full_output_folder, filename, counter, subfolder, filename_prefix = comfy_paths.get_save_image_path(save_path, comfy_paths.output_directory, 0, 0)
+        if create_subfolders:
+            if not full_output_folder.endswith('/') and not full_output_folder.endswith('\\'):
+                full_output_folder += '/'
+            full_output_folder = f"{full_output_folder}{filename}_{counter:05}_/"
+            subfolder = f"{subfolder}{filename}_{counter:05}_/"
+            filename = f"{filename}.ply"
+        else:
+            filename = f"{filename}_{counter:05}_.ply"
+        Path(full_output_folder).mkdir(parents=True, exist_ok=True)
+        save_path = os.path.join(full_output_folder, filename)
         if save_path is not None:
             gs_ply.write(save_path)
         
-        return (save_path, )
+        return (save_path, full_output_folder, subfolder, )
 
 class Image_Add_Pure_Color_Background:
     @classmethod
@@ -3923,18 +3959,23 @@ class Trellis_Structured_3D_Latents_Models:
                 "reference_image": ("IMAGE",),
                 "reference_mask": ("MASK",),
                 "seed": ("INT", {"default": 1, "min": 0, "max": 0xffffffffffffffff}),
-                "sparse_structure_guidance_scale": ("FLOAT", {"default": 7.5, "min": 0.0, "step": 0.01}),
+                "sparse_structure_guidance_scale": ("FLOAT", {"default": 7.5, "min": 0.0, "step": 0.1}),
                 "sparse_structure_sample_steps": ("INT", {"default": 12, "min": 1}),
-                "structured_latent_guidance_scale": ("FLOAT", {"default": 3.0, "min": 0.0, "step": 0.01}),
+                "structured_latent_guidance_scale": ("FLOAT", {"default": 3.0, "min": 0.0, "step": 0.1}),
                 "structured_latent_sample_steps": ("INT", {"default": 12, "min": 1}),
+                "texture_size": ("INT", {"default": 1024, "min": 64, "max": 4096, "step": 64}),
+                "render_resolution": ("INT", {"default": 1024, "min": 256, "max": 4096, "step": 256}),
+                "simplify_ratio": ("FLOAT", {"default": 0.95, "min": 0.80, "max": 0.99999, "step": 0.01, "round": False}),
             }
         }
     
     RETURN_TYPES = (
         "MESH",
+        "IMAGE",
     )
     RETURN_NAMES = (
         "mesh",
+        "texture",
     )
     FUNCTION = "run_model"
     CATEGORY = "Comfy3D/Algorithm"
@@ -3950,39 +3991,97 @@ class Trellis_Structured_3D_Latents_Models:
         sparse_structure_sample_steps,
         structured_latent_guidance_scale,
         structured_latent_sample_steps,
+        texture_size,
+        render_resolution,
+        simplify_ratio,
     ):
-        single_image = torch_imgs_to_pils(reference_image, reference_mask)[0]
+        
+        
+        images = torch_imgs_to_pils(reference_image, reference_mask)
 
         with torch.inference_mode(False):
-            outputs = trellis_pipe.run(
-                single_image,
-                # Optional parameters
-                seed=seed,
-                formats=["gaussian", "mesh"],
-                sparse_structure_sampler_params={
-                    "cfg_strength": sparse_structure_guidance_scale,
-                    "steps": sparse_structure_sample_steps,
-                },
-                slat_sampler_params={
-                    "cfg_strength": structured_latent_guidance_scale,
-                    "steps": structured_latent_sample_steps,
-                },
-            )
+            if (len(images) == 1):
+                outputs = trellis_pipe.run(
+                    images[0],
+                    # Optional parameters
+                    seed=seed,
+                    formats=["gaussian", "mesh"],
+                    sparse_structure_sampler_params={
+                        "cfg_strength": sparse_structure_guidance_scale,
+                        "steps": sparse_structure_sample_steps,
+                    },
+                    slat_sampler_params={
+                        "cfg_strength": structured_latent_guidance_scale,
+                        "steps": structured_latent_sample_steps,
+                    },
+                )
+            else:
+                outputs = trellis_pipe.run_multi_image(
+                    images,
+                    # Optional parameters
+                    seed=seed,
+                    formats=["gaussian", "mesh"],
+                    sparse_structure_sampler_params={
+                        "cfg_strength": sparse_structure_guidance_scale,
+                        "steps": sparse_structure_sample_steps,
+                    },
+                    slat_sampler_params={
+                        "cfg_strength": structured_latent_guidance_scale,
+                        "steps": structured_latent_sample_steps,
+                    },
+                )
 
+            ## GLB files can be extracted from the outputs
+            #vertices, faces, uvs, texture = postprocessing_utils.finalize_mesh(
+            #    outputs['gaussian'][0],
+            #    outputs['mesh'][0],
+            #    # Optional parameters
+            #    simplify=0.95,          # Ratio of triangles to remove in the simplification process
+            #    texture_size=1024,      # Size of the texture used for the GLB
+            #)
             # GLB files can be extracted from the outputs
-            vertices, faces, uvs, texture = postprocessing_utils.finalize_mesh(
-                outputs['gaussian'][0],
-                outputs['mesh'][0],
+            
+            
+            gs = outputs['gaussian'][0]
+            mesh = outputs['mesh'][0]
+            
+            vertices = mesh.vertices.cpu().numpy()
+            faces = mesh.faces.cpu().numpy()
+            
+            vertices, faces = postprocessing_utils.postprocess_mesh(
+                vertices,
+                faces,
                 # Optional parameters
-                simplify=0.95,          # Ratio of triangles to remove in the simplification process
-                texture_size=1024,      # Size of the texture used for the GLB
+                simplify_ratio=simplify_ratio,          # Ratio of triangles to remove in the simplification process
             )
+            
+            vertices, faces, uvs = postprocessing_utils.parametrize_mesh(vertices, faces)
+            
+            observations, extrinsics, intrinsics = postprocessing_utils.render_multiview(
+                gs, 
+                resolution=render_resolution, 
+                nviews=100
+            )
+            masks = [np.any(observation > 0, axis=-1) for observation in observations]
+            extrinsics = [extrinsics[i].cpu().numpy() for i in range(len(extrinsics))]
+            intrinsics = [intrinsics[i].cpu().numpy() for i in range(len(intrinsics))]
+            texture = postprocessing_utils.bake_texture(
+                vertices, faces, uvs,
+                observations, masks, extrinsics, intrinsics,
+                texture_size=texture_size, mode='opt',
+                lambda_tv=0.01,
+                verbose=False
+            )
+            
+            vertices = vertices @ np.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]])
 
-            vertices, faces, uvs, texture = torch.from_numpy(vertices).to(DEVICE), torch.from_numpy(faces).to(torch.int64).to(DEVICE), torch.from_numpy(uvs).to(DEVICE), torch.from_numpy(texture).to(DEVICE)
-            mesh = Mesh(v=vertices, f=faces, vt=uvs, ft=faces, albedo=texture, device=DEVICE)
+            texture_0 = torch.flip(torch.tensor(torch.from_numpy(texture / 255.0).unsqueeze(0)), (1,))
+
+            vertices, faces, uvs = torch.from_numpy(vertices).to(DEVICE), torch.from_numpy(faces).to(torch.int64).to(DEVICE), torch.from_numpy(uvs).to(DEVICE)
+            mesh = Mesh(v=vertices, f=faces, vt=uvs, ft=faces, albedo=texture_0[0], device=DEVICE)
             mesh.auto_normal()
 
-        return (mesh,)
+        return (mesh,texture_0, )
     
 
     

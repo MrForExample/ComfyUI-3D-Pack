@@ -4,14 +4,17 @@ import torch
 import utils3d
 import nvdiffrast.torch as dr
 from tqdm import tqdm
-import comfy.utils
+import trimesh
+import trimesh.visual
 import xatlas
 import pyvista as pv
 from pymeshfix import _meshfix
 import igraph
 import cv2
+from PIL import Image
 from .random_utils import sphere_hammersley_sequence
 from .render_utils import render_multiview
+from ..renderers import GaussianRenderer
 from ..representations import Strivec, Gaussian, MeshExtractResult
 
 
@@ -311,14 +314,11 @@ def bake_texture(
     views = [utils3d.torch.extrinsics_to_view(torch.tensor(extr).cuda()) for extr in extrinsics]
     projections = [utils3d.torch.intrinsics_to_perspective(torch.tensor(intr).cuda(), near, far) for intr in intrinsics]
 
-    steps = len(views)
-    comfy_pbar = comfy.utils.ProgressBar(steps)
-    
     if mode == 'fast':
         texture = torch.zeros((texture_size * texture_size, 3), dtype=torch.float32).cuda()
         texture_weights = torch.zeros((texture_size * texture_size), dtype=torch.float32).cuda()
         rastctx = utils3d.torch.RastContext(backend='cuda')
-        for i, (observation, view, projection) in enumerate(tqdm(zip(observations, views, projections), total=steps, disable=not verbose, desc='Texture baking (fast)')):
+        for observation, view, projection in tqdm(zip(observations, views, projections), total=len(observations), disable=not verbose, desc='Texture baking (fast)'):
             with torch.no_grad():
                 rast = utils3d.torch.rasterize_triangle_faces(
                     rastctx, vertices[None], faces, observation.shape[1], observation.shape[0], uv=uvs[None], view=view, projection=projection
@@ -334,8 +334,6 @@ def bake_texture(
             texture = texture.scatter_add(0, idx.view(-1, 1).expand(-1, 3), obs)
             texture_weights = texture_weights.scatter_add(0, idx, torch.ones((obs.shape[0]), dtype=torch.float32, device=texture.device))
 
-            comfy_pbar.update_absolute(i + 1)
-
         mask = texture_weights > 0
         texture[mask] /= texture_weights[mask][:, None]
         texture = np.clip(texture.reshape(texture_size, texture_size, 3).cpu().numpy() * 255, 0, 255).astype(np.uint8)
@@ -350,15 +348,13 @@ def bake_texture(
         masks = [m.flip(0) for m in masks]
         _uv = []
         _uv_dr = []
-        for i, (observation, view, projection) in enumerate(tqdm(zip(observations, views, projections), total=steps, disable=not verbose, desc='Texture baking (opt): UV')):
+        for observation, view, projection in tqdm(zip(observations, views, projections), total=len(views), disable=not verbose, desc='Texture baking (opt): UV'):
             with torch.no_grad():
                 rast = utils3d.torch.rasterize_triangle_faces(
                     rastctx, vertices[None], faces, observation.shape[1], observation.shape[0], uv=uvs[None], view=view, projection=projection
                 )
                 _uv.append(rast['uv'].detach())
                 _uv_dr.append(rast['uv_dr'].detach())
-
-                comfy_pbar.update_absolute(i + 1)
 
         texture = torch.nn.Parameter(torch.zeros((1, texture_size, texture_size, 3), dtype=torch.float32).cuda())
         optimizer = torch.optim.Adam([texture], betas=(0.5, 0.9), lr=1e-2)
@@ -374,7 +370,6 @@ def bake_texture(
                    torch.nn.functional.l1_loss(texture[:, :, :-1, :], texture[:, :, 1:, :])
     
         total_steps = 2500
-        comfy_pbar = comfy.utils.ProgressBar(total_steps)
         with tqdm(total=total_steps, disable=not verbose, desc='Texture baking (opt): optimizing') as pbar:
             for step in range(total_steps):
                 optimizer.zero_grad()
@@ -390,9 +385,6 @@ def bake_texture(
                 optimizer.param_groups[0]['lr'] = cosine_anealing(optimizer, step, total_steps, 1e-2, 1e-5)
                 pbar.set_postfix({'loss': loss.item()})
                 pbar.update()
-
-                comfy_pbar.update_absolute(step + 1)
-
         texture = np.clip(texture[0].flip(0).detach().cpu().numpy() * 255, 0, 255).astype(np.uint8)
         mask = 1 - utils3d.torch.rasterize_triangle_faces(
             rastctx, (uvs * 2 - 1)[None], faces, texture_size, texture_size
@@ -404,7 +396,7 @@ def bake_texture(
     return texture
 
 
-def finalize_mesh(
+def to_glb(
     app_rep: Union[Strivec, Gaussian],
     mesh: MeshExtractResult,
     simplify: float = 0.95,
@@ -413,7 +405,7 @@ def finalize_mesh(
     texture_size: int = 1024,
     debug: bool = False,
     verbose: bool = True,
-):
+) -> trimesh.Trimesh:
     """
     Convert a generated asset to a glb file.
 
@@ -459,9 +451,137 @@ def finalize_mesh(
         lambda_tv=0.01,
         verbose=verbose
     )
-    texture = texture.astype(np.float32) / 255
-    uvs[:, 1] = 1 - uvs[:, 1]
+    texture = Image.fromarray(texture)
 
     # rotate mesh (from z-up to y-up)
     vertices = vertices @ np.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]])
-    return vertices, faces, uvs, texture
+    material = trimesh.visual.material.PBRMaterial(
+        roughnessFactor=1.0,
+        baseColorTexture=texture,
+        baseColorFactor=np.array([255, 255, 255, 255], dtype=np.uint8)
+    )
+    mesh = trimesh.Trimesh(vertices, faces, visual=trimesh.visual.TextureVisuals(uv=uvs, material=material))
+    return mesh
+
+
+def simplify_gs(
+    gs: Gaussian,
+    simplify: float = 0.95,
+    verbose: bool = True,
+):
+    """
+    Simplify 3D Gaussians
+    NOTE: this function is not used in the current implementation for the unsatisfactory performance.
+    
+    Args:
+        gs (Gaussian): 3D Gaussian.
+        simplify (float): Ratio of Gaussians to remove in simplification.
+    """
+    if simplify <= 0:
+        return gs
+    
+    # simplify
+    observations, extrinsics, intrinsics = render_multiview(gs, resolution=1024, nviews=100)
+    observations = [torch.tensor(obs / 255.0).float().cuda().permute(2, 0, 1) for obs in observations]
+    
+    # Following https://arxiv.org/pdf/2411.06019
+    renderer = GaussianRenderer({
+            "resolution": 1024,
+            "near": 0.8,
+            "far": 1.6,
+            "ssaa": 1,
+            "bg_color": (0,0,0),
+        })
+    new_gs = Gaussian(**gs.init_params)
+    new_gs._features_dc = gs._features_dc.clone()
+    new_gs._features_rest = gs._features_rest.clone() if gs._features_rest is not None else None
+    new_gs._opacity = torch.nn.Parameter(gs._opacity.clone())
+    new_gs._rotation = torch.nn.Parameter(gs._rotation.clone())
+    new_gs._scaling = torch.nn.Parameter(gs._scaling.clone())
+    new_gs._xyz = torch.nn.Parameter(gs._xyz.clone())
+    
+    start_lr = [1e-4, 1e-3, 5e-3, 0.025]
+    end_lr = [1e-6, 1e-5, 5e-5, 0.00025]
+    optimizer = torch.optim.Adam([
+        {"params": new_gs._xyz, "lr": start_lr[0]},
+        {"params": new_gs._rotation, "lr": start_lr[1]},
+        {"params": new_gs._scaling, "lr": start_lr[2]},
+        {"params": new_gs._opacity, "lr": start_lr[3]},
+    ], lr=start_lr[0])
+    
+    def exp_anealing(optimizer, step, total_steps, start_lr, end_lr):
+            return start_lr * (end_lr / start_lr) ** (step / total_steps)
+
+    def cosine_anealing(optimizer, step, total_steps, start_lr, end_lr):
+        return end_lr + 0.5 * (start_lr - end_lr) * (1 + np.cos(np.pi * step / total_steps))
+    
+    _zeta = new_gs.get_opacity.clone().detach().squeeze()
+    _lambda = torch.zeros_like(_zeta)
+    _delta = 1e-7
+    _interval = 10
+    num_target = int((1 - simplify) * _zeta.shape[0])
+    
+    with tqdm(total=2500, disable=not verbose, desc='Simplifying Gaussian') as pbar:
+        for i in range(2500):
+            # prune
+            if i % 100 == 0:
+                mask = new_gs.get_opacity.squeeze() > 0.05
+                mask = torch.nonzero(mask).squeeze()
+                new_gs._xyz = torch.nn.Parameter(new_gs._xyz[mask])
+                new_gs._rotation = torch.nn.Parameter(new_gs._rotation[mask])
+                new_gs._scaling = torch.nn.Parameter(new_gs._scaling[mask])
+                new_gs._opacity = torch.nn.Parameter(new_gs._opacity[mask])
+                new_gs._features_dc = new_gs._features_dc[mask]
+                new_gs._features_rest = new_gs._features_rest[mask] if new_gs._features_rest is not None else None
+                _zeta = _zeta[mask]
+                _lambda = _lambda[mask]
+                # update optimizer state
+                for param_group, new_param in zip(optimizer.param_groups, [new_gs._xyz, new_gs._rotation, new_gs._scaling, new_gs._opacity]):
+                    stored_state = optimizer.state[param_group['params'][0]]
+                    if 'exp_avg' in stored_state:
+                        stored_state['exp_avg'] = stored_state['exp_avg'][mask]
+                        stored_state['exp_avg_sq'] = stored_state['exp_avg_sq'][mask]
+                    del optimizer.state[param_group['params'][0]]
+                    param_group['params'][0] = new_param
+                    optimizer.state[param_group['params'][0]] = stored_state
+
+            opacity = new_gs.get_opacity.squeeze()
+            
+            # sparisfy
+            if i % _interval == 0:
+                _zeta = _lambda + opacity.detach()
+                if opacity.shape[0] > num_target:
+                    index = _zeta.topk(num_target)[1]
+                    _m = torch.ones_like(_zeta, dtype=torch.bool)
+                    _m[index] = 0
+                    _zeta[_m] = 0
+                _lambda = _lambda + opacity.detach() - _zeta
+            
+            # sample a random view
+            view_idx = np.random.randint(len(observations))
+            observation = observations[view_idx]
+            extrinsic = extrinsics[view_idx]
+            intrinsic = intrinsics[view_idx]
+            
+            color = renderer.render(new_gs, extrinsic, intrinsic)['color']
+            rgb_loss = torch.nn.functional.l1_loss(color, observation)
+            loss = rgb_loss + \
+                   _delta * torch.sum(torch.pow(_lambda + opacity - _zeta, 2))
+            
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+            
+            # update lr
+            for j in range(len(optimizer.param_groups)):
+                optimizer.param_groups[j]['lr'] = cosine_anealing(optimizer, i, 2500, start_lr[j], end_lr[j])
+            
+            pbar.set_postfix({'loss': rgb_loss.item(), 'num': opacity.shape[0], 'lambda': _lambda.mean().item()})
+            pbar.update()
+            
+    new_gs._xyz = new_gs._xyz.data
+    new_gs._rotation = new_gs._rotation.data
+    new_gs._scaling = new_gs._scaling.data
+    new_gs._opacity = new_gs._opacity.data
+    
+    return new_gs
