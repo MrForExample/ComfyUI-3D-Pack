@@ -1,1 +1,0 @@
-from .strivec import Strivec

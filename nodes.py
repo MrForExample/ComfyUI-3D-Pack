@@ -239,39 +239,6 @@ class Preview_3DMesh:
         ]
         return {"ui": {"previews": previews}, "result": ()}
 
-class Preview_3DMesh2:
-
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "mesh": ("MESH", ),
-            },
-        }
-    
-    OUTPUT_NODE = True
-    RETURN_TYPES = ()
-    FUNCTION = "preview_mesh2"
-    CATEGORY = "Comfy3D/Visualize"
-    
-    def preview_mesh2(self, mesh):
-        
-        mesh_folder_path, filename = os.path.split(mesh_file_path)
-        
-        if not os.path.isabs(mesh_file_path):
-            mesh_file_path = os.path.join(comfy_paths.output_directory, mesh_folder_path)
-        
-        if not filename.lower().endswith(SUPPORTED_3D_EXTENSIONS):
-            cstr(f"[{self.__class__.__name__}] File name {filename} does not end with supported 3D file extensions: {SUPPORTED_3D_EXTENSIONS}").error.print()
-            mesh_file_path = ""
-        
-        previews = [
-            {
-                "filepath": mesh_file_path,
-            }
-        ]
-        return {"ui": {"previews": previews}, "result": ()}
-
 class Load_3D_Mesh:
 
     @classmethod
@@ -3992,13 +3959,13 @@ class Trellis_Structured_3D_Latents_Models:
                 "reference_image": ("IMAGE",),
                 "reference_mask": ("MASK",),
                 "seed": ("INT", {"default": 1, "min": 0, "max": 0xffffffffffffffff}),
-                "sparse_structure_guidance_scale": ("FLOAT", {"default": 7.5, "min": 0.0, "step": 0.01}),
+                "sparse_structure_guidance_scale": ("FLOAT", {"default": 7.5, "min": 0.0, "step": 0.1}),
                 "sparse_structure_sample_steps": ("INT", {"default": 12, "min": 1}),
-                "structured_latent_guidance_scale": ("FLOAT", {"default": 3.0, "min": 0.0, "step": 0.01}),
+                "structured_latent_guidance_scale": ("FLOAT", {"default": 3.0, "min": 0.0, "step": 0.1}),
                 "structured_latent_sample_steps": ("INT", {"default": 12, "min": 1}),
-                "texture_size": ("INT", {"default": 1024, "min": 256, "max": 4096, "step": 256}),
+                "texture_size": ("INT", {"default": 1024, "min": 64, "max": 4096, "step": 64}),
                 "render_resolution": ("INT", {"default": 1024, "min": 256, "max": 4096, "step": 256}),
-                "simplify_ratio": ("FLOAT", {"default": 0.95, "min": 0.80, "max": 0.99, "step": 0.01}),
+                "simplify_ratio": ("FLOAT", {"default": 0.95, "min": 0.80, "max": 0.99999, "step": 0.01, "round": False}),
             }
         }
     
@@ -4028,23 +3995,41 @@ class Trellis_Structured_3D_Latents_Models:
         render_resolution,
         simplify_ratio,
     ):
-        single_image = torch_imgs_to_pils(reference_image, reference_mask)[0]
+        
+        
+        images = torch_imgs_to_pils(reference_image, reference_mask)
 
         with torch.inference_mode(False):
-            outputs = trellis_pipe.run(
-                single_image,
-                # Optional parameters
-                seed=seed,
-                formats=["gaussian", "mesh"],
-                sparse_structure_sampler_params={
-                    "cfg_strength": sparse_structure_guidance_scale,
-                    "steps": sparse_structure_sample_steps,
-                },
-                slat_sampler_params={
-                    "cfg_strength": structured_latent_guidance_scale,
-                    "steps": structured_latent_sample_steps,
-                },
-            )
+            if (len(images) == 1):
+                outputs = trellis_pipe.run(
+                    images[0],
+                    # Optional parameters
+                    seed=seed,
+                    formats=["gaussian", "mesh"],
+                    sparse_structure_sampler_params={
+                        "cfg_strength": sparse_structure_guidance_scale,
+                        "steps": sparse_structure_sample_steps,
+                    },
+                    slat_sampler_params={
+                        "cfg_strength": structured_latent_guidance_scale,
+                        "steps": structured_latent_sample_steps,
+                    },
+                )
+            else:
+                outputs = trellis_pipe.run_multi_image(
+                    images,
+                    # Optional parameters
+                    seed=seed,
+                    formats=["gaussian", "mesh"],
+                    sparse_structure_sampler_params={
+                        "cfg_strength": sparse_structure_guidance_scale,
+                        "steps": sparse_structure_sample_steps,
+                    },
+                    slat_sampler_params={
+                        "cfg_strength": structured_latent_guidance_scale,
+                        "steps": structured_latent_sample_steps,
+                    },
+                )
 
             ## GLB files can be extracted from the outputs
             #vertices, faces, uvs, texture = postprocessing_utils.finalize_mesh(
@@ -4087,9 +4072,6 @@ class Trellis_Structured_3D_Latents_Models:
                 lambda_tv=0.01,
                 verbose=False
             )
-            
-            #texture =  np.transpose(texture / 255.0, (2,0,1))
-            #texture_raw = texture
             
             vertices = vertices @ np.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]])
 
