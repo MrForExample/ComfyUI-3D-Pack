@@ -1,0 +1,38 @@
+{
+  "_class_name": "StableDiffusionInstructPix2PixPipeline",
+  "_diffusers_version": "0.30.1",
+  "_name_or_path": "",
+  "feature_extractor": [
+    "transformers",
+    "CLIPImageProcessor"
+  ],
+  "image_encoder": [
+    null,
+    null
+  ],
+  "requires_safety_checker": false,
+  "safety_checker": [
+    null,
+    null
+  ],
+  "scheduler": [
+    "diffusers",
+    "DDIMScheduler"
+  ],
+  "text_encoder": [
+    "transformers",
+    "CLIPTextModel"
+  ],
+  "tokenizer": [
+    "transformers",
+    "CLIPTokenizer"
+  ],
+  "unet": [
+    "diffusers",
+    "UNet2DConditionModel"
+  ],
+  "vae": [
+    "diffusers",
+    "AutoencoderKL"
+  ]
+}

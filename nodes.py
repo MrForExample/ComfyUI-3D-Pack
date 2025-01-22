@@ -33,6 +33,7 @@ from diffusers import (
 from huggingface_hub import snapshot_download
 
 from plyfile import PlyData
+import trimesh
 from PIL import Image
 
 from .mesh_processer.mesh import Mesh
@@ -93,8 +94,10 @@ from CRM_T2I_V3.model.crm.sampler import CRMSamplerV3
 from Hunyuan3D_V1.mvd.hunyuan3d_mvd_std_pipeline import HunYuan3D_MVD_Std_Pipeline
 from Hunyuan3D_V1.mvd.hunyuan3d_mvd_lite_pipeline import Hunyuan3D_MVD_Lite_Pipeline
 from Hunyuan3D_V1.infer import Views2Mesh
+from Hunyuan3D_V2.hy3dgen.shapegen import FaceReducer, FloaterRemover, DegenerateFaceRemover, Hunyuan3DDiTFlowMatchingPipeline
+from Hunyuan3D_V2.hy3dgen.texgen import Hunyuan3DPaintPipeline
 from TRELLIS.trellis.pipelines import TrellisImageTo3DPipeline
-from TRELLIS.trellis.utils import render_utils, postprocessing_utils
+from TRELLIS.trellis.utils import postprocessing_utils
 
 os.environ['SPCONV_ALGO'] = 'native'
 
@@ -120,6 +123,8 @@ DIFFUSERS_PIPE_DICT = OrderedDict([
     ("Unique3DImageCustomPipeline", StableDiffusionImageCustomPipeline),
     ("HunYuan3DMVDStdPipeline", HunYuan3D_MVD_Std_Pipeline),
     ("Hunyuan3DMVDLitePipeline", Hunyuan3D_MVD_Lite_Pipeline),
+    ("Hunyuan3DDiTFlowMatchingPipeline", Hunyuan3DDiTFlowMatchingPipeline),
+    ("Hunyuan3DPaintPipeline", Hunyuan3DPaintPipeline),
 ])
 
 DIFFUSERS_SCHEDULER_DICT = OrderedDict([
@@ -168,7 +173,7 @@ WEIGHT_DTYPE = torch.float16
 DEVICE_STR = "cuda" if torch.cuda.is_available() else "cpu"
 DEVICE = torch.device(DEVICE_STR)
 
-HF_DOWNLOAD_IGNORE = ["*.json", "*.py", ".png", ".jpg"]
+HF_DOWNLOAD_IGNORE = ["*.yaml", "*.json", "*.py", ".png", ".jpg", ".gif"]
 
 class Preview_3DGS:
 
@@ -1482,7 +1487,8 @@ class Load_Diffusers_Pipeline:
             custom_pipeline=custom_pipeline,
         ).to(DEVICE)
         
-        pipe.enable_xformers_memory_efficient_attention()
+        if hasattr(pipe, 'enable_xformers_memory_efficient_attention'):
+            pipe.enable_xformers_memory_efficient_attention()
         
         return (pipe, )
     
@@ -3883,6 +3889,104 @@ class Hunyuan3D_V1_Reconstruction_Model:
         mesh = Mesh(v=vertices, f=faces.to(torch.int64), vc=vtx_colors, device=DEVICE)
         mesh.auto_normal()
         
+        return (mesh,)
+
+class Hunyuan3D_V2_DiT_Flow_Matching_Model:
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "hunyuan3d_v2_i23d_pipe": ("DIFFUSERS_PIPE",),
+                "reference_image": ("IMAGE",),
+                "reference_mask": ("MASK",),
+                "seed": ("INT", {"default": 1234, "min": 0, "max": 0xffffffffffffffff}),
+                "guidance_scale": ("FLOAT", {"default": 5.5, "min": 0.0, "step": 0.01}),
+                "num_inference_steps": ("INT", {"default": 30, "min": 1}),
+                "octree_resolution": ("INT", {"default": 256, "min": 1}),
+            }
+        }
+    
+    RETURN_TYPES = (
+        "MESH",
+    )
+    RETURN_NAMES = (
+        "mesh",
+    )
+    FUNCTION = "run_model"
+    CATEGORY = "Comfy3D/Algorithm"
+    
+    @torch.no_grad()
+    def run_model(
+        self, 
+        hunyuan3d_v2_i23d_pipe, 
+        reference_image, # [1, H, W, 3]
+        reference_mask,  # [1, H, W]
+        seed,
+        guidance_scale, 
+        num_inference_steps,
+        octree_resolution,
+    ):
+        single_image = torch_imgs_to_pils(reference_image, reference_mask)[0]
+
+        generator = torch.Generator(device=hunyuan3d_v2_i23d_pipe.device).manual_seed(seed)
+        mesh = hunyuan3d_v2_i23d_pipe(
+            image=single_image,
+            num_inference_steps=num_inference_steps,
+            guidance_scale=guidance_scale,
+            generator=generator,
+            octree_resolution=octree_resolution
+        )[0]
+
+        mesh = FloaterRemover()(mesh)
+        mesh = DegenerateFaceRemover()(mesh)
+        mesh = FaceReducer()(mesh)
+
+        mesh = Mesh.load_trimesh(given_mesh=mesh)
+
+        return (mesh,)
+
+class Hunyuan3D_V2_Paint_Model:
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "hunyuan3d_v2_texgen_pipe": ("DIFFUSERS_PIPE",),
+                "reference_image": ("IMAGE",),
+                "reference_mask": ("MASK",),
+                "mesh": ("MESH",),
+            }
+        }
+    
+    RETURN_TYPES = (
+        "MESH",
+    )
+    RETURN_NAMES = (
+        "mesh",
+    )
+    FUNCTION = "run_model"
+    CATEGORY = "Comfy3D/Algorithm"
+    
+    @torch.no_grad()
+    def run_model(
+        self, 
+        hunyuan3d_v2_texgen_pipe, 
+        reference_image, # [1, H, W, 3]
+        reference_mask,  # [1, H, W]
+        mesh,
+    ):
+        single_image = torch_imgs_to_pils(reference_image, reference_mask)[0]
+
+        v_np = mesh.v.detach().cpu().numpy()
+        f_np = mesh.f.detach().cpu().numpy()
+
+        mesh = trimesh.Trimesh(vertices=v_np, faces=f_np)
+        mesh = hunyuan3d_v2_texgen_pipe(mesh, single_image)
+
+        mesh = Mesh.load_trimesh(given_mesh=mesh)
+        mesh.auto_normal()
+
         return (mesh,)
     
 class Load_Trellis_Structured_3D_Latents_Models:
