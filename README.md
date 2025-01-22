@@ -43,15 +43,20 @@ Your ComfyUI Root Directory\python_embeded\python.exe install.py
 
 
 ## Features:
-- For use cases please check out [Example Workflows](./_Example_Workflows/). [**Last update: 16/December/2024**]
+- For use cases please check out [Example Workflows](./_Example_Workflows/). [**Last update: 22/January/2025**]
   - **Note:** you need to put [Example Inputs Files & Folders](_Example_Workflows/_Example_Inputs_Files/) under ComfyUI Root Directory\ComfyUI\input folder before you can run the example workflow
-  - [tripoSR-layered-diffusion workflow](https://github.com/C0nsumption/Consume-ComfyUI-Workflows/tree/main/assets/tripo_sr/00) by [@Consumption](https://twitter.com/c0nsumption_)
 
 - **TRELLIS**: [microsoft/TRELLIS](https://github.com/microsoft/TRELLIS)
   - Single image to 3D Mesh with RGB texture
   - Model weights: https://huggingface.co/JeffreyXiang/TRELLIS-image-large
 
   <video controls autoplay loop src="https://github.com/user-attachments/assets/f569c561-23ea-471f-a9d3-f2e6d1803e00"></video>
+
+- **Hunyuan3D_V2** [tencent/Hunyuan3D-2](https://github.com/Tencent/Hunyuan3D-2/)
+  - Two stages pipeline:
+    1. Single image to 3D Mesh shape only
+    2. 3D Mesh shape + Single reference image to 3D Mesh with RGB texture
+  - Model weights: https://huggingface.co/tencent/Hunyuan3D-2/tree/main
 
 - **Hunyuan3D_V1** [tencent/Hunyuan3D-1](https://github.com/Tencent/Hunyuan3D-1/)
   - Two stages pipeline:
@@ -123,6 +128,7 @@ Your ComfyUI Root Directory\python_embeded\python.exe install.py
 - **TripoSR**: [VAST-AI-Research/TripoSR](https://github.com/VAST-AI-Research/TripoSR) | [ComfyUI-Flowty-TripoSR](https://github.com/flowtyone/ComfyUI-Flowty-TripoSR)
   - Generate NeRF representation and using marching cube to turn it into 3D mesh
   - Model weights: https://huggingface.co/stabilityai/TripoSR/tree/main
+  - [tripoSR-layered-diffusion workflow](https://github.com/C0nsumption/Consume-ComfyUI-Workflows/tree/main/assets/tripo_sr/00) by [@Consumption](https://twitter.com/c0nsumption_)
  
   <video controls autoplay loop src="https://github.com/MrForExample/ComfyUI-3D-Pack/assets/62230687/ec4f8df5-5907-4bbf-ba19-c0565fe95a97"></video>
 

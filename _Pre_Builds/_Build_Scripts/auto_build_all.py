@@ -24,7 +24,7 @@ from build_utils import (
 
 def read_dependencies(file_path):
     # Download required source libraries from remote
-    if not os.path.exists(LIBS_ROOT_ABS_PATH):
+    if not os.path.exists(LIBS_ROOT_ABS_PATH) or not os.listdir(LIBS_ROOT_ABS_PATH):
         if not git_folder_parallel(build_config.repo_id, build_config.libs_dir_name, recursive=True, root_outdir=LIBS_ROOT_ABS_PATH):
             raise RuntimeError(f"Comfy3D install failed, couldn't download directory {build_config.libs_dir_name} in remote repository {build_config.repo_id}")
     dependencies = [ f.path for f in os.scandir(LIBS_ROOT_ABS_PATH) if f.is_dir() ]
