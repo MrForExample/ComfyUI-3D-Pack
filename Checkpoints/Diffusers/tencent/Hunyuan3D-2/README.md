@@ -9,14 +9,11 @@ language:
 tags:
   - image-to-3d
   - text-to-3d
-pipeline_tag: text-to-3d
+pipeline_tag: image-to-3d
 ---
-
 
 <p align="center">
   <img src="./assets/images/teaser.jpg">
-
-
 </p>
 
 <div align="center">
@@ -40,6 +37,9 @@ pipeline_tag: text-to-3d
 “ Living out everyone’s imagination on creating and manipulating 3D assets.”
 </p>
 
+This repository contains the models of the paper [Hunyuan3D 2.0: Scaling Diffusion Models for High Resolution Textured 3D Assets Generation](https://huggingface.co/papers/2501.12202).
+For code and more details on how to use it, refer to the [Github repository](https://github.com/Tencent/Hunyuan3D-2).
+
 ## 🔥 News
 
 - Jan 21, 2025: 💬 Release [Hunyuan3D 2.0](https://huggingface.co/spaces/tencent/Hunyuan3D-2). Please give it a try!
@@ -59,8 +59,6 @@ efficiently.
 We systematically evaluate our models, showing that Hunyuan3D 2.0 outperforms previous state-of-the-art models,
 including the open-source models and closed-source models in geometry details, condition alignment, texture quality, and
 e.t.c.
-
-
 
 <p align="center">
   <img src="assets/images/system.jpg">
@@ -104,6 +102,7 @@ Generation results of Hunyuan3D 2.0:
 |----------------------|------------|--------------------------------------------------------| 
 | Hunyuan3D-DiT-v2-0   | 2025-01-21 | [Download](https://huggingface.co/tencent/Hunyuan3D-2) |
 | Hunyuan3D-Paint-v2-0 | 2025-01-21 | [Download](https://huggingface.co/tencent/Hunyuan3D-2) |
+| Hunyuan3D-Delight-v2-0 | 2025-01-21 | [Download](https://huggingface.co/tencent/Hunyuan3D-2/tree/main/hunyuan3d-delight-v2-0) |
 
 ## 🤗 Get Started with Hunyuan3D 2.0
 
@@ -118,8 +117,9 @@ pip install -r requirements.txt
 # for texture
 cd hy3dgen/texgen/custom_rasterizer
 python3 setup.py install
+cd ../../..
 cd hy3dgen/texgen/differentiable_renderer
-bash compile_mesh_painter.sh
+bash compile_mesh_painter.sh OR python3 setup.py install (on Windows)
 ```
 
 ### API Usage
@@ -184,8 +184,28 @@ If you found this repository helpful, please cite our report:
     title={Hunyuan3D 2.0: Scaling Diffusion Models for High Resolution Textured 3D Assets Generation},
     author={Tencent Hunyuan3D Team},
     year={2025},
+    eprint={2501.12202},
+    archivePrefix={arXiv},
+    primaryClass={cs.CV}
+}
+
+@misc{yang2024tencent,
+    title={Tencent Hunyuan3D-1.0: A Unified Framework for Text-to-3D and Image-to-3D Generation},
+    author={Tencent Hunyuan3D Team},
+    year={2024},
+    eprint={2411.02293},
+    archivePrefix={arXiv},
+    primaryClass={cs.CV}
 }
 ```
+
+## Community Resources
+
+Thanks for the contributions of community members, here we have these great extensions of Hunyuan3D 2.0:
+
+- [ComfyUI-Hunyuan3DWrapper](https://github.com/kijai/ComfyUI-Hunyuan3DWrapper)
+- [Hunyuan3D-2-for-windows](https://github.com/sdbds/Hunyuan3D-2-for-windows)
+- [📦 A bundle for running on Windows | 整合包](https://github.com/YanWenKun/Comfy3D-WinPortable/releases/tag/r8-hunyuan3d2)
 
 ## Acknowledgements
 

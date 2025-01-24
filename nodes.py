@@ -46,6 +46,7 @@ from .mesh_processer.mesh_utils import (
     marching_cubes_density_to_mesh,
     color_func_to_albedo,
     interpolate_texture_map_attr,
+    decimate_mesh,
 )
 
 from FlexiCubes.flexicubes_trainer import FlexiCubesTrainer
@@ -606,6 +607,35 @@ class Fast_Clean_Mesh:
         vertices, faces, _ = from_py3d_mesh(meshes)
 
         mesh = Mesh(v=vertices, f=faces, device=DEVICE)
+
+        return (mesh,)
+    
+class Decimate_Mesh:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "mesh": ("MESH",),
+                "target": ("INT", {"default": 5e4, "min": 0, "max": 0xffffffffffffffff}),
+                "remesh": ("BOOLEAN", {"default": True},),
+                "optimalplacement": ("BOOLEAN", {"default": True},),
+            },
+        }
+
+    RETURN_TYPES = (
+        "MESH",
+    )
+    RETURN_NAMES = (
+        "mesh",
+    )
+    FUNCTION = "process_mesh"
+    CATEGORY = "Comfy3D/Preprocessor"
+
+    def process_mesh(self, mesh, target, remesh, optimalplacement):
+        
+        vertices, faces = decimate_mesh(mesh.v, mesh.f, target, remesh, optimalplacement)
+        mesh.v = vertices
+        mesh.f = faces
 
         return (mesh,)
 
