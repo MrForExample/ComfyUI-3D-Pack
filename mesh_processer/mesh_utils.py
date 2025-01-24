@@ -211,9 +211,22 @@ def poisson_mesh_reconstruction(points, normals=None):
 
 
 def decimate_mesh(
-    verts, faces, target, backend="pymeshlab", remesh=False, optimalplacement=True
+    verts, faces, target=5e4, backend="pymeshlab", remesh=False, optimalplacement=True, verbose=True
 ):
-    # optimalplacement: default is True, but for flat mesh must turn False to prevent spike artifect.
+    """ perform mesh decimation.
+
+    Args:
+        verts (np.ndarray): mesh vertices, float [N, 3]
+        faces (np.ndarray): mesh faces, int [M, 3]
+        target (int): targeted number of faces
+        backend (str, optional): algorithm backend, can be "pymeshlab" or "pyfqmr". Defaults to "pymeshlab".
+        remesh (bool, optional): whether to remesh after decimation. Defaults to False.
+        optimalplacement (bool, optional): For flat mesh, use False to prevent spikes. Defaults to True.
+        verbose (bool, optional): whether to print the decimation process. Defaults to True.
+
+    Returns:
+        Tuple[np.ndarray]: vertices and faces after decimation.
+    """
 
     _ori_vert_shape = verts.shape
     _ori_face_shape = faces.shape
@@ -231,7 +244,7 @@ def decimate_mesh(
         ms.add_mesh(m, "mesh")  # will copy!
 
         # filters
-        # ms.meshing_decimation_clustering(threshold=pml.Percentage(1))
+        # ms.meshing_decimation_clustering(threshold=pml.PercentageValue(1))
         ms.meshing_decimation_quadric_edge_collapse(
             targetfacenum=int(target), optimalplacement=optimalplacement
         )
@@ -239,17 +252,17 @@ def decimate_mesh(
         if remesh:
             # ms.apply_coord_taubin_smoothing()
             ms.meshing_isotropic_explicit_remeshing(
-                iterations=3, targetlen=pml.Percentage(1)
+                iterations=3, targetlen=pml.PercentageValue(1)
             )
 
         # extract mesh
         m = ms.current_mesh()
+        m.compact()
         verts = m.vertex_matrix()
         faces = m.face_matrix()
 
-    print(
-        f"[INFO] mesh decimation: {_ori_vert_shape} --> {verts.shape}, {_ori_face_shape} --> {faces.shape}"
-    )
+    if verbose:
+        print(f"[INFO] mesh decimation: {_ori_vert_shape} --> {verts.shape}, {_ori_face_shape} --> {faces.shape}")
 
     return verts, faces
 
