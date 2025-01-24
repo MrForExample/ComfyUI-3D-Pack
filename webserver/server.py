@@ -1,10 +1,7 @@
 import server
-import folder_paths as comfy_paths
 import os
 
 from ..shared_utils.log_utils import cstr
-
-ROOT_PATH = os.path.join(comfy_paths.get_folder_paths("custom_nodes")[0], "ComfyUI-3D-Pack")
 
 web = server.web
 
