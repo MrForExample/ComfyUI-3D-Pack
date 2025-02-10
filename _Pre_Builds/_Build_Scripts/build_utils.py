@@ -4,6 +4,9 @@ from os.path import dirname
 import platform
 import subprocess
 import time
+import urllib.request
+import zipfile
+import shutil
 
 PYTHON_PATH = sys.executable
 
@@ -154,3 +157,107 @@ def install_remote_packages(package_names):
                 continue
 
         subprocess.run([PYTHON_PATH, "-s", "-m", "pip", "install", package_name])
+
+
+# windows build tool dependencies
+VS_BUILD_TOOLS_URL = "https://aka.ms/vs/17/release/vs_BuildTools.exe"
+VS_INSTALLER = os.path.join(os.getcwd(), "vs_BuildTools.exe")
+
+NINJA_URL = "https://github.com/ninja-build/ninja/releases/latest/download/ninja-win.zip"
+NINJA_DIR = os.path.join(os.getenv("LOCALAPPDATA"), "Ninja")
+NINJA_EXE = os.path.join(NINJA_DIR, "ninja.exe")
+
+VS_INSTALLER = os.path.join(os.getcwd(), "vs_BuildTools.exe")
+def install_windows_build_tool_dependencies():
+    install_ninja()
+    install_vs_build_tools()
+
+def is_ninja_installed():
+    """Check if Ninja is installed and accessible."""
+
+    # Check if ninja.exe exists in the expected location
+    ninja_exists = os.path.exists(NINJA_EXE)
+
+    if not ninja_exists:
+        print("❌ Ninja NOT found in expected location.")
+        return False
+
+    # Check if it's available in PATH
+    if shutil.which("ninja") is not None:
+        print("✅ Ninja is accessible via PATH.")
+        return True
+    else:
+        print("⚠️ Ninja is installed but NOT found in PATH. Trying to fix...")
+        add_ninja_to_path()
+        return shutil.which("ninja") is not None
+
+
+def add_ninja_to_path():
+    """Adds Ninja to the system PATH permanently."""
+    ninja_path = NINJA_DIR
+    current_path = os.environ.get("PATH", "")
+
+    if ninja_path not in current_path:
+        print("🔧 Adding Ninja to system PATH...")
+        subprocess.run([
+            "setx", "PATH", f"{current_path};{ninja_path}"
+        ], shell=True, check=True)
+        print(f"✅ Ninja has been added to PATH: {ninja_path}")
+    else:
+        print("✅ Ninja is already in PATH.")
+
+def install_ninja():
+    """Downloads and installs Ninja build system automatically."""
+
+    # If Ninja is already installed, skip installation
+    if is_ninja_installed():
+        print(f"✅ Ninja is already installed at {NINJA_EXE}")
+        return
+
+    print("🔽 Downloading Ninja...")
+    ninja_zip = os.path.join(os.getcwd(), "ninja.zip")
+    urllib.request.urlretrieve(NINJA_URL, ninja_zip)
+
+    print(f"📦 Extracting Ninja to {NINJA_DIR}...")
+    os.makedirs(NINJA_DIR, exist_ok=True)  # Ensure directory exists
+
+    with zipfile.ZipFile(ninja_zip, "r") as zip_ref:
+        zip_ref.extractall(NINJA_DIR)
+
+    os.remove(ninja_zip)  # Clean up
+
+    print(f"✅ Ninja installed successfully at {NINJA_DIR}")
+
+    # Add Ninja to system PATH
+    add_ninja_to_path()
+
+def is_msvc_installed():
+    """Check if MSVC compiler (`cl.exe`) is installed."""
+    return shutil.which("cl") is not None
+
+def install_vs_build_tools():
+    """Downloads and installs Visual Studio Build Tools with MSVC and Windows SDK silently."""
+
+    # If MSVC is installed, skip installation
+    if is_msvc_installed():
+        print("✅ MSVC Compiler is already installed.")
+        return
+
+    print("🔽 Downloading Visual Studio Build Tools...")
+    urllib.request.urlretrieve(VS_BUILD_TOOLS_URL, VS_INSTALLER)
+
+    print("⚙️ Installing Visual Studio Build Tools (this may take a few minutes)...")
+    subprocess.run([
+        VS_INSTALLER,
+        "--quiet", "--wait",
+        "--add", "Microsoft.VisualStudio.Workload.VCTools",        # C++ Build Tools Workload
+        "--add", "Microsoft.VisualStudio.Component.VC.CoreBuildTools",  # MSVC Compiler
+        "--add", "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",  # 64-bit toolset
+        "--add", "Microsoft.VisualStudio.Component.Windows10SDK.19041",  # Windows SDK
+        "--add", "Microsoft.VisualStudio.Component.VC.Redist.14.Latest"  # Standard Library Headers
+    ], check=True)
+
+    print("✅ MSVC Compiler and Windows SDK installed successfully!")
+
+    # Cleanup downloaded installer
+    os.remove(VS_INSTALLER)

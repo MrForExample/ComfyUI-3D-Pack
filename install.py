@@ -21,9 +21,11 @@ try:
         git_folder_parallel,
         install_remote_packages,
         build_config,
+        install_windows_build_tool_dependencies,
         PYTHON_PATH,
         WHEELS_ROOT_ABS_PATH,
-        PYTHON_VERSION
+        PYTHON_VERSION,
+        OS_TYPE,
     )
     from shared_utils.log_utils import cstr
     
@@ -48,6 +50,10 @@ try:
     
     # Install packages that needs specify remote url
     install_remote_packages(build_config.build_base_packages)
+
+    # If on windows, install build tool dependencies
+    if OS_TYPE == 'win':
+        install_windows_build_tool_dependencies()
     
     # Get the target remote pre-built wheels directory name and path
     platform_config_name = get_platform_config_name()
