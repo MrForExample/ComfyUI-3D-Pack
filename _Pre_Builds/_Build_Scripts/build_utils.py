@@ -233,7 +233,14 @@ def install_ninja():
 
 def is_msvc_installed():
     """Check if MSVC compiler (`cl.exe`) is installed."""
-    return shutil.which("cl") is not None
+    # Check if cl.exe exists in the expected location
+    msvc_path = os.path.join(os.getenv("ProgramFiles(x86)"), "Microsoft Visual Studio", "2022", "BuildTools", "VC", "Tools", "MSVC")
+
+    if not os.path.exists(msvc_path):
+        print("❌ MSVC NOT found in expected location.")
+        return False
+
+    return True
 
 def install_vs_build_tools():
     """Downloads and installs Visual Studio Build Tools with MSVC and Windows SDK silently."""
@@ -247,17 +254,19 @@ def install_vs_build_tools():
     urllib.request.urlretrieve(VS_BUILD_TOOLS_URL, VS_INSTALLER)
 
     print("⚙️ Installing Visual Studio Build Tools (this may take a few minutes)...")
-    subprocess.run([
-        VS_INSTALLER,
-        "--quiet", "--wait",
-        "--add", "Microsoft.VisualStudio.Workload.VCTools",        # C++ Build Tools Workload
-        "--add", "Microsoft.VisualStudio.Component.VC.CoreBuildTools",  # MSVC Compiler
-        "--add", "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",  # 64-bit toolset
-        "--add", "Microsoft.VisualStudio.Component.Windows10SDK.19041",  # Windows SDK
-        "--add", "Microsoft.VisualStudio.Component.VC.Redist.14.Latest"  # Standard Library Headers
-    ], check=True)
-
-    print("✅ MSVC Compiler and Windows SDK installed successfully!")
-
-    # Cleanup downloaded installer
-    os.remove(VS_INSTALLER)
+    try:
+        subprocess.run([
+            VS_INSTALLER,
+            "--quiet", "--wait",
+            "--add", "Microsoft.VisualStudio.Workload.VCTools",        # C++ Build Tools Workload
+            "--add", "Microsoft.VisualStudio.Component.VC.CoreBuildTools",  # MSVC Compiler
+            "--add", "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",  # 64-bit toolset
+            "--add", "Microsoft.VisualStudio.Component.Windows10SDK.19041",  # Windows SDK
+            "--add", "Microsoft.VisualStudio.Component.VC.Redist.14.Latest"  # Standard Library Headers
+        ], check=True)
+        print("✅ MSVC Compiler and Windows SDK installed successfully!")
+    finally:
+        # Clean up the installer file whether installation succeeded or failed
+        if os.path.exists(VS_INSTALLER):
+            os.remove(VS_INSTALLER)
+            print("🧹 Cleaned up VS Build Tools installer.")
