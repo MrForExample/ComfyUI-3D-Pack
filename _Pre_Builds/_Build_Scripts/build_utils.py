@@ -258,11 +258,13 @@ def install_vs_build_tools():
         subprocess.run([
             VS_INSTALLER,
             "--quiet", "--wait",
-            "--add", "Microsoft.VisualStudio.Workload.VCTools",        # C++ Build Tools Workload
-            "--add", "Microsoft.VisualStudio.Component.VC.CoreBuildTools",  # MSVC Compiler
-            "--add", "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",  # 64-bit toolset
-            "--add", "Microsoft.VisualStudio.Component.Windows10SDK.19041",  # Windows SDK
-            "--add", "Microsoft.VisualStudio.Component.VC.Redist.14.Latest"  # Standard Library Headers
+            "--add", "Microsoft.VisualStudio.Workload.VCTools",               # C++ Build Tools Workload
+            "--add", "Microsoft.VisualStudio.Component.VC.CoreBuildTools",    # MSVC Compiler Core
+            "--add", "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",     # 64-bit toolset
+            "--add", "Microsoft.VisualStudio.Component.Windows10SDK.19041",   # Windows SDK 10
+            "--add", "Microsoft.VisualStudio.Component.VC.Redist.14.Latest",  # Standard Library Headers
+            "--add", "Microsoft.VisualStudio.Component.CMake",                # CMake (for some builds)
+            "--add", "Microsoft.VisualStudio.Component.VC.ATL",               # ATL/MFC (sometimes required)
         ], check=True)
         print("✅ MSVC Compiler and Windows SDK installed successfully!")
     finally:
