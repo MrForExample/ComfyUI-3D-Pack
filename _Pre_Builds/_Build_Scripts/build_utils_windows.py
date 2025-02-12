@@ -22,15 +22,15 @@ def is_ninja_installed():
     ninja_exists = os.path.exists(NINJA_EXE)
 
     if not ninja_exists:
-        print("❌ Ninja NOT found in expected location.")
+        print("Ninja NOT found in expected location.")
         return False
 
     # Check if it's available in PATH
     if shutil.which("ninja") is not None:
-        print("✅ Ninja is accessible via PATH.")
+        print("Ninja is accessible via PATH.")
         return True
     else:
-        print("⚠️ Ninja is installed but NOT found in PATH. Trying to fix...")
+        print("Ninja is installed but NOT found in PATH. Trying to fix...")
         add_ninja_to_path()
         return shutil.which("ninja") is not None
 
@@ -41,27 +41,27 @@ def add_ninja_to_path():
     current_path = os.environ.get("PATH", "")
 
     if ninja_path not in current_path:
-        print("🔧 Adding Ninja to system PATH...")
+        print("Adding Ninja to system PATH...")
         subprocess.run([
             "setx", "PATH", f"{current_path};{ninja_path}"
         ], shell=True, check=True)
-        print(f"✅ Ninja has been added to PATH: {ninja_path}")
+        print(f"Ninja has been added to PATH: {ninja_path}")
     else:
-        print("✅ Ninja is already in PATH.")
+        print("Ninja is already in PATH.")
 
 def install_ninja():
     """Downloads and installs Ninja build system automatically."""
 
     # If Ninja is already installed, skip installation
     if is_ninja_installed():
-        print(f"✅ Ninja is already installed at {NINJA_EXE}")
+        print(f"Ninja is already installed at {NINJA_EXE}")
         return
 
-    print("🔽 Downloading Ninja...")
+    print("Downloading Ninja...")
     ninja_zip = os.path.join(os.getcwd(), "ninja.zip")
     urllib.request.urlretrieve(NINJA_URL, ninja_zip)
 
-    print(f"📦 Extracting Ninja to {NINJA_DIR}...")
+    print(f"Extracting Ninja to {NINJA_DIR}...")
     os.makedirs(NINJA_DIR, exist_ok=True)  # Ensure directory exists
 
     with zipfile.ZipFile(ninja_zip, "r") as zip_ref:
@@ -69,7 +69,7 @@ def install_ninja():
 
     os.remove(ninja_zip)  # Clean up
 
-    print(f"✅ Ninja installed successfully at {NINJA_DIR}")
+    print(f"Ninja installed successfully at {NINJA_DIR}")
 
     # Add Ninja to system PATH
     add_ninja_to_path()
@@ -85,7 +85,7 @@ def find_msvc_path():
     """
     vswhere_path = r"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe"
     if not os.path.exists(vswhere_path):
-        print("❌ vswhere.exe not found. Please ensure the Visual Studio Installer is installed.")
+        print("vswhere.exe not found. Please ensure the Visual Studio Installer is installed.")
         return None
 
     try:
@@ -99,18 +99,18 @@ def find_msvc_path():
 
         vs_install_path = result.stdout.strip()
         if not vs_install_path:
-            print("❌ Visual Studio installation not found by vswhere.")
+            print("Visual Studio installation not found by vswhere.")
             return None
 
         # The MSVC toolset is typically located under the "VC\Tools\MSVC" folder.
         msvc_base_path = os.path.join(vs_install_path, "VC", "Tools", "MSVC")
         if not os.path.exists(msvc_base_path):
-            print("❌ MSVC Tools folder not found in the Visual Studio installation.")
+            print("MSVC Tools folder not found in the Visual Studio installation.")
             return None
         return msvc_base_path
 
     except subprocess.CalledProcessError as e:
-        print(f"❌ Error running vswhere: {e}")
+        print(f"Error running vswhere: {e}")
         return None
 
 def find_latest_msvc_bin():
@@ -126,7 +126,7 @@ def find_latest_msvc_bin():
         # Filter out non-directory entries and assume folder names are version numbers.
         versions = [v for v in os.listdir(msvc_base_path) if os.path.isdir(os.path.join(msvc_base_path, v))]
         if not versions:
-            print("❌ No MSVC version directories found.")
+            print("No MSVC version directories found.")
             return None
 
         # Choose the latest version by comparing version tuples.
@@ -135,10 +135,10 @@ def find_latest_msvc_bin():
         if os.path.exists(msvc_bin_path):
             return msvc_bin_path
         else:
-            print(f"❌ MSVC bin path not found for version {latest_version}.")
+            print(f"MSVC bin path not found for version {latest_version}.")
             return None
     except Exception as e:
-        print(f"❌ Error locating MSVC bin path: {e}")
+        print(f"Error locating MSVC bin path: {e}")
         return None
 
 def is_msvc_installed():
@@ -146,10 +146,10 @@ def is_msvc_installed():
     Check if the MSVC compiler (`cl.exe`) is installed and accessible via the current PATH.
     """
     if shutil.which("cl"):
-        print("✅ MSVC Compiler (`cl.exe`) is installed and accessible!")
+        print("MSVC Compiler (`cl.exe`) is installed and accessible!")
         return True
     else:
-        print("❌ MSVC Compiler (`cl.exe`) NOT found in PATH!")
+        print("MSVC Compiler (`cl.exe`) NOT found in PATH!")
         return False
 
 def add_msvc_to_user_path():
@@ -159,10 +159,10 @@ def add_msvc_to_user_path():
     """
     msvc_bin_path = find_latest_msvc_bin()  # Assume this function exists from previous code.
     if not msvc_bin_path:
-        print("❌ Unable to locate `cl.exe`, MSVC installation might be broken.")
+        print("Unable to locate `cl.exe`, MSVC installation might be broken.")
         return
 
-    print(f"🔧 Adding `{msvc_bin_path}` to user PATH...")
+    print(f"Adding `{msvc_bin_path}` to user PATH...")
 
     # Update the PATH for the current session.
     os.environ["PATH"] += ";" + msvc_bin_path
@@ -180,11 +180,11 @@ def add_msvc_to_user_path():
             if msvc_bin_path not in current_path:
                 new_path = current_path + (";" if current_path else "") + msvc_bin_path
                 winreg.SetValueEx(key, "Path", 0, reg_type, new_path)
-                print("✅ Successfully added `cl.exe` to the user PATH! (A log off/on is required for new processes.)")
+                print("Successfully added `cl.exe` to the user PATH! (A log off/on is required for new processes.)")
             else:
-                print("ℹ️ MSVC bin path is already present in the user PATH.")
+                print("MSVC bin path is already present in the user PATH.")
     except Exception as e:
-        print(f"⚠️ Failed to update user PATH: {e}")
+        print(f"Failed to update user PATH: {e}")
 
 
 def install_vs_build_tools():
@@ -193,14 +193,14 @@ def install_vs_build_tools():
     If the MSVC compiler is already installed, ensure its directory is added to the PATH.
     """
     if is_msvc_installed():
-        print("✅ MSVC Compiler is already installed.")
+        print("MSVC Compiler is already installed.")
         add_msvc_to_user_path()  # Ensure it's in PATH.
         return
 
-    print("🔽 Downloading Visual Studio Build Tools...")
+    print("Downloading Visual Studio Build Tools...")
     urllib.request.urlretrieve(VS_BUILD_TOOLS_URL, VS_INSTALLER)
 
-    print("⚙️ Installing Visual Studio Build Tools (this may take a few minutes)...")
+    print("Installing Visual Studio Build Tools (this may take a few minutes)...")
     try:
         subprocess.run([
             VS_INSTALLER,
@@ -213,7 +213,7 @@ def install_vs_build_tools():
             "--add", "Microsoft.VisualStudio.Component.CMake",               # CMake (for some builds)
             "--add", "Microsoft.VisualStudio.Component.VC.ATL",              # ATL/MFC (sometimes required)
         ], check=True)
-        print("✅ MSVC Compiler and Windows SDK installed successfully!")
+        print("MSVC Compiler and Windows SDK installed successfully!")
 
         # After installation, update the PATH.
         add_msvc_to_user_path()
@@ -222,4 +222,4 @@ def install_vs_build_tools():
         # Clean up the installer file.
         if os.path.exists(VS_INSTALLER):
             os.remove(VS_INSTALLER)
-            print("🧹 Cleaned up the VS Build Tools installer.")
+            print("Cleaned up the VS Build Tools installer.")
