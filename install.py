@@ -21,11 +21,13 @@ try:
         git_folder_parallel,
         install_remote_packages,
         build_config,
-        install_windows_build_tool_dependencies,
         PYTHON_PATH,
         WHEELS_ROOT_ABS_PATH,
         PYTHON_VERSION,
         OS_TYPE,
+    )
+    from build_utils_windows import (
+        install_windows_build_tool_dependencies
     )
     from shared_utils.log_utils import cstr
     
@@ -88,5 +90,3 @@ try:
 except Exception as e:
     traceback.print_exc()
     cstr("Comfy3D install failed: Dependency installation has failed. Please install manually: https://github.com/MrForExample/ComfyUI-3D-Pack/tree/main/_Pre_Builds/README.md.").error.print()
-
-
