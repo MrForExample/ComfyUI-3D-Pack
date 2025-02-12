@@ -157,7 +157,7 @@ def add_msvc_to_user_path():
     Adds the MSVC binary path to the current user's PATH permanently.
     This does not require administrator privileges.
     """
-    msvc_bin_path = find_latest_msvc_bin()  # Assume this function exists from previous code.
+    msvc_bin_path = find_latest_msvc_bin()
     if not msvc_bin_path:
         print("Unable to locate `cl.exe`, MSVC installation might be broken.")
         return
@@ -194,8 +194,12 @@ def install_vs_build_tools():
     """
     if is_msvc_installed():
         print("MSVC Compiler is already installed.")
-        add_msvc_to_user_path()  # Ensure it's in PATH.
+        #add_msvc_to_user_path()
         return
+
+    if find_latest_msvc_bin():
+        print("MSVC Compiler installed but not on PATH")
+        add_msvc_to_user_path()
 
     print("Downloading Visual Studio Build Tools...")
     urllib.request.urlretrieve(VS_BUILD_TOOLS_URL, VS_INSTALLER)
