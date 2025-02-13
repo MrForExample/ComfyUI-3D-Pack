@@ -13,7 +13,7 @@ libs_dir_name: "_Libs"
 # Folder used to store built wheels
 wheels_dir_name: "_Build_Wheels"
 
-build_base_packages: ["torch", "torchvision", "torchaudio", "xformers", "spconv-${cuda_version}", "torch-scatter"]
+build_base_packages: ["torch", "torchvision", "torchaudio", "xformers", "spconv-${cuda_version}"]
 # All packages will be automatically installed at beginning of install.py follwing orders from top to bottom 
 remote_packages:
   torch:
@@ -27,6 +27,3 @@ remote_packages:
   torchaudio:
     version: "2.6.0"
     url: "https://download.pytorch.org/whl/${cuda_version}"
-
-  torch-scatter:
-    version: "2.1.2"
