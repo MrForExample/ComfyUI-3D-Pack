@@ -200,6 +200,7 @@ def install_vs_build_tools():
     if find_latest_msvc_bin():
         print("MSVC Compiler installed but not on PATH")
         add_msvc_to_user_path()
+        return
 
     print("Downloading Visual Studio Build Tools...")
     urllib.request.urlretrieve(VS_BUILD_TOOLS_URL, VS_INSTALLER)
@@ -209,16 +210,15 @@ def install_vs_build_tools():
         subprocess.run([
             VS_INSTALLER,
             "--quiet", "--wait",
-            "--add", "Microsoft.VisualStudio.Workload.VCTools",              # C++ Build Tools Workload
-            "--add", "Microsoft.VisualStudio.Component.VC.CoreBuildTools",   # MSVC Compiler Core
-            "--add", "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",    # 64-bit toolset
-            "--add", "Microsoft.VisualStudio.Component.Windows10SDK.19041",  # Windows SDK 10
-            "--add", "Microsoft.VisualStudio.Component.VC.Redist.14.Latest", # Standard Library Headers
-            "--add", "Microsoft.VisualStudio.Component.CMake",               # CMake (for some builds)
-            "--add", "Microsoft.VisualStudio.Component.VC.ATL",              # ATL/MFC (sometimes required)
+            "--add", "Microsoft.VisualStudio.Workload.VCTools",               # C++ Build Tools Workload
+            "--add", "Microsoft.VisualStudio.Component.VC.CoreBuildTools",    # MSVC Compiler Core
+            "--add", "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",     # 64-bit toolset
+            "--add", "Microsoft.VisualStudio.Component.Windows10SDK.19041",   # Windows SDK 10
+            "--add", "Microsoft.VisualStudio.Component.VC.Redist.14.Latest",  # Standard Library Headers
+            "--add", "Microsoft.VisualStudio.Component.VC.Redist.x64",        # Force x64 Redistributable installation
+            "--add", "Microsoft.VisualStudio.Component.CMake",                # CMake (for some builds)
+            "--add", "Microsoft.VisualStudio.Component.VC.ATL",               # ATL/MFC (sometimes required)
         ], check=True)
-        print("MSVC Compiler and Windows SDK installed successfully!")
-
         # After installation, update the PATH.
         add_msvc_to_user_path()
 
