@@ -139,7 +139,7 @@ DIFFUSERS_SCHEDULER_DICT = OrderedDict([
     ("KDPM2DiscreteScheduler,", KDPM2DiscreteScheduler),
 ])
 
-ROOT_PATH = os.path.join(comfy_paths.get_folder_paths("custom_nodes")[0], "ComfyUI-3D-Pack")
+ROOT_PATH = os.path.dirname(os.path.realpath(__file__))
 CKPT_ROOT_PATH = os.path.join(ROOT_PATH, "Checkpoints")
 CKPT_DIFFUSERS_PATH = os.path.join(CKPT_ROOT_PATH, "Diffusers")
 CONFIG_ROOT_PATH = os.path.join(ROOT_PATH, "Configs")
