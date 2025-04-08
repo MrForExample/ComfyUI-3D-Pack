@@ -82,5 +82,5 @@ http://localhost:8188
 
 To test, you can load the following workflow:
 
-- `./_Example_Workflows/Unique3D/Unique3D_All_Stages.json`
+- `./example_workflows/Unique3D/Unique3D_All_Stages.json`
 

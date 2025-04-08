@@ -43,8 +43,8 @@ Your ComfyUI Root Directory\python_embeded\python.exe install.py
 
 
 ## Features:
-- For use cases please check out [Example Workflows](./_Example_Workflows/). [**Last update: 22/January/2025**]
-  - **Note:** you need to put [Example Inputs Files & Folders](_Example_Workflows/_Example_Inputs_Files/) under ComfyUI Root Directory\ComfyUI\input folder before you can run the example workflow
+- For use cases please check out [Example Workflows](./example_workflows/). [**Last update: 22/January/2025**]
+  - **Note:** you need to put [Example Inputs Files & Folders](example_workflows/_Example_Inputs_Files/) under ComfyUI Root Directory\ComfyUI\input folder before you can run the example workflow
 
 - **TRELLIS**: [microsoft/TRELLIS](https://github.com/microsoft/TRELLIS)
   - Single image to 3D Mesh with RGB texture
@@ -77,7 +77,7 @@ Your ComfyUI Root Directory\python_embeded\python.exe install.py
 
 - **CharacterGen**: [zjp-shadow/CharacterGen](https://github.com/zjp-shadow/CharacterGen)
   - Single front view of a character with arbitrary pose
-  - Can [combine with Unique3D workflow](./_Example_Workflows/CharacterGen/CharacterGen_to_Unique3D.json) for better result
+  - Can [combine with Unique3D workflow](./example_workflows/CharacterGen/CharacterGen_to_Unique3D.json) for better result
   - Model weights: https://huggingface.co/zjpshadow/CharacterGen/tree/main
  
   <video controls autoplay loop src="https://github.com/user-attachments/assets/4f0ae0c0-2d29-49f0-a6f2-a636dd4b4dcc"></video>
@@ -88,7 +88,7 @@ Your ComfyUI Root Directory\python_embeded\python.exe install.py
     2. Consistent Multi-view images Upscale to 512X512, super resolution to 2048X2048
     3. Multi-view images to Normal maps with resolution: 512X512, super resolution to 2048X2048
     4. Multi-view images & Normal maps to 3D mesh with texture
-  - To use the [All stage Unique3D workflow](./_Example_Workflows/Unique3D/Unique3D_All_Stages.json), Download Models:
+  - To use the [All stage Unique3D workflow](./example_workflows/Unique3D/Unique3D_All_Stages.json), Download Models:
     - [sdv1.5-pruned-emaonly](https://huggingface.co/runwayml/stable-diffusion-v1-5/blob/main/v1-5-pruned-emaonly.ckpt) and put it into `Your ComfyUI root directory/ComfyUI/models/checkpoints`
     - [fine-tuned controlnet-tile](https://huggingface.co/spaces/Wuvin/Unique3D/tree/main/ckpt/controlnet-tile) and put it into `Your ComfyUI root directory/ComfyUI/models/controlnet`
     - [ip-adapter_sd15](https://huggingface.co/h94/IP-Adapter/blob/main/models/ip-adapter_sd15.safetensors) and put it into `Your ComfyUI root directory/ComfyUI/models/ipadapter`
@@ -138,7 +138,7 @@ Your ComfyUI Root Directory\python_embeded\python.exe install.py
   - Generate spatial consistent 6 views images & normal maps from a single image
   - Model weights: https://huggingface.co/flamehaze1115/wonder3d-v1.0/tree/main
   
-  ![Wonder3D_FatCat_MVs](_Example_Workflows/_Example_Outputs/Wonder3D_FatCat_MVs.jpg)
+  ![Wonder3D_FatCat_MVs](example_workflows/_Example_Outputs/Wonder3D_FatCat_MVs.jpg)
 
 - **Large Multiview Gaussian Model**: [3DTopia/LGM](https://github.com/3DTopia/LGM)
   - Enable single image to 3D Gaussian in less than 30 seconds on a RTX3080 GPU, later you can also convert 3D Gaussian to mesh
@@ -163,9 +163,9 @@ Your ComfyUI Root Directory\python_embeded\python.exe install.py
   - You can use it to generate the orbit camera poses and directly input to other 3D process node (e.g. GaussianSplatting and BakeTextureToMesh)
   - Example usage:
 
-    <img src="_Example_Workflows/_Example_Outputs/Cammy_Cam_Rotate_Clockwise_Camposes.png" width="256"/> <img src="_Example_Workflows/_Example_Outputs/Cammy_Cam_Rotate_Counter_Clockwise_Camposes.png" width="256"/>
+    <img src="example_workflows/_Example_Outputs/Cammy_Cam_Rotate_Clockwise_Camposes.png" width="256"/> <img src="example_workflows/_Example_Outputs/Cammy_Cam_Rotate_Counter_Clockwise_Camposes.png" width="256"/>
     <br>
-    <img src="_Example_Workflows/_Example_Outputs/Cammy_Cam_Rotate_Clockwise.gif" width="256"/> <img src="_Example_Workflows/_Example_Outputs/Cammy_Cam_Rotate_Counter_Clockwise.gif" width="256"/> 
+    <img src="example_workflows/_Example_Outputs/Cammy_Cam_Rotate_Clockwise.gif" width="256"/> <img src="example_workflows/_Example_Outputs/Cammy_Cam_Rotate_Counter_Clockwise.gif" width="256"/> 
   - Coordinate system:
     - Azimuth: In top view, from angle 0 rotate 360 degree with step -90 you get (0, -90, -180/180, 90, 0), in this case camera rotates clock-wise, vice versa.
     - Elevation: 0 when camera points horizontally forward, pointing down to the ground is negitive angle, vice versa.
