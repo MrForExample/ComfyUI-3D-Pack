@@ -50,6 +50,8 @@ Your ComfyUI Root Directory\python_embeded\python.exe install.py
   - Single image (Reference or Scribble) to 3D Mesh
   - Model weights: https://huggingface.co/VAST-AI/TripoSG, https://huggingface.co/VAST-AI/TripoSG-scribble
 
+  <video controls autoplay loop src="https://github.com/user-attachments/assets/7b7969c1-e7c8-465b-9605-8bba7e847dbf"></video>
+
 - **TRELLIS**: [microsoft/TRELLIS](https://github.com/microsoft/TRELLIS)
   - Single image to 3D Mesh with RGB texture
   - Model weights: https://huggingface.co/JeffreyXiang/TRELLIS-image-large
