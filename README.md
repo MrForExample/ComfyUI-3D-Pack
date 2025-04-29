@@ -43,8 +43,12 @@ Your ComfyUI Root Directory\python_embeded\python.exe install.py
 
 
 ## Features:
-- For use cases please check out [Example Workflows](./_Example_Workflows/). [**Last update: 22/January/2025**]
+- For use cases please check out [Example Workflows](./_Example_Workflows/). [**Last update: 29/April/2025**]
   - **Note:** you need to put [Example Inputs Files & Folders](_Example_Workflows/_Example_Inputs_Files/) under ComfyUI Root Directory\ComfyUI\input folder before you can run the example workflow
+
+- **TripoSG**: [VAST-AI-Research/TripoSG](https://github.com/VAST-AI-Research/TripoSG)
+  - Single image (Reference or Scribble) to 3D Mesh
+  - Model weights: https://huggingface.co/VAST-AI/TripoSG, https://huggingface.co/VAST-AI/TripoSG-scribble
 
 - **TRELLIS**: [microsoft/TRELLIS](https://github.com/microsoft/TRELLIS)
   - Single image to 3D Mesh with RGB texture
