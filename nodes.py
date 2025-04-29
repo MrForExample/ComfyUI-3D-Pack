@@ -99,6 +99,8 @@ from Hunyuan3D_V2.hy3dgen.shapegen import FaceReducer, FloaterRemover, Degenerat
 from Hunyuan3D_V2.hy3dgen.texgen import Hunyuan3DPaintPipeline
 from TRELLIS.trellis.pipelines import TrellisImageTo3DPipeline
 from TRELLIS.trellis.utils import postprocessing_utils
+from TripoSG.pipelines.pipeline_triposg import TripoSGPipeline
+from TripoSG.pipelines.pipeline_triposg_scribble import TripoSGScribblePipeline
 
 os.environ['SPCONV_ALGO'] = 'native'
 
@@ -126,6 +128,8 @@ DIFFUSERS_PIPE_DICT = OrderedDict([
     ("Hunyuan3DMVDLitePipeline", Hunyuan3D_MVD_Lite_Pipeline),
     ("Hunyuan3DDiTFlowMatchingPipeline", Hunyuan3DDiTFlowMatchingPipeline),
     ("Hunyuan3DPaintPipeline", Hunyuan3DPaintPipeline),
+    ("TripoSGPipeline", TripoSGPipeline),
+    ("TripoSGScribblePipeline", TripoSGScribblePipeline),
 ])
 
 DIFFUSERS_SCHEDULER_DICT = OrderedDict([
@@ -632,11 +636,9 @@ class Decimate_Mesh:
     CATEGORY = "Comfy3D/Preprocessor"
 
     def process_mesh(self, mesh, target, remesh, optimalplacement):
-        
-        vertices, faces = decimate_mesh(mesh.v, mesh.f, target, remesh, optimalplacement)
-        mesh.v = vertices
-        mesh.f = faces
-
+        vertices, faces = decimate_mesh(mesh.v.detach().cpu().numpy(), mesh.f.detach().cpu().numpy(), target, remesh, optimalplacement)
+        mesh.v, mesh.f = torch.from_numpy(vertices).to(DEVICE), torch.from_numpy(faces).to(torch.int64).to(DEVICE)
+        mesh.auto_normal()
         return (mesh,)
 
 class Switch_3DGS_Axis:
@@ -1486,6 +1488,7 @@ class Load_Diffusers_Pipeline:
             },
             "optional": {
                 "checkpoint_sub_dir": ("STRING", {"default": "", "multiline": False}),
+                "force_disable_xformers": ("BOOLEAN", {"default": False}),
             }
         }
     
@@ -1498,7 +1501,7 @@ class Load_Diffusers_Pipeline:
     FUNCTION = "load_diffusers_pipe"
     CATEGORY = "Comfy3D/Import|Export"
     
-    def load_diffusers_pipe(self, diffusers_pipeline_name, repo_id, custom_pipeline, force_download, checkpoint_sub_dir=""):
+    def load_diffusers_pipe(self, diffusers_pipeline_name, repo_id, custom_pipeline, force_download, checkpoint_sub_dir="", force_disable_xformers=False):
         
         # resume download pretrained checkpoint
         ckpt_download_dir = os.path.join(CKPT_DIFFUSERS_PATH, repo_id)
@@ -1515,9 +1518,9 @@ class Load_Diffusers_Pipeline:
             ckpt_path,
             torch_dtype=WEIGHT_DTYPE,
             custom_pipeline=custom_pipeline,
-        ).to(DEVICE)
+        ).to(DEVICE, WEIGHT_DTYPE)
         
-        if hasattr(pipe, 'enable_xformers_memory_efficient_attention'):
+        if hasattr(pipe, 'enable_xformers_memory_efficient_attention') and not force_disable_xformers:
             pipe.enable_xformers_memory_efficient_attention()
         
         return (pipe, )
@@ -4117,6 +4120,137 @@ class Trellis_Structured_3D_Latents_Models:
             mesh.auto_normal()
 
         return (mesh,)
+
+class TripoSG_I23D_Model:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "tsg_pipe": ("DIFFUSERS_PIPE",),
+                "reference_image": ("IMAGE",),
+                "seed": ("INT", {"default": 42, "min": 0, "max": 0xffffffffffffffff}),
+                "guidance_scale": ("FLOAT", {"default": 7.0, "min": 0.0, "step": 0.01}),
+                "num_inference_steps": ("INT", {"default": 50, "min": 1}),
+                "use_flash_decoder": ("BOOLEAN", {"default": True}),
+                "flash_octree_depth": ("INT", {"default": 9, "min": 1}),
+                "hierarchical_octree_depth": ("INT", {"default": 9, "min": 1}),
+                "dense_octree_depth": ("INT", {"default": 8, "min": 1}),
+            }
+        }
+    
+    RETURN_TYPES = (
+        "MESH",
+    )
+    RETURN_NAMES = (
+        "mesh",
+    )
+    FUNCTION = "run_model"
+    CATEGORY = "Comfy3D/Algorithm"
+    
+    @torch.no_grad()
+    def run_model(
+        self, 
+        tsg_pipe, 
+        reference_image, # [1, H, W, 3]
+        seed,
+        guidance_scale,
+        num_inference_steps,
+        use_flash_decoder,
+        flash_octree_depth,
+        hierarchical_octree_depth,
+        dense_octree_depth,
+    ):
+        
+        single_image = torch_imgs_to_pils(reference_image)[0]
+        
+        with torch.inference_mode(False):
+            outputs = tsg_pipe(
+                image=single_image,
+                generator=torch.Generator(device=DEVICE).manual_seed(seed),
+                num_inference_steps=num_inference_steps,
+                guidance_scale=guidance_scale,
+                use_flash_decoder=use_flash_decoder,
+                flash_octree_depth=flash_octree_depth,
+                hierarchical_octree_depth=hierarchical_octree_depth,
+                dense_octree_depth=dense_octree_depth,
+            ).samples[0]
+
+            vertices, faces = torch.from_numpy(outputs[0].astype(np.float32)).to(DEVICE), torch.from_numpy(np.ascontiguousarray(outputs[1])).to(torch.int64).to(DEVICE) 
+            mesh = Mesh(v=vertices, f=faces, device=DEVICE)
+            mesh.auto_normal()
+
+        return (mesh,)
+    
+class TripoSG_Scribble_Model:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "tsg_scribble_pipe": ("DIFFUSERS_PIPE",),
+                "scribble_image": ("IMAGE",),
+                "prompt": ("STRING", {
+                    "default": "3D assets",
+                    "multiline": True
+                }),
+                "seed": ("INT", {"default": 42, "min": 0, "max": 0xffffffffffffffff}),
+                "num_inference_steps": ("INT", {"default": 16, "min": 1}),
+                "scribble_confidence": ("FLOAT", {"default": 0.4, "min": 0.0, "step": 0.01}),
+                "prompt_confidence": ("FLOAT", {"default": 1.0, "min": 0.0, "step": 0.01}),
+                "use_flash_decoder": ("BOOLEAN", {"default": False}),
+                "flash_octree_depth": ("INT", {"default": 8, "min": 1}),
+                "hierarchical_octree_depth": ("INT", {"default": 8, "min": 1}),
+                "dense_octree_depth": ("INT", {"default": 8, "min": 1}),
+            }
+        }
+    
+    RETURN_TYPES = (
+        "MESH",
+    )
+    RETURN_NAMES = (
+        "mesh",
+    )
+    FUNCTION = "run_model"
+    CATEGORY = "Comfy3D/Algorithm"
+    
+    @torch.no_grad()
+    def run_model(
+        self, 
+        tsg_scribble_pipe, 
+        scribble_image, # [1, H, W, 3]
+        prompt,
+        seed,
+        num_inference_steps,
+        scribble_confidence,
+        prompt_confidence,
+        use_flash_decoder,
+        flash_octree_depth,
+        hierarchical_octree_depth,
+        dense_octree_depth,
+    ):
+        
+        single_image = torch_imgs_to_pils(scribble_image)[0]
+        
+        with torch.inference_mode(False):
+            outputs = tsg_scribble_pipe(
+                image=single_image,
+                prompt=prompt,
+                generator=torch.Generator(device=DEVICE).manual_seed(seed),
+                num_inference_steps=num_inference_steps,
+                guidance_scale=0, # this is a CFG-distilled model
+                attention_kwargs={"cross_attention_scale": prompt_confidence, "cross_attention_2_scale": scribble_confidence},
+                use_flash_decoder=use_flash_decoder,
+                flash_octree_depth=flash_octree_depth, # there're some boundary problems when using flash decoder with this model
+                hierarchical_octree_depth=hierarchical_octree_depth,
+                dense_octree_depth=dense_octree_depth,
+            ).samples[0]
+
+            vertices, faces = torch.from_numpy(outputs[0].astype(np.float32)).to(DEVICE), torch.from_numpy(np.ascontiguousarray(outputs[1])).to(torch.int64).to(DEVICE)
+            mesh = Mesh(v=vertices, f=faces.to(torch.int64), device=DEVICE)
+            mesh.auto_normal()
+
+        return (mesh,)
+
+        
     
 
     

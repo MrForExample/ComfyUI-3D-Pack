@@ -1,0 +1,32 @@
+{
+  "_class_name": "TripoSGScribblePipeline",
+  "_diffusers_version": "0.33.1",
+  "feature_extractor_dinov2": [
+    "transformers",
+    "BitImageProcessor"
+  ],
+  "image_encoder_dinov2": [
+    "transformers",
+    "Dinov2Model"
+  ],
+  "scheduler": [
+    "TripoSG.schedulers.scheduling_rectified_flow",
+    "RectifiedFlowScheduler"
+  ],
+  "text_encoder": [
+    "transformers",
+    "CLIPTextModelWithProjection"
+  ],
+  "tokenizer": [
+    "transformers",
+    "CLIPTokenizer"
+  ],
+  "transformer": [
+    "TripoSG.models.transformers.triposg_transformer",
+    "TripoSGDiTModel"
+  ],
+  "vae": [
+    "TripoSG.models.autoencoders.autoencoder_kl_triposg",
+    "TripoSGVAEModel"
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "_class_name": "TripoSGDiTModel",
+  "_diffusers_version": "0.33.1",
+  "cross_attention_2_dim": 1024,
+  "cross_attention_dim": 768,
+  "in_channels": 64,
+  "num_attention_heads": 16,
+  "num_layers": 21,
+  "use_cross_attention_2": true,
+  "width": 2048
+}

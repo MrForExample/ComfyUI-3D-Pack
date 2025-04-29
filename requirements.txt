@@ -48,6 +48,7 @@ libigl
 pyvista
 pymeshfix
 igraph
+diso
 
 # configs & extra
 torchtyping>=0.1.5
