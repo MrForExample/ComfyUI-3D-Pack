@@ -179,7 +179,6 @@ DEVICE_STR = "cuda" if torch.cuda.is_available() else "cpu"
 DEVICE = torch.device(DEVICE_STR)
 
 HF_DOWNLOAD_IGNORE = ["*.yaml", "*.json", "*.py", ".png", ".jpg", ".gif"]
-# HF_DOWNLOAD_IGNORE = ["*.json", "*.py", ".png", ".jpg", ".gif"]
 
 class Preview_3DGS:
 
