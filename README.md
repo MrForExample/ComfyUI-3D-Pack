@@ -47,8 +47,10 @@ Your ComfyUI Root Directory\python_embeded\python.exe install.py
   - **Note:** you need to put [Example Inputs Files & Folders](_Example_Workflows/_Example_Inputs_Files/) under ComfyUI Root Directory\ComfyUI\input folder before you can run the example workflow
 
 - **Hunyuan3D_V2**: turbo, mini, fast
- - Single image to 3D Mesh
- - Model weights: https://huggingface.co/tencent/Hunyuan3D-2, https://huggingface.co/tencent/Hunyuan3D-2mini
+  - Single image to 3D Mesh
+  - Model weights: https://huggingface.co/tencent/Hunyuan3D-2, https://huggingface.co/tencent/Hunyuan3D-2mini
+
+  <video controls autoplay loop src="https://github.com/user-attachments/assets/6aa605e8-9d53-401f-8091-ffe42cd1f0b9"></video>
 
 - **TripoSG**: [VAST-AI-Research/TripoSG](https://github.com/VAST-AI-Research/TripoSG)
   - Single image (Reference or Scribble) to 3D Mesh
