@@ -1,0 +1,70 @@
+model:
+  target: Hunyuan3D_V2.hy3dgen.shapegen.models.Hunyuan3DDiT
+  params:
+    in_channels: 64
+    context_in_dim: 1536
+    hidden_size: 1024
+    mlp_ratio: 4.0
+    num_heads: 16
+    depth: 16
+    depth_single_blocks: 32
+    axes_dim: [ 64 ]
+    theta: 10000
+    qkv_bias: true
+    guidance_embed: true
+
+vae:
+  target: Hunyuan3D_V2.hy3dgen.shapegen.models.ShapeVAE
+  params:
+    num_latents: 3072
+    embed_dim: 64
+    num_freqs: 8
+    include_pi: false
+    heads: 16
+    width: 1024
+    num_decoder_layers: 16
+    qkv_bias: false
+    qk_norm: true
+    scale_factor: 0.9990943042622529
+
+conditioner:
+  target: Hunyuan3D_V2.hy3dgen.shapegen.models.SingleImageEncoder
+  params:
+    main_image_encoder:
+      type: DinoImageEncoderMV # dino giant
+      kwargs:
+        config:
+          attention_probs_dropout_prob: 0.0
+          drop_path_rate: 0.0
+          hidden_act: gelu
+          hidden_dropout_prob: 0.0
+          hidden_size: 1536
+          image_size: 518
+          initializer_range: 0.02
+          layer_norm_eps: 1.e-6
+          layerscale_value: 1.0
+          mlp_ratio: 4
+          model_type: dinov2
+          num_attention_heads: 24
+          num_channels: 3
+          num_hidden_layers: 40
+          patch_size: 14
+          qkv_bias: true
+          torch_dtype: float32
+          use_swiglu_ffn: true
+        image_size: 518
+
+scheduler:
+  target: Hunyuan3D_V2.hy3dgen.shapegen.schedulers.ConsistencyFlowMatchEulerDiscreteScheduler
+  params:
+    num_train_timesteps: 1000
+    pcm_timesteps: 100
+
+image_processor:
+  target: Hunyuan3D_V2.hy3dgen.shapegen.preprocessors.MVImageProcessorV2
+  params:
+    size: 512
+    border_ratio: 0.15
+
+pipeline:
+  target: Hunyuan3D_V2.hy3dgen.shapegen.pipelines.Hunyuan3DDiTFlowMatchingPipeline

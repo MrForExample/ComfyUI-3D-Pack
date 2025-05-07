@@ -1,13 +1,3 @@
-# Open Source Model Licensed under the Apache License Version 2.0
-# and Other Licenses of the Third-Party Components therein:
-# The below Model in this distribution may have been modified by THL A29 Limited
-# ("Tencent Modifications"). All Tencent Modifications are Copyright (C) 2024 THL A29 Limited.
-
-# Copyright (C) 2024 THL A29 Limited, a Tencent company.  All rights reserved.
-# The below software and/or models in this distribution may have been
-# modified by THL A29 Limited ("Tencent Modifications").
-# All Tencent Modifications are Copyright (C) THL A29 Limited.
-
 # Hunyuan 3D is licensed under the TENCENT HUNYUAN NON-COMMERCIAL LICENSE AGREEMENT
 # except for the third-party components listed below.
 # Hunyuan 3D does not impose any additional limitations beyond what is outlined
@@ -24,17 +14,17 @@
 
 
 import logging
-import os
-
 import numpy as np
+import os
 import torch
 from PIL import Image
+from typing import List, Union, Optional
 
-import comfy.utils
 
 from .differentiable_renderer.mesh_render import MeshRender
 from .utils.dehighlight_utils import Light_Shadow_Remover
 from .utils.multiview_utils import Multiview_Diffusion_Net
+from .utils.imagesuper_utils import Image_Super_Net
 from .utils.uv_warp_utils import mesh_uv_wrap
 
 logger = logging.getLogger(__name__)
@@ -42,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 class Hunyuan3DTexGenConfig:
 
-    def __init__(self, light_remover_ckpt_path, multiview_ckpt_path):
+    def __init__(self, light_remover_ckpt_path, multiview_ckpt_path, subfolder_name):
         self.device = 'cuda'
         self.light_remover_ckpt_path = light_remover_ckpt_path
         self.multiview_ckpt_path = multiview_ckpt_path
@@ -52,23 +42,48 @@ class Hunyuan3DTexGenConfig:
         self.candidate_view_weights = [1, 0.1, 0.5, 0.1, 0.05, 0.05]
 
         self.render_size = 2048
-        self.texture_size = 1024
+        self.texture_size = 2048
         self.bake_exp = 4
         self.merge_method = 'fast'
+
+        self.pipe_dict = {'hunyuan3d-paint-v2-0': 'hunyuanpaint', 'hunyuan3d-paint-v2-0-turbo': 'hunyuanpaint-turbo'}
+        self.pipe_name = self.pipe_dict[subfolder_name]
 
 
 class Hunyuan3DPaintPipeline:
     @classmethod
-    def from_pretrained(cls, model_path, device='cuda', dtype=torch.float16, **kwargs):
-        # try local path	
-        delight_model_path = os.path.join(model_path, 'hunyuan3d-delight-v2-0')
-        multiview_model_path = os.path.join(model_path, 'hunyuan3d-paint-v2-0')
-        
-        if not (os.path.exists(delight_model_path) and os.path.exists(multiview_model_path)):
-            raise FileNotFoundError(f"Model path {delight_model_path} or {multiview_model_path} not found")
+    def from_pretrained(cls, model_path, subfolder='hunyuan3d-paint-v2-0-turbo'):
+        original_model_path = model_path
+        if not os.path.exists(model_path):
+            # try local path
+            base_dir = os.environ.get('HY3DGEN_MODELS', '~/.cache/hy3dgen')
+            model_path = os.path.expanduser(os.path.join(base_dir, model_path))
 
-        return cls(Hunyuan3DTexGenConfig(delight_model_path, multiview_model_path))
+            delight_model_path = os.path.join(model_path, 'hunyuan3d-delight-v2-0')
+            multiview_model_path = os.path.join(model_path, subfolder)
 
+            if not os.path.exists(delight_model_path) or not os.path.exists(multiview_model_path):
+                try:
+                    import huggingface_hub
+                    # download from huggingface
+                    model_path = huggingface_hub.snapshot_download(
+                        repo_id=original_model_path, allow_patterns=["hunyuan3d-delight-v2-0/*"]
+                    )
+                    model_path = huggingface_hub.snapshot_download(
+                        repo_id=original_model_path, allow_patterns=[f'{subfolder}/*']
+                    )
+                    delight_model_path = os.path.join(model_path, 'hunyuan3d-delight-v2-0')
+                    multiview_model_path = os.path.join(model_path, subfolder)
+                    return cls(Hunyuan3DTexGenConfig(delight_model_path, multiview_model_path, subfolder))
+                except ImportError:
+                    logger.warning(
+                        "You need to install HuggingFace Hub to load models from the hub."
+                    )
+                    raise RuntimeError(f"Model path {model_path} not found")
+            else:
+                return cls(Hunyuan3DTexGenConfig(delight_model_path, multiview_model_path, subfolder))
+
+        raise FileNotFoundError(f"Model path {original_model_path} not found and we could not find it at huggingface")
 
     def __init__(self, config):
         self.config = config
@@ -78,6 +93,16 @@ class Hunyuan3DPaintPipeline:
             texture_size=self.config.texture_size)
 
         self.load_models()
+        
+    def to(self, device=None, dtype=None):     # ⬅️  тот же уровень, что и __init__
+        if device is not None:
+            for m in self.models.values():
+                m.pipeline.to(device)
+            self.render.to(device)
+        if dtype is not None:
+            for m in self.models.values():
+                m.pipeline.to(dtype=dtype)
+        return self
 
     def load_models(self):
         # empty cude cache
@@ -85,16 +110,11 @@ class Hunyuan3DPaintPipeline:
         # Load model
         self.models['delight_model'] = Light_Shadow_Remover(self.config)
         self.models['multiview_model'] = Multiview_Diffusion_Net(self.config)
-        
-    def to(self, device=None, dtype=None):
-        if device is not None:
-            for model in self.models.values():
-                model.pipeline.to(device)
-        if dtype is not None:
-            for model in self.models.values():
-                model.pipeline.to(dtype=dtype)
+        # self.models['super_model'] = Image_Super_Net(self.config)
 
-        return self
+    def enable_model_cpu_offload(self, gpu_id: Optional[int] = None, device: Union[torch.device, str] = "cuda"):
+        self.models['delight_model'].pipeline.enable_model_cpu_offload(gpu_id=gpu_id, device=device)
+        self.models['multiview_model'].pipeline.enable_model_cpu_offload(gpu_id=gpu_id, device=device)
 
     def render_normal_multiview(self, camera_elevs, camera_azims, use_abs_coor=True):
         normal_maps = []
@@ -140,7 +160,7 @@ class Hunyuan3DPaintPipeline:
         texture = torch.tensor(texture_np / 255).float().to(texture.device)
 
         return texture
-    
+
     def recenter_image(self, image, border_ratio=0.2):
         if image.mode == 'RGB':
             return image
@@ -178,26 +198,25 @@ class Hunyuan3DPaintPipeline:
     @torch.no_grad()
     def __call__(self, mesh, image):
 
-        comfy_pbar = comfy.utils.ProgressBar(4)
-        step_num_i = 0
+        if not isinstance(image, List):
+            image = [image]
 
-        print("Load image and predict delight")
-        if isinstance(image, str):
-            image_prompt = Image.open(image)
-        else:
-            image_prompt = image
+        images_prompt = []
+        for i in range(len(image)):
+            if isinstance(image[i], str):
+                image_prompt = Image.open(image[i])
+            else:
+                image_prompt = image[i]
+            images_prompt.append(image_prompt)
+            
+        images_prompt = [self.recenter_image(image_prompt) for image_prompt in images_prompt]
 
-        image_prompt = self.recenter_image(image_prompt)
-        image_prompt = self.models['delight_model'](image_prompt)
-
-        step_num_i += 1
-        comfy_pbar.update_absolute(step_num_i)
+        images_prompt = [self.models['delight_model'](image_prompt) for image_prompt in images_prompt]
 
         mesh = mesh_uv_wrap(mesh)
 
-        print("Rendering normal and position maps of the mesh")
         self.render.load_mesh(mesh)
-        
+
         selected_camera_elevs, selected_camera_azims, selected_view_weights = \
             self.config.candidate_camera_elevs, self.config.candidate_camera_azims, self.config.candidate_view_weights
 
@@ -205,40 +224,26 @@ class Hunyuan3DPaintPipeline:
             selected_camera_elevs, selected_camera_azims, use_abs_coor=True)
         position_maps = self.render_position_multiview(
             selected_camera_elevs, selected_camera_azims)
-        
-        step_num_i += 1
-        comfy_pbar.update_absolute(step_num_i)
 
-        print("Predicting multiview texture")
         camera_info = [(((azim // 30) + 9) % 12) // {-20: 1, 0: 1, 20: 1, -90: 3, 90: 3}[
             elev] + {-20: 0, 0: 12, 20: 24, -90: 36, 90: 40}[elev] for azim, elev in
                        zip(selected_camera_azims, selected_camera_elevs)]
-        multiviews = self.models['multiview_model'](image_prompt, normal_maps + position_maps, camera_info)
+        multiviews = self.models['multiview_model'](images_prompt, normal_maps + position_maps, camera_info)
 
         for i in range(len(multiviews)):
+            # multiviews[i] = self.models['super_model'](multiviews[i])
             multiviews[i] = multiviews[i].resize(
                 (self.config.render_size, self.config.render_size))
-        
-        step_num_i += 1
-        comfy_pbar.update_absolute(step_num_i)
 
-        print("Baking texture on to the mesh")
         texture, mask = self.bake_from_multiview(multiviews,
                                                  selected_camera_elevs, selected_camera_azims, selected_view_weights,
                                                  method=self.config.merge_method)
 
-        step_num_i += 1
-        comfy_pbar.update_absolute(step_num_i)
-
-        print("Inpainting texture")        
         mask_np = (mask.squeeze(-1).cpu().numpy() * 255).astype(np.uint8)
 
         texture = self.texture_inpaint(texture, mask_np)
 
         self.render.set_texture(texture)
         textured_mesh = self.render.save_mesh()
-
-        step_num_i += 1
-        comfy_pbar.update_absolute(step_num_i)
 
         return textured_mesh

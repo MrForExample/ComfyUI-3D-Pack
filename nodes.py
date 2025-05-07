@@ -143,7 +143,7 @@ DIFFUSERS_SCHEDULER_DICT = OrderedDict([
     ("KDPM2DiscreteScheduler,", KDPM2DiscreteScheduler),
 ])
 
-ROOT_PATH = os.path.join(comfy_paths.get_folder_paths("custom_nodes")[0], "ComfyUI-3D-Pack")
+ROOT_PATH = os.path.dirname(os.path.realpath(__file__))
 CKPT_ROOT_PATH = os.path.join(ROOT_PATH, "Checkpoints")
 CKPT_DIFFUSERS_PATH = os.path.join(CKPT_ROOT_PATH, "Diffusers")
 CONFIG_ROOT_PATH = os.path.join(ROOT_PATH, "Configs")
@@ -179,6 +179,7 @@ DEVICE_STR = "cuda" if torch.cuda.is_available() else "cpu"
 DEVICE = torch.device(DEVICE_STR)
 
 HF_DOWNLOAD_IGNORE = ["*.yaml", "*.json", "*.py", ".png", ".jpg", ".gif"]
+# HF_DOWNLOAD_IGNORE = ["*.json", "*.py", ".png", ".jpg", ".gif"]
 
 class Preview_3DGS:
 
@@ -3923,7 +3924,8 @@ class Hunyuan3D_V1_Reconstruction_Model:
         mesh.auto_normal()
         
         return (mesh,)
-
+    
+# deprecated
 class Hunyuan3D_V2_DiT_Flow_Matching_Model:
     
     @classmethod
@@ -3979,6 +3981,7 @@ class Hunyuan3D_V2_DiT_Flow_Matching_Model:
 
         return (mesh,)
 
+# deprecated
 class Hunyuan3D_V2_Paint_Model:
     
     @classmethod
@@ -4250,7 +4253,199 @@ class TripoSG_Scribble_Model:
 
         return (mesh,)
 
-        
-    
+class Load_Hunyuan3D_V2_ShapeGen_Pipeline:
+    CATEGORY      = "Comfy3D/Algorithm"
+    RETURN_TYPES  = ("DIFFUSERS_PIPE",)
+    RETURN_NAMES  = ("shapegen_pipe",)
+    FUNCTION      = "load"
 
+    _REPO_ID_BASE = "tencent"
+
+    _MODES = {
+        "Hunyuan3D-2":             ("Hunyuan3D-2",     "hunyuan3d-dit-v2-0",         30),
+        "Hunyuan3D-2-Fast":        ("Hunyuan3D-2",     "hunyuan3d-dit-v2-0-fast",     5),
+        "Hunyuan3D-2-Turbo":       ("Hunyuan3D-2",     "hunyuan3d-dit-v2-0-turbo",    5),
+        "Hunyuan3D-2mini":         ("Hunyuan3D-2mini", "hunyuan3d-dit-v2-mini",       30),
+        "Hunyuan3D-2mini-Fast":    ("Hunyuan3D-2mini", "hunyuan3d-dit-v2-mini-fast",   5),
+        "Hunyuan3D-2mini-Turbo":   ("Hunyuan3D-2mini", "hunyuan3d-dit-v2-mini-turbo",  5),
+    }
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "generation_mode": (list(cls._MODES.keys()),),
+                "weights_format" : (["safetensors", "ckpt"],),
+                "flash_vdm"      : ("BOOLEAN", {"default": True}),
+            }
+        }
+
+    @staticmethod
+    def _ensure_weights(repo: str, subfolder: str, use_safetensors: bool):
+        base_dir = os.path.join(CKPT_DIFFUSERS_PATH, f"{Load_Hunyuan3D_V2_ShapeGen_Pipeline._REPO_ID_BASE}/{repo}")
+        ckpt_file = "model.fp16.safetensors" if use_safetensors else "model.fp16.ckpt"
+        ckpt_path = os.path.join(base_dir, subfolder, ckpt_file)
+
+        if not os.path.exists(ckpt_path):
+            snapshot_download(
+                repo_id=f"{Load_Hunyuan3D_V2_ShapeGen_Pipeline._REPO_ID_BASE}/{repo}",
+                repo_type="model",
+                local_dir=base_dir,
+                local_dir_use_symlinks=False,
+                resume_download=True,
+                ignore_patterns = HF_DOWNLOAD_IGNORE
+            )
+
+    @staticmethod
+    def _build_pipe(repo: str, subfolder: str, use_safetensors: bool, flash_vdm: bool):
+        Load_Hunyuan3D_V2_ShapeGen_Pipeline._ensure_weights(repo, subfolder, use_safetensors)
+
+        model_dir = os.path.join(CKPT_DIFFUSERS_PATH,
+                                 f"{Load_Hunyuan3D_V2_ShapeGen_Pipeline._REPO_ID_BASE}/{repo}",
+                                 subfolder)
+        ckpt = os.path.join(model_dir, "model.fp16.safetensors" if use_safetensors else "model.fp16.ckpt")
+        cfg  = os.path.join(model_dir, "config.yaml")
+
+        pipe = Hunyuan3DDiTFlowMatchingPipeline.from_single_file(
+            ckpt_path=ckpt,
+            config_path=cfg,
+            device="cuda",
+            dtype=torch.float16,
+            use_safetensors=use_safetensors,
+            from_pretrained_kwargs={
+                "model_path": f"{Load_Hunyuan3D_V2_ShapeGen_Pipeline._REPO_ID_BASE}/{repo}",
+                "subfolder": subfolder,
+                "use_safetensors": use_safetensors,
+            },
+        )
+
+        if flash_vdm and any(tag in subfolder for tag in ("turbo", "fast")):
+            pipe.enable_flashvdm(replace_vae=False)
+
+        return pipe.to("cuda", torch.float16)
+
+    def load(self, generation_mode, weights_format, flash_vdm):
+        repo, subfolder, def_steps = self._MODES[generation_mode]
+        use_safe = (weights_format == "safetensors")
+        pipe = self._build_pipe(repo, subfolder, use_safe, flash_vdm)
+        pipe.default_steps = def_steps
+        return (pipe,)
+
+class Hunyuan3D_V2_ShapeGen:
+
+    CATEGORY      = "Comfy3D/Algorithm"
+    RETURN_TYPES  = ("MESH",)
+    RETURN_NAMES  = ("mesh",)
+    FUNCTION      = "run"
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "shapegen_pipe"     : ("DIFFUSERS_PIPE",),
+                "reference_image"   : ("IMAGE",),
+                "reference_mask"    : ("MASK",),
+                "seed"              : ("INT",   {"default": 1234, "min": 0, "max": 0xffffffffffffffff}),
+                "guidance_scale"    : ("FLOAT", {"default": 5.0,  "min": 0.0, "step": 0.1}),
+                "num_inference_steps": ("INT",  {"default": 5, "min": 0}),
+                "octree_resolution" : ("INT",  {"default": 256, "min": 64}),
+            }
+        }
+
+    @torch.no_grad()
+    def run(self, shapegen_pipe, reference_image, reference_mask, seed,
+            guidance_scale, num_inference_steps, octree_resolution):
+
+        img = torch_imgs_to_pils(reference_image, reference_mask)[0]
+
+        steps = (shapegen_pipe.default_steps if num_inference_steps == 0
+                  else num_inference_steps)
+        gen = torch.Generator(device=shapegen_pipe.device).manual_seed(seed)
+
+        mesh = shapegen_pipe(
+            image               = img,
+            num_inference_steps = steps,
+            guidance_scale      = guidance_scale,
+            generator           = gen,
+            octree_resolution   = octree_resolution,
+            output_type         = "trimesh",
+        )[0]
+
+        for fn in (FloaterRemover(), DegenerateFaceRemover(), FaceReducer()):
+            mesh = fn(mesh)
+
+        return (Mesh.load_trimesh(given_mesh=mesh),)
+    
+class Load_Hunyuan3D_V2_TexGen_Pipeline:
+    CATEGORY     = "Comfy3D/Algorithm"
+    RETURN_TYPES = ("DIFFUSERS_PIPE",)
+    RETURN_NAMES = ("texgen_pipe",)
+    FUNCTION     = "load"
+
+    MODEL2REPO = {
+        "Standard": ("tencent/Hunyuan3D-2", "hunyuan3d-paint-v2-0"),
+        "Turbo":    ("tencent/Hunyuan3D-2", "hunyuan3d-paint-v2-0-turbo"),
+    }
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {"required": {
+            "generation_mode": (list(cls.MODEL2REPO.keys()),),
+            "weights_format":  (["safetensors","ckpt"],),
+        }}
+
+    @staticmethod
+    def _ensure_weights(repo_id: str, subfolder: str, use_safetensors: bool):
+        base_dir = os.path.join(CKPT_DIFFUSERS_PATH, repo_id)
+        os.makedirs(base_dir, exist_ok=True)
+        target_dir = os.path.join(base_dir, subfolder)
+        if not os.path.exists(target_dir):
+            snapshot_download(
+                repo_id=repo_id,
+                repo_type="model",
+                local_dir=base_dir,
+                local_dir_use_symlinks=False,
+                resume_download=True,
+                ignore_patterns = HF_DOWNLOAD_IGNORE
+            )
+
+    def load(self, generation_mode, weights_format):
+        repo_id,subfolder=self.MODEL2REPO[generation_mode]
+        Load_Hunyuan3D_V2_TexGen_Pipeline._ensure_weights(repo_id,subfolder,
+                                                          weights_format=="safetensors")
+        pipe=Hunyuan3DPaintPipeline.from_pretrained(
+            model_path=repo_id,
+            subfolder=subfolder,
+        )
+        return (pipe.to("cuda",torch.float16),)
+
+class Hunyuan3D_V2_Paint_Model_Turbo:
+    CATEGORY      = "Comfy3D/Algorithm"
+    RETURN_TYPES  = ("MESH",)
+    RETURN_NAMES  = ("mesh",)
+    FUNCTION      = "run"
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {"required": {
+            "hunyuan3d_v2_texgen_pipe": ("DIFFUSERS_PIPE",),
+            "reference_image": ("IMAGE",),   
+            "reference_mask":  ("MASK",),
+            "mesh":            ("MESH",),
+        }}
+
+    @torch.no_grad()
+    def run(self, hunyuan3d_v2_texgen_pipe,
+                  reference_image, reference_mask, mesh):
+
+        img_pil = torch_imgs_to_pils(reference_image, reference_mask)[0]
+
+        v_np = mesh.v.detach().cpu().numpy()
+        f_np = mesh.f.detach().cpu().numpy()
+        tri  = trimesh.Trimesh(vertices=v_np, faces=f_np)
+
+        textured = hunyuan3d_v2_texgen_pipe(tri, img_pil)
+        m_out = Mesh.load_trimesh(given_mesh=textured)
+        m_out.auto_normal()
+        return (m_out,)
     

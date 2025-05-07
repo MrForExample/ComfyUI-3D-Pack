@@ -1,0 +1,15 @@
+target: Hunyuan3D_V2.hy3dgen.shapegen.models.ShapeVAE
+params:
+  num_latents: 3072
+  embed_dim: 64
+  num_freqs: 8
+  include_pi: false
+  heads: 16
+  width: 1024
+  num_decoder_layers: 16
+  qkv_bias: false
+  qk_norm: true
+  scale_factor: 0.9990943042622529
+  geo_decoder_mlp_expand_ratio: 4
+  geo_decoder_downsample_ratio: 1
+  geo_decoder_ln_post: true
