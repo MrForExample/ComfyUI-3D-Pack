@@ -93,8 +93,8 @@ class Hunyuan3DPaintPipeline:
             texture_size=self.config.texture_size)
 
         self.load_models()
-        
-    def to(self, device=None, dtype=None):     # ⬅️  тот же уровень, что и __init__
+
+    def to(self, device=None, dtype=None):   
         if device is not None:
             for m in self.models.values():
                 m.pipeline.to(device)
