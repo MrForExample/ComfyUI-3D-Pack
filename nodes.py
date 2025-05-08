@@ -4330,10 +4330,10 @@ class Load_Hunyuan3D_V2_ShapeGen_Pipeline:
         repo, subfolder, def_steps = self._MODES[generation_mode]
         use_safe = (weights_format == "safetensors")
         pipe = self._build_pipe(repo, subfolder, use_safe, flash_vdm)
-        pipe.default_steps = def_steps
+        pipe.num_inference_steps = def_steps
         return (pipe,)
     
-class Load_Hunyuan3D_V2_TexGen_Pipeline:
+class Load_Hunyuan3D_V2_TexGen_Pipeline: 
     CATEGORY     = "Comfy3D/Algorithm"
     RETURN_TYPES = ("DIFFUSERS_PIPE",)
     RETURN_NAMES = ("texgen_pipe",)
@@ -4348,32 +4348,35 @@ class Load_Hunyuan3D_V2_TexGen_Pipeline:
     def INPUT_TYPES(cls):
         return {"required": {
             "generation_mode": (list(cls.MODEL2REPO.keys()),),
-            "weights_format":  (["safetensors","ckpt"],),
         }}
 
-    @staticmethod
-    def _ensure_weights(repo_id: str, subfolder: str, use_safetensors: bool):
-        base_dir = os.path.join(CKPT_DIFFUSERS_PATH, repo_id)
-        os.makedirs(base_dir, exist_ok=True)
-        target_dir = os.path.join(base_dir, subfolder)
-        if not os.path.exists(target_dir):
+    def _download_required_weights(self, repo_id, subfolder):
+        ckpt_download_dir = os.path.join(CKPT_DIFFUSERS_PATH, repo_id)
+        os.makedirs(ckpt_download_dir, exist_ok=True)
+
+        # Only download the "delight" and target submodel directories
+        for folder in ["hunyuan3d-delight-v2-0", subfolder]:
             snapshot_download(
                 repo_id=repo_id,
+                local_dir=ckpt_download_dir,
                 repo_type="model",
-                local_dir=base_dir,
-                resume_download=True,
-                ignore_patterns = HF_DOWNLOAD_IGNORE
+                force_download=False,
+                ignore_patterns=HF_DOWNLOAD_IGNORE
             )
 
-    def load(self, generation_mode, weights_format):
-        repo_id,subfolder=self.MODEL2REPO[generation_mode]
-        Load_Hunyuan3D_V2_TexGen_Pipeline._ensure_weights(repo_id,subfolder,
-                                                          weights_format=="safetensors")
-        pipe=Hunyuan3DPaintPipeline.from_pretrained(
-            model_path=repo_id,
-            subfolder=subfolder,
+    def load(self, generation_mode):
+        repo_id, subfolder = self.MODEL2REPO[generation_mode]
+
+        self._download_required_weights(repo_id, subfolder)
+
+        local_repo_dir = os.path.join(CKPT_DIFFUSERS_PATH, repo_id)
+
+        pipe = Hunyuan3DPaintPipeline.from_pretrained(
+            model_path=local_repo_dir,
+            subfolder=subfolder
         )
-        return (pipe.to("cuda",torch.float16),)
+
+        return (pipe.to("cuda", torch.float16),)
 
 class Hunyuan3D_V2_Paint_Model_Turbo_MV:
     """
@@ -4443,7 +4446,8 @@ class Multi_Background_Remover:
         self,
         image_front,
         image_back=None,
-        image_left=None
+        image_left=None,
+        image_right=None
     ):
         rmbg = BackgroundRemover()
 
@@ -4451,7 +4455,8 @@ class Multi_Background_Remover:
             k: v for k, v in {
                 "front": image_front,
                 "back": image_back,
-                "left": image_left
+                "left": image_left,
+                "right": image_right
             }.items() if v is not None
         }
 
@@ -4504,7 +4509,7 @@ class Hunyuan3D_V2_ShapeGen_MV:
         if len(images) == 1:
             image = images[0]
         else:
-            directions = ["front", "back", "left"]
+            directions = ["front", "back", "left", "right"]
             image = {k: v for k, v in zip(directions, images)}
 
         steps = shapegen_pipe.default_steps if num_inference_steps == 0 else num_inference_steps
