@@ -1,0 +1,494 @@
+{
+  "id": "ecf3b5f9-96c2-411d-92cb-d8bd8cebbe0f",
+  "revision": 0,
+  "last_node_id": 89,
+  "last_link_id": 172,
+  "nodes": [
+    {
+      "id": 87,
+      "type": "[Comfy3D] Hunyuan3D V2 Paint Model Turbo MV",
+      "pos": [
+        948.6290893554688,
+        1604.2415771484375
+      ],
+      "size": [
+        300,
+        68.93335723876953
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "hunyuan3d_v2_texgen_pipe",
+          "type": "DIFFUSERS_PIPE",
+          "link": 160
+        },
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 170
+        },
+        {
+          "name": "images",
+          "type": "LIST",
+          "link": 168
+        }
+      ],
+      "outputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "links": [
+            163
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Hunyuan3D V2 Paint Model Turbo MV"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 89,
+      "type": "[Comfy3D] Multi Background Remover",
+      "pos": [
+        948.6290893554688,
+        1353.7720947265625
+      ],
+      "size": [
+        300,
+        68.93328857421875
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image_front",
+          "type": "IMAGE",
+          "link": 165
+        },
+        {
+          "name": "image_back",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "image_left",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "images",
+          "type": "LIST",
+          "links": [
+            168,
+            169
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Multi Background Remover"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 64,
+      "type": "[Comfy3D] Save 3D Mesh",
+      "pos": [
+        1337.7381591796875,
+        2070.820556640625
+      ],
+      "size": [
+        355,
+        58
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 163
+        }
+      ],
+      "outputs": [
+        {
+          "name": "save_path",
+          "type": "STRING",
+          "slot_index": 0,
+          "links": [
+            105
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Save 3D Mesh"
+      },
+      "widgets_values": [
+        "Hunyuan3D_V2_Test/mesh_tex.glb"
+      ]
+    },
+    {
+      "id": 76,
+      "type": "[Comfy3D] Save 3D Mesh",
+      "pos": [
+        1337.7381591796875,
+        842.8392333984375
+      ],
+      "size": [
+        355,
+        58
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 172
+        }
+      ],
+      "outputs": [
+        {
+          "name": "save_path",
+          "type": "STRING",
+          "slot_index": 0,
+          "links": [
+            126
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Save 3D Mesh"
+      },
+      "widgets_values": [
+        "Hunyuan3D_V2_Test/mesh_shape.glb"
+      ]
+    },
+    {
+      "id": 71,
+      "type": "[Comfy3D] Load Hunyuan3D V2 TexGen Pipeline",
+      "pos": [
+        948.6290893554688,
+        1481.4090576171875
+      ],
+      "size": [
+        300,
+        64.12879180908203
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "texgen_pipe",
+          "type": "DIFFUSERS_PIPE",
+          "links": [
+            160
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Load Hunyuan3D V2 TexGen Pipeline"
+      },
+      "widgets_values": [
+        "Turbo"
+      ]
+    },
+    {
+      "id": 59,
+      "type": "LoadImage",
+      "pos": [
+        394.900146484375,
+        947.0440063476562
+      ],
+      "size": [
+        467.71405029296875,
+        468.8607177734375
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            165
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "penguin.png",
+        "image"
+      ]
+    },
+    {
+      "id": 61,
+      "type": "[Comfy3D] Load Hunyuan3D V2 ShapeGen Pipeline",
+      "pos": [
+        948.6290893554688,
+        947.0440063476562
+      ],
+      "size": [
+        300,
+        113.12071228027344
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "shapegen_pipe",
+          "type": "DIFFUSERS_PIPE",
+          "links": [
+            171
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Load Hunyuan3D V2 ShapeGen Pipeline"
+      },
+      "widgets_values": [
+        "Hunyuan3D-2mini-Turbo",
+        "safetensors",
+        true
+      ]
+    },
+    {
+      "id": 88,
+      "type": "[Comfy3D] Hunyuan3D V2 ShapeGen MV",
+      "pos": [
+        948.6290893554688,
+        1118.868408203125
+      ],
+      "size": [
+        300,
+        176.1999969482422
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "shapegen_pipe",
+          "type": "DIFFUSERS_PIPE",
+          "link": 171
+        },
+        {
+          "name": "images",
+          "type": "LIST",
+          "link": 169
+        }
+      ],
+      "outputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "links": [
+            170,
+            172
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Hunyuan3D V2 ShapeGen MV"
+      },
+      "widgets_values": [
+        960228185985185,
+        "randomize",
+        5,
+        5,
+        256
+      ]
+    },
+    {
+      "id": 63,
+      "type": "[Comfy3D] Preview 3DMesh",
+      "pos": [
+        1337.7381591796875,
+        947.0440063476562
+      ],
+      "size": [
+        600,
+        500
+      ],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh_file_path",
+          "type": "STRING",
+          "widget": {
+            "name": "mesh_file_path"
+          },
+          "link": 126
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Preview 3DMesh"
+      },
+      "widgets_values": [
+        "",
+        null
+      ]
+    },
+    {
+      "id": 27,
+      "type": "[Comfy3D] Preview 3DMesh",
+      "pos": [
+        1337.7381591796875,
+        1499.6043701171875
+      ],
+      "size": [
+        600,
+        500
+      ],
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh_file_path",
+          "type": "STRING",
+          "widget": {
+            "name": "mesh_file_path"
+          },
+          "link": 105
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Preview 3DMesh"
+      },
+      "widgets_values": [
+        "",
+        null
+      ]
+    }
+  ],
+  "links": [
+    [
+      105,
+      64,
+      0,
+      27,
+      0,
+      "STRING"
+    ],
+    [
+      126,
+      76,
+      0,
+      63,
+      0,
+      "STRING"
+    ],
+    [
+      160,
+      71,
+      0,
+      87,
+      0,
+      "DIFFUSERS_PIPE"
+    ],
+    [
+      163,
+      87,
+      0,
+      64,
+      0,
+      "MESH"
+    ],
+    [
+      165,
+      59,
+      0,
+      89,
+      0,
+      "IMAGE"
+    ],
+    [
+      168,
+      89,
+      0,
+      87,
+      2,
+      "LIST"
+    ],
+    [
+      169,
+      89,
+      0,
+      88,
+      1,
+      "LIST"
+    ],
+    [
+      170,
+      88,
+      0,
+      87,
+      1,
+      "MESH"
+    ],
+    [
+      171,
+      61,
+      0,
+      88,
+      0,
+      "DIFFUSERS_PIPE"
+    ],
+    [
+      172,
+      88,
+      0,
+      76,
+      0,
+      "MESH"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.7835261664684585,
+      "offset": [
+        -183.11496948222285,
+        -694.7344965147519
+      ]
+    },
+    "frontendVersion": "1.17.11",
+    "node_versions": {
+      "ComfyUI-3D-Pack": "2ee2bbcedce5bdf98f69a6a5a81ee6380db301be",
+      "comfy-core": "0.3.30"
+    },
+    "VHS_latentpreview": false,
+    "VHS_latentpreviewrate": 0,
+    "VHS_MetadataImage": true,
+    "VHS_KeepIntermediate": true
+  },
+  "version": 0.4
+}

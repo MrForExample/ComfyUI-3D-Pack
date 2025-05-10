@@ -1,13 +1,3 @@
-# Open Source Model Licensed under the Apache License Version 2.0
-# and Other Licenses of the Third-Party Components therein:
-# The below Model in this distribution may have been modified by THL A29 Limited
-# ("Tencent Modifications"). All Tencent Modifications are Copyright (C) 2024 THL A29 Limited.
-
-# Copyright (C) 2024 THL A29 Limited, a Tencent company.  All rights reserved.
-# The below software and/or models in this distribution may have been
-# modified by THL A29 Limited ("Tencent Modifications").
-# All Tencent Modifications are Copyright (C) THL A29 Limited.
-
 # Hunyuan 3D is licensed under the TENCENT HUNYUAN NON-COMMERCIAL LICENSE AGREEMENT
 # except for the third-party components listed below.
 # Hunyuan 3D does not impose any additional limitations beyond what is outlined
@@ -26,10 +16,13 @@ import os
 import tempfile
 from typing import Union
 
+import numpy as np
 import pymeshlab
+import torch
 import trimesh
 
-from .models.vae import Latent2MeshOutput
+from .models.autoencoders import Latent2MeshOutput
+from .utils import synchronize_timer
 
 
 def load_mesh(path):
@@ -42,6 +35,9 @@ def load_mesh(path):
 
 
 def reduce_face(mesh: pymeshlab.MeshSet, max_facenum: int = 200000):
+    if max_facenum > mesh.current_mesh().face_number():
+        return mesh
+
     mesh.apply_filter(
         "meshing_decimation_quadric_edge_collapse",
         targetfacenum=max_facenum,
@@ -64,15 +60,9 @@ def remove_floater(mesh: pymeshlab.MeshSet):
 
 
 def pymeshlab2trimesh(mesh: pymeshlab.MeshSet):
-    temp_file = tempfile.NamedTemporaryFile(suffix='.ply', delete=True)
-    temp_file.close()
-    temp_file_name = temp_file.name
-    
-    mesh.save_current_mesh(temp_file_name)
-    mesh = trimesh.load(temp_file_name)
-    if os.path.exists(temp_file_name):
-        os.remove(temp_file_name)
-          
+    with tempfile.NamedTemporaryFile(suffix='.ply', delete=False) as temp_file:
+        mesh.save_current_mesh(temp_file.name)
+        mesh = trimesh.load(temp_file.name)
     # 检查加载的对象类型
     if isinstance(mesh, trimesh.Scene):
         combined_mesh = trimesh.Trimesh()
@@ -84,23 +74,17 @@ def pymeshlab2trimesh(mesh: pymeshlab.MeshSet):
 
 
 def trimesh2pymeshlab(mesh: trimesh.Trimesh):
-    temp_file = tempfile.NamedTemporaryFile(suffix='.ply', delete=True)
-    temp_file.close()
-    temp_file_name = temp_file.name
-    
-    if isinstance(mesh, trimesh.scene.Scene):
-        for idx, obj in enumerate(mesh.geometry.values()):
-            if idx == 0:
-                temp_mesh = obj
-            else:
-                temp_mesh = temp_mesh + obj
-        mesh = temp_mesh
-    mesh.export(temp_file_name)
-    mesh = pymeshlab.MeshSet()
-    mesh.load_new_mesh(temp_file_name)
-    if os.path.exists(temp_file_name):
-        os.remove(temp_file_name)
-          
+    with tempfile.NamedTemporaryFile(suffix='.ply', delete=False) as temp_file:
+        if isinstance(mesh, trimesh.scene.Scene):
+            for idx, obj in enumerate(mesh.geometry.values()):
+                if idx == 0:
+                    temp_mesh = obj
+                else:
+                    temp_mesh = temp_mesh + obj
+            mesh = temp_mesh
+        mesh.export(temp_file.name)
+        mesh = pymeshlab.MeshSet()
+        mesh.load_new_mesh(temp_file.name)
     return mesh
 
 
@@ -132,6 +116,7 @@ def import_mesh(mesh: Union[pymeshlab.MeshSet, trimesh.Trimesh, Latent2MeshOutpu
 
 
 class FaceReducer:
+    @synchronize_timer('FaceReducer')
     def __call__(
         self,
         mesh: Union[pymeshlab.MeshSet, trimesh.Trimesh, Latent2MeshOutput, str],
@@ -144,6 +129,7 @@ class FaceReducer:
 
 
 class FloaterRemover:
+    @synchronize_timer('FloaterRemover')
     def __call__(
         self,
         mesh: Union[pymeshlab.MeshSet, trimesh.Trimesh, Latent2MeshOutput, str],
@@ -155,21 +141,62 @@ class FloaterRemover:
 
 
 class DegenerateFaceRemover:
+    @synchronize_timer('DegenerateFaceRemover')
     def __call__(
         self,
         mesh: Union[pymeshlab.MeshSet, trimesh.Trimesh, Latent2MeshOutput, str],
     ) -> Union[pymeshlab.MeshSet, trimesh.Trimesh, Latent2MeshOutput]:
         ms = import_mesh(mesh)
 
-        temp_file = tempfile.NamedTemporaryFile(suffix='.ply', delete=True)
-        temp_file.close()
-        temp_file_name = temp_file.name
+        with tempfile.NamedTemporaryFile(suffix='.ply', delete=False) as temp_file:
+            ms.save_current_mesh(temp_file.name)
+            ms = pymeshlab.MeshSet()
+            ms.load_new_mesh(temp_file.name)
 
-        ms.save_current_mesh(temp_file_name)
-        ms = pymeshlab.MeshSet()
-        ms.load_new_mesh(temp_file_name)
-        if os.path.exists(temp_file_name):
-            os.remove(temp_file_name)
-               
         mesh = export_mesh(mesh, ms)
         return mesh
+
+
+def mesh_normalize(mesh):
+    """
+    Normalize mesh vertices to sphere
+    """
+    scale_factor = 1.2
+    vtx_pos = np.asarray(mesh.vertices)
+    max_bb = (vtx_pos - 0).max(0)[0]
+    min_bb = (vtx_pos - 0).min(0)[0]
+
+    center = (max_bb + min_bb) / 2
+
+    scale = torch.norm(torch.tensor(vtx_pos - center, dtype=torch.float32), dim=1).max() * 2.0
+
+    vtx_pos = (vtx_pos - center) * (scale_factor / float(scale))
+    mesh.vertices = vtx_pos
+
+    return mesh
+
+
+class MeshSimplifier:
+    def __init__(self, executable: str = None):
+        if executable is None:
+            CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+            executable = os.path.join(CURRENT_DIR, "mesh_simplifier.bin")
+        self.executable = executable
+
+    @synchronize_timer('MeshSimplifier')
+    def __call__(
+        self,
+        mesh: Union[trimesh.Trimesh],
+    ) -> Union[trimesh.Trimesh]:
+        with tempfile.NamedTemporaryFile(suffix='.obj', delete=False) as temp_input:
+            with tempfile.NamedTemporaryFile(suffix='.obj', delete=False) as temp_output:
+                mesh.export(temp_input.name)
+                os.system(f'{self.executable} {temp_input.name} {temp_output.name}')
+                ms = trimesh.load(temp_output.name, process=False)
+                if isinstance(ms, trimesh.Scene):
+                    combined_mesh = trimesh.Trimesh()
+                    for geom in ms.geometry.values():
+                        combined_mesh = trimesh.util.concatenate([combined_mesh, geom])
+                    ms = combined_mesh
+                ms = mesh_normalize(ms)
+                return ms

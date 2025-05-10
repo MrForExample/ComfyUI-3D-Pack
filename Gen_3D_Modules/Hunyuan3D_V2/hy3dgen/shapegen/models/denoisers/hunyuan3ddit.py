@@ -1,13 +1,3 @@
-# Open Source Model Licensed under the Apache License Version 2.0
-# and Other Licenses of the Third-Party Components therein:
-# The below Model in this distribution may have been modified by THL A29 Limited
-# ("Tencent Modifications"). All Tencent Modifications are Copyright (C) 2024 THL A29 Limited.
-
-# Copyright (C) 2024 THL A29 Limited, a Tencent company.  All rights reserved.
-# The below software and/or models in this distribution may have been
-# modified by THL A29 Limited ("Tencent Modifications").
-# All Tencent Modifications are Copyright (C) THL A29 Limited.
-
 # Hunyuan 3D is licensed under the TENCENT HUNYUAN NON-COMMERCIAL LICENSE AGREEMENT
 # except for the third-party components listed below.
 # Hunyuan 3D does not impose any additional limitations beyond what is outlined
@@ -23,6 +13,7 @@
 # by Tencent in accordance with TENCENT HUNYUAN COMMUNITY LICENSE AGREEMENT.
 
 import math
+import os
 from dataclasses import dataclass
 from typing import List, Tuple, Optional
 
@@ -30,9 +21,17 @@ import torch
 from einops import rearrange
 from torch import Tensor, nn
 
+scaled_dot_product_attention = nn.functional.scaled_dot_product_attention
+if os.environ.get('USE_SAGEATTN', '0') == '1':
+    try:
+        from sageattention import sageattn
+    except ImportError:
+        raise ImportError('Please install the package "sageattention" to use this USE_SAGEATTN.')
+    scaled_dot_product_attention = sageattn
+
 
 def attention(q: Tensor, k: Tensor, v: Tensor, **kwargs) -> Tensor:
-    x = torch.nn.functional.scaled_dot_product_attention(q, k, v)
+    x = scaled_dot_product_attention(q, k, v)
     x = rearrange(x, "B H L D -> B L (H D)")
     return x
 
@@ -59,6 +58,15 @@ def timestep_embedding(t: Tensor, dim, max_period=10000, time_factor: float = 10
     if torch.is_floating_point(t):
         embedding = embedding.to(t)
     return embedding
+
+
+class GELU(nn.Module):
+    def __init__(self, approximate='tanh'):
+        super().__init__()
+        self.approximate = approximate
+
+    def forward(self, x: Tensor) -> Tensor:
+        return nn.functional.gelu(x.contiguous(), approximate=self.approximate)
 
 
 class MLPEmbedder(nn.Module):
@@ -163,7 +171,7 @@ class DoubleStreamBlock(nn.Module):
         self.img_norm2 = nn.LayerNorm(hidden_size, elementwise_affine=False, eps=1e-6)
         self.img_mlp = nn.Sequential(
             nn.Linear(hidden_size, mlp_hidden_dim, bias=True),
-            nn.GELU(approximate="tanh"),
+            GELU(approximate="tanh"),
             nn.Linear(mlp_hidden_dim, hidden_size, bias=True),
         )
 
@@ -174,7 +182,7 @@ class DoubleStreamBlock(nn.Module):
         self.txt_norm2 = nn.LayerNorm(hidden_size, elementwise_affine=False, eps=1e-6)
         self.txt_mlp = nn.Sequential(
             nn.Linear(hidden_size, mlp_hidden_dim, bias=True),
-            nn.GELU(approximate="tanh"),
+            GELU(approximate="tanh"),
             nn.Linear(mlp_hidden_dim, hidden_size, bias=True),
         )
 
@@ -240,7 +248,7 @@ class SingleStreamBlock(nn.Module):
         self.hidden_size = hidden_size
         self.pre_norm = nn.LayerNorm(hidden_size, elementwise_affine=False, eps=1e-6)
 
-        self.mlp_act = nn.GELU(approximate="tanh")
+        self.mlp_act = GELU(approximate="tanh")
         self.modulation = Modulation(hidden_size, double=False)
 
     def forward(self, x: Tensor, vec: Tensor, pe: Tensor) -> Tensor:
@@ -287,6 +295,7 @@ class Hunyuan3DDiT(nn.Module):
         theta: int = 10_000,
         qkv_bias: bool = True,
         time_factor: float = 1000,
+        guidance_embed: bool = False,
         ckpt_path: Optional[str] = None,
         **kwargs,
     ):
@@ -303,6 +312,7 @@ class Hunyuan3DDiT(nn.Module):
         self.qkv_bias = qkv_bias
         self.time_factor = time_factor
         self.out_channels = self.in_channels
+        self.guidance_embed = guidance_embed
 
         if hidden_size % num_heads != 0:
             raise ValueError(
@@ -316,6 +326,9 @@ class Hunyuan3DDiT(nn.Module):
         self.latent_in = nn.Linear(self.in_channels, self.hidden_size, bias=True)
         self.time_in = MLPEmbedder(in_dim=256, hidden_dim=self.hidden_size)
         self.cond_in = nn.Linear(context_in_dim, self.hidden_size)
+        self.guidance_in = (
+            MLPEmbedder(in_dim=256, hidden_dim=self.hidden_size) if guidance_embed else nn.Identity()
+        )
 
         self.double_blocks = nn.ModuleList(
             [
@@ -374,7 +387,14 @@ class Hunyuan3DDiT(nn.Module):
     ) -> Tensor:
         cond = contexts['main']
         latent = self.latent_in(x)
+
         vec = self.time_in(timestep_embedding(t, 256, self.time_factor).to(dtype=latent.dtype))
+        if self.guidance_embed:
+            guidance = kwargs.get('guidance', None)
+            if guidance is None:
+                raise ValueError("Didn't get guidance strength for guidance distilled model.")
+            vec = vec + self.guidance_in(timestep_embedding(guidance, 256, self.time_factor))
+
         cond = self.cond_in(cond)
         pe = None
 

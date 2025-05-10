@@ -97,6 +97,7 @@ from Hunyuan3D_V1.mvd.hunyuan3d_mvd_lite_pipeline import Hunyuan3D_MVD_Lite_Pipe
 from Hunyuan3D_V1.infer import Views2Mesh
 from Hunyuan3D_V2.hy3dgen.shapegen import FaceReducer, FloaterRemover, DegenerateFaceRemover, Hunyuan3DDiTFlowMatchingPipeline
 from Hunyuan3D_V2.hy3dgen.texgen import Hunyuan3DPaintPipeline
+from Hunyuan3D_V2.hy3dgen.rembg import BackgroundRemover
 from TRELLIS.trellis.pipelines import TrellisImageTo3DPipeline
 from TRELLIS.trellis.utils import postprocessing_utils
 from TripoSG.pipelines.pipeline_triposg import TripoSGPipeline
@@ -143,7 +144,7 @@ DIFFUSERS_SCHEDULER_DICT = OrderedDict([
     ("KDPM2DiscreteScheduler,", KDPM2DiscreteScheduler),
 ])
 
-ROOT_PATH = os.path.join(comfy_paths.get_folder_paths("custom_nodes")[0], "ComfyUI-3D-Pack")
+ROOT_PATH = os.path.dirname(os.path.realpath(__file__))
 CKPT_ROOT_PATH = os.path.join(ROOT_PATH, "Checkpoints")
 CKPT_DIFFUSERS_PATH = os.path.join(CKPT_ROOT_PATH, "Diffusers")
 CONFIG_ROOT_PATH = os.path.join(ROOT_PATH, "Configs")
@@ -3923,7 +3924,8 @@ class Hunyuan3D_V1_Reconstruction_Model:
         mesh.auto_normal()
         
         return (mesh,)
-
+    
+# deprecated
 class Hunyuan3D_V2_DiT_Flow_Matching_Model:
     
     @classmethod
@@ -3979,6 +3981,7 @@ class Hunyuan3D_V2_DiT_Flow_Matching_Model:
 
         return (mesh,)
 
+# deprecated
 class Hunyuan3D_V2_Paint_Model:
     
     @classmethod
@@ -4250,7 +4253,281 @@ class TripoSG_Scribble_Model:
 
         return (mesh,)
 
-        
-    
+class Load_Hunyuan3D_V2_ShapeGen_Pipeline:
+    CATEGORY      = "Comfy3D/Algorithm"
+    RETURN_TYPES  = ("DIFFUSERS_PIPE",)
+    RETURN_NAMES  = ("shapegen_pipe",)
+    FUNCTION      = "load"
 
+    _REPO_ID_BASE = "tencent"
+
+    _MODES = {
+        "Hunyuan3D-2":             ("Hunyuan3D-2",     "hunyuan3d-dit-v2-0",         30),
+        "Hunyuan3D-2-Fast":        ("Hunyuan3D-2",     "hunyuan3d-dit-v2-0-fast",    20),
+        "Hunyuan3D-2-Turbo":       ("Hunyuan3D-2",     "hunyuan3d-dit-v2-0-turbo",    5),
+        "Hunyuan3D-2mini":         ("Hunyuan3D-2mini", "hunyuan3d-dit-v2-mini",       30),
+        "Hunyuan3D-2mini-Fast":    ("Hunyuan3D-2mini", "hunyuan3d-dit-v2-mini-fast",   20),
+        "Hunyuan3D-2mini-Turbo":   ("Hunyuan3D-2mini", "hunyuan3d-dit-v2-mini-turbo",  5),
+        "Hunyuan3D-2mv":           ("Hunyuan3D-2mv",   "hunyuan3d-dit-v2-mv",   30),
+        "Hunyuan3D-2mv-Fast":      ("Hunyuan3D-2mv",   "hunyuan3d-dit-v2-mv-fast",    20),
+        "Hunyuan3D-2mv-Turbo":     ("Hunyuan3D-2mv",   "hunyuan3d-dit-v2-mv-turbo",   5),
+    }
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "generation_mode": (list(cls._MODES.keys()),),
+                "weights_format" : (["safetensors", "ckpt"],),
+                "flash_vdm"      : ("BOOLEAN", {"default": True}),
+            }
+        }
+
+    @staticmethod
+    def _ensure_weights(repo: str, subfolder: str, use_safetensors: bool):
+        base_dir = os.path.join(CKPT_DIFFUSERS_PATH, f"{Load_Hunyuan3D_V2_ShapeGen_Pipeline._REPO_ID_BASE}/{repo}")
+        ckpt_file = "model.fp16.safetensors" if use_safetensors else "model.fp16.ckpt"
+        ckpt_path = os.path.join(base_dir, subfolder, ckpt_file)
+
+        if not os.path.exists(ckpt_path):
+            snapshot_download(
+                repo_id=f"{Load_Hunyuan3D_V2_ShapeGen_Pipeline._REPO_ID_BASE}/{repo}",
+                repo_type="model",
+                local_dir=base_dir,
+                resume_download=True,
+                ignore_patterns = HF_DOWNLOAD_IGNORE
+            )
+
+    @staticmethod
+    def _build_pipe(repo: str, subfolder: str, use_safetensors: bool, flash_vdm: bool):
+        Load_Hunyuan3D_V2_ShapeGen_Pipeline._ensure_weights(repo, subfolder, use_safetensors)
+
+        model_dir = os.path.join(CKPT_DIFFUSERS_PATH,
+                                 f"{Load_Hunyuan3D_V2_ShapeGen_Pipeline._REPO_ID_BASE}/{repo}",
+                                 subfolder)
+        ckpt = os.path.join(model_dir, "model.fp16.safetensors" if use_safetensors else "model.fp16.ckpt")
+        cfg  = os.path.join(model_dir, "config.yaml")
+
+        pipe = Hunyuan3DDiTFlowMatchingPipeline.from_single_file(
+            ckpt_path=ckpt,
+            config_path=cfg,
+            device="cuda",
+            dtype=torch.float16,
+            use_safetensors=use_safetensors,
+            from_pretrained_kwargs={
+                "model_path": f"{Load_Hunyuan3D_V2_ShapeGen_Pipeline._REPO_ID_BASE}/{repo}",
+                "subfolder": subfolder,
+                "use_safetensors": use_safetensors,
+            },
+        )
+
+        if flash_vdm and any(tag in subfolder for tag in ("turbo", "fast")):
+            pipe.enable_flashvdm(replace_vae=False)
+
+        return pipe.to("cuda", torch.float16)
+
+    def load(self, generation_mode, weights_format, flash_vdm):
+        repo, subfolder, def_steps = self._MODES[generation_mode]
+        use_safe = (weights_format == "safetensors")
+        pipe = self._build_pipe(repo, subfolder, use_safe, flash_vdm)
+        pipe.num_inference_steps = def_steps
+        return (pipe,)
     
+class Load_Hunyuan3D_V2_TexGen_Pipeline: 
+    CATEGORY     = "Comfy3D/Algorithm"
+    RETURN_TYPES = ("DIFFUSERS_PIPE",)
+    RETURN_NAMES = ("texgen_pipe",)
+    FUNCTION     = "load"
+
+    MODEL2REPO = {
+        "Standard": ("tencent/Hunyuan3D-2", "hunyuan3d-paint-v2-0"),
+        "Turbo":    ("tencent/Hunyuan3D-2", "hunyuan3d-paint-v2-0-turbo"),
+    }
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {"required": {
+            "generation_mode": (list(cls.MODEL2REPO.keys()),),
+        }}
+
+    def _download_required_weights(self, repo_id, subfolder):
+        ckpt_download_dir = os.path.join(CKPT_DIFFUSERS_PATH, repo_id)
+        os.makedirs(ckpt_download_dir, exist_ok=True)
+
+        # Only download the "delight" and target submodel directories
+        for folder in ["hunyuan3d-delight-v2-0", subfolder]:
+            snapshot_download(
+                repo_id=repo_id,
+                local_dir=ckpt_download_dir,
+                repo_type="model",
+                force_download=False,
+                ignore_patterns=HF_DOWNLOAD_IGNORE
+            )
+
+    def load(self, generation_mode):
+        repo_id, subfolder = self.MODEL2REPO[generation_mode]
+
+        self._download_required_weights(repo_id, subfolder)
+
+        local_repo_dir = os.path.join(CKPT_DIFFUSERS_PATH, repo_id)
+
+        pipe = Hunyuan3DPaintPipeline.from_pretrained(
+            model_path=local_repo_dir,
+            subfolder=subfolder
+        )
+
+        return (pipe.to("cuda", torch.float16),)
+
+class Hunyuan3D_V2_Paint_Model_Turbo_MV:
+    """
+    Texture-painting pipeline using a list of PIL images.
+    If list contains 1 image → single-view; if >1 → multi-view mode.
+    """
+
+    CATEGORY = "Comfy3D/Algorithm"
+    RETURN_TYPES = ("MESH",)
+    RETURN_NAMES = ("mesh",)
+    FUNCTION = "run"
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "hunyuan3d_v2_texgen_pipe": ("DIFFUSERS_PIPE",),
+                "mesh": ("MESH",),
+                "images": ("LIST",),
+            }
+        }
+
+    @torch.no_grad()
+    def run(self, hunyuan3d_v2_texgen_pipe, mesh, images):
+        if not isinstance(images, list) or len(images) == 0:
+            raise Exception("[Hunyuan3D_V2_Paint_Model_Turbo_MV] 'images' must be a non-empty list of PIL images")
+
+        v_np = mesh.v.detach().cpu().numpy()
+        f_np = mesh.f.detach().cpu().numpy()
+        tri = trimesh.Trimesh(vertices=v_np, faces=f_np)
+
+        try:
+            textured = hunyuan3d_v2_texgen_pipe(tri, images)
+        except Exception as e:
+            raise Exception(f"[Hunyuan3D_V2_Paint_Model_Turbo_MV] Texture generation failed: {str(e)}")
+
+        m_out = Mesh.load_trimesh(given_mesh=textured)
+        m_out.auto_normal()
+        return (m_out,)
+
+class Multi_Background_Remover:
+    """
+    Converts 1 to 4 image inputs (front/back/left/right) to a list of processed PIL images.
+    Applies RGBA conversion and background removal.
+    Suitable for feeding directly into ShapeGen or Paint models.
+    """
+
+    CATEGORY = "Comfy3D/Preprocessors"
+    RETURN_TYPES = ("LIST",)  # List of PIL images
+    RETURN_NAMES = ("images",)
+    FUNCTION = "run"
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "image_front": ("IMAGE",),
+            },
+            "optional": {
+                "image_back": ("IMAGE",),
+                "image_left": ("IMAGE",),
+            }
+        }
+
+    @torch.no_grad()
+    def run(
+        self,
+        image_front,
+        image_back=None,
+        image_left=None,
+        image_right=None
+    ):
+        rmbg = BackgroundRemover()
+
+        mv_inputs = {
+            k: v for k, v in {
+                "front": image_front,
+                "back": image_back,
+                "left": image_left,
+                "right": image_right
+            }.items() if v is not None
+        }
+
+        images = []
+        for key, tensor_img in mv_inputs.items():
+            pil_img = torch_imgs_to_pils(tensor_img)[0].convert("RGBA")
+            if pil_img.mode == "RGB":
+                pil_img = rmbg(pil_img.convert("RGB"))
+            images.append(pil_img)
+
+        return (images,)        
+
+class Hunyuan3D_V2_ShapeGen_MV:
+    """
+    Shape generation pipeline using a list of processed PIL images.
+    If len(images) == 1 → single-view; if >1 → multi-view dict.
+    """
+
+    CATEGORY = "Comfy3D/Algorithm"
+    RETURN_TYPES = ("MESH",)
+    RETURN_NAMES = ("mesh",)
+    FUNCTION = "run"
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "shapegen_pipe": ("DIFFUSERS_PIPE",),
+                "images": ("LIST",),
+                "seed": ("INT", {"default": 1234, "min": 0, "max": 0xffffffffffffffff}),
+                "guidance_scale": ("FLOAT", {"default": 5.0, "min": 0.0, "step": 0.1}),
+                "num_inference_steps": ("INT", {"default": 5, "min": 0, "tooltip": "Turbo: 5; Fast/Standard: 30–40"}),
+                "octree_resolution": ("INT", {"default": 256, "min": 64}),
+            }
+        }
+
+    @torch.no_grad()
+    def run(
+        self,
+        shapegen_pipe,
+        images,
+        seed=1234,
+        guidance_scale=5.0,
+        num_inference_steps=5,
+        octree_resolution=256
+    ):
+        if not isinstance(images, list) or len(images) == 0:
+            raise Exception("[Hunyuan3D_V2_ShapeGen_MV] 'images' must be a non-empty list of PIL images")
+
+        if len(images) == 1:
+            image = images[0]
+        else:
+            directions = ["front", "back", "left", "right"]
+            image = {k: v for k, v in zip(directions, images)}
+
+        steps = shapegen_pipe.default_steps if num_inference_steps == 0 else num_inference_steps
+        gen = torch.Generator(device=shapegen_pipe.device).manual_seed(seed)
+
+        try:
+            mesh = shapegen_pipe(
+                image=image,
+                num_inference_steps=steps,
+                guidance_scale=guidance_scale,
+                generator=gen,
+                octree_resolution=octree_resolution,
+                output_type="trimesh",
+            )[0]
+        except Exception as e:
+            raise Exception(f"[Hunyuan3D_V2_ShapeGen_MV] Shape generation failed: {str(e)}")
+
+        for fn in (FloaterRemover(), DegenerateFaceRemover(), FaceReducer()):
+            mesh = fn(mesh)
+
+        return (Mesh.load_trimesh(given_mesh=mesh),)
