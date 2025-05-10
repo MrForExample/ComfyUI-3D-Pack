@@ -50,7 +50,7 @@ Your ComfyUI Root Directory\python_embeded\python.exe install.py
   - Single image to 3D Mesh
   - Multi-views to 3D Mesh with RGB texture
   - Model weights: https://huggingface.co/tencent/Hunyuan3D-2, https://huggingface.co/tencent/Hunyuan3D-2mini
-  - [Workflows](https://github.com/DenisKochetov/ComfyUI-3D-Pack/tree/dev/_Example_Workflows/Hunyuan3D_V2)
+  - [Workflows](./_Example_Workflows/Hunyuan3D_V2)
     
   <video controls autoplay loop src="https://github.com/user-attachments/assets/ae0f68d8-edd3-4bdd-9a9a-1f5ccc07a3d0"></video>
 
