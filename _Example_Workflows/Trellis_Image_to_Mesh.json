@@ -232,7 +232,7 @@
         "Node name for S&R": "[Comfy3D] Load Trellis Structured 3D Latents Models"
       },
       "widgets_values": [
-        "JeffreyXiang/TRELLIS-image-large"
+        "jetx/TRELLIS-image-large"
       ]
     }
   ],
