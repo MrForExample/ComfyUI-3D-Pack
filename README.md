@@ -48,7 +48,7 @@ Your ComfyUI Root Directory\python_embeded\python.exe install.py
 
 - **TRELLIS**: [microsoft/TRELLIS](https://github.com/microsoft/TRELLIS)
   - Single image to 3D Mesh with RGB texture
-  - Model weights: https://huggingface.co/JeffreyXiang/TRELLIS-image-large
+  - Model weights: https://huggingface.co/jetx/TRELLIS-image-large
 
   <video controls autoplay loop src="https://github.com/user-attachments/assets/f569c561-23ea-471f-a9d3-f2e6d1803e00"></video>
 
