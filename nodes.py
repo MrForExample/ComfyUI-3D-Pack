@@ -4020,7 +4020,7 @@ class Hunyuan3D_V2_Paint_Model:
         return (mesh,)
     
 class Load_Trellis_Structured_3D_Latents_Models:
-    default_repo_id = "JeffreyXiang/TRELLIS-image-large"
+    default_repo_id = "jetx/TRELLIS-image-large"
 
     @classmethod
     def INPUT_TYPES(cls):
