@@ -38,6 +38,7 @@ matplotlib
 
 # for process, import & export mesh 
 trimesh
+fast-simplification
 plyfile
 pygltflib
 xatlas
