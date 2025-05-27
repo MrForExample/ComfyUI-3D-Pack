@@ -43,7 +43,6 @@ class TrellisModelManager:
             device (str): Device to load models on (e.g. "cuda")
         """
         self.model_dir = model_dir
-        # Handle config being either a dict or an object
         if config is None:
             self.device = device
         elif isinstance(config, dict):
@@ -58,23 +57,19 @@ class TrellisModelManager:
     def load(self) -> None:
         """Load model configuration and checkpoints"""
         try:
-            # Ensure directory exists
             os.makedirs(self.model_dir, exist_ok=True)
             ckpts_folder = os.path.join(self.model_dir, "ckpts")
             os.makedirs(ckpts_folder, exist_ok=True)
             
-            # Download model files if needed
             if not os.path.exists(os.path.join(self.model_dir, "pipeline.json")):
                 logger.info("Downloading TRELLIS models...")
                 try:
-                    # Download main pipeline files
                     snapshot_download(
                         repo_id="Stable-X/trellis-normal-v0-1",
                         local_dir=self.model_dir,
                         local_dir_use_symlinks=False,
                         allow_patterns=["pipeline.json", "README.md"]
                     )
-                    # Download checkpoint files
                     snapshot_download(
                         repo_id="Stable-X/trellis-normal-v0-1",
                         local_dir=ckpts_folder,
@@ -87,7 +82,6 @@ class TrellisModelManager:
                     logger.error(f"Error downloading model files: {str(e)}")
                     raise
             
-            # Load configuration
             self.config = self._load_config()
             
         except Exception as e:
@@ -99,7 +93,6 @@ class TrellisModelManager:
         Returns the full path to a checkpoint file.
         """
         ckpts_folder = os.path.join(self.model_dir, "ckpts")
-        # Add .safetensors extension if not present
         if not filename.endswith('.safetensors'):
             filename = f"{filename}.safetensors"
         full_path = os.path.join(ckpts_folder, filename)
@@ -126,7 +119,6 @@ class TrellisModelManager:
                 with open(config_path, 'r') as f:
                     config = json.load(f)
             
-            # Debug: Print raw config
             logger.info("Raw config contents:")
             logger.info(json.dumps(config, indent=2))
             
@@ -171,62 +163,130 @@ class TrellisModelManager:
         return models
 
     def load_dinov2(self, model_name: str):
-        """Load DINOv2 model with device, precision, and attention backend management"""
+        """Load DINOv2 model from local repo and weights"""
         try:
-            # Get configuration values
+            local_repo_path = self._ensure_dinov2_repo()
+            weights_path = self._ensure_dinov2_weights(model_name)
+            
             use_fp16 = (self.config.get('use_fp16', True) 
                     if isinstance(self.config, dict) 
                     else getattr(self.config, 'use_fp16', True))
             
-            # Get attention backend from config
-            attention_backend = (self.config.get('attention_backend', 'default')
-                    if isinstance(self.config, dict)
-                    else getattr(self.config, 'attention_backend', 'default'))
-
-            # Try to load from local path first
-            model_path = folder_paths.get_full_path("classifiers", f"{model_name}.pth")
+            model = torch.hub.load(
+                local_repo_path,
+                model_name,
+                source='local',
+                pretrained=False,  
+                force_reload=False,
+                trust_repo=True
+            )
             
-            if model_path is None:
-                print(f"Downloading {model_name} from torch hub...")
-                try:
-                    # Load model architecture with specified attention backend
-                    model = torch.hub.load('facebookresearch/dinov2', model_name, 
-                                         pretrained=True, 
-                                         force_reload=False,
-                                         trust_repo=True)
-                    
-                    # Save model for future use
-                    save_dir = os.path.join(folder_paths.models_dir, "classifiers")
-                    os.makedirs(save_dir, exist_ok=True)
-                    save_path = os.path.join(save_dir, f"{model_name}.pth")
-                    
-                    # Save on CPU to avoid memory issues
-                    model = model.cpu()
-                    torch.save(model.state_dict(), save_path)
-                    print(f"Saved DINOv2 model to {save_path}")
-                    
-                except Exception as e:
-                    raise RuntimeError(f"Failed to download DINOv2 model: {str(e)}")
-            else:
-                # Load from local path
-                print(f"Loading DINOv2 model from {model_path}")
-                model = torch.hub.load('facebookresearch/dinov2', model_name, 
-                                     pretrained=False,
-                                     force_reload=False,
-                                     trust_repo=True)
-                model.load_state_dict(torch.load(model_path))
-
-            # Move model to specified device and apply precision settings
+            state_dict = torch.load(weights_path, map_location='cpu')
+            
+            if 'model' in state_dict:
+                state_dict = state_dict['model']
+            elif 'state_dict' in state_dict:
+                state_dict = state_dict['state_dict']
+            
+            model.load_state_dict(state_dict, strict=False)
+            
             model = model.to(self.device)
             if use_fp16:
                 model = model.half()
             
-            # Set attention backend if specified in config
-            if hasattr(model, 'set_attention_backend') and attention_backend != 'default':
-                model.set_attention_backend(attention_backend)
-            
             model.eval()
+            logger.info(f"DINOv2 model {model_name} loaded successfully")
             return model
                 
         except Exception as e:
             raise RuntimeError(f"Error loading DINOv2 model: {str(e)}")
+
+    def _ensure_dinov2_repo(self):
+        repo_path = os.path.join(os.path.dirname(__file__), 'dinov2')
+        
+        if not os.path.exists(repo_path):
+            logger.error("DINOv2 repository not found. Please ensure dinov2/ folder exists with hubconf.py")
+            raise FileNotFoundError(f"DINOv2 repo not found at {repo_path}")
+        
+        return repo_path
+
+    def _ensure_dinov2_weights(self, model_name: str):
+        weights_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 
+                                  'Checkpoints', 'facebookresearch', 'dinov2')
+        os.makedirs(weights_dir, exist_ok=True)
+        
+        weights_file = f"{model_name}.pth"
+        weights_path = os.path.join(weights_dir, weights_file)
+        
+        if not os.path.exists(weights_path):
+            logger.info(f"Downloading {model_name} weights...")
+            
+            success = self._download_from_facebook(model_name, weights_path)
+            
+            if not success:
+                logger.info("Trying HuggingFace...")
+                self._download_from_huggingface(model_name, weights_path)
+                logger.info("Weights downloaded via HuggingFace")
+        
+        return weights_path
+    
+    def _download_from_facebook(self, model_name: str, weights_path: str) -> bool:
+        try:
+            import urllib.request
+            import shutil
+            
+            facebook_urls = {
+                'dinov2_vitl14_reg': 'https://dl.fbaipublicfiles.com/dinov2/dinov2_vitl14/dinov2_vitl14_reg4_pretrain.pth'
+            }
+            
+            if model_name not in facebook_urls:
+                return False
+            
+            url = facebook_urls[model_name]
+            logger.info(f"Downloading from Facebook...")
+            
+            temp_path = weights_path + '.tmp'
+            urllib.request.urlretrieve(url, temp_path)
+            
+            shutil.move(temp_path, weights_path)
+            
+            return True
+            
+        except Exception as e:
+            logger.warning(f"Facebook download failed: {str(e)}")
+            temp_path = weights_path + '.tmp'
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+            return False
+    
+    def _download_from_huggingface(self, model_name: str, weights_path: str):
+        """Download DINOv2 weights from HuggingFace as fallback"""
+        try:
+            weights_dir = os.path.dirname(weights_path)
+            
+            model_mapping = {
+                'dinov2_vitl14_reg': ('DenisKochetov/dinov2_vitl14_reg', 'dinov2_vitl14_reg.pth')
+            }
+            
+            if model_name not in model_mapping:
+                raise ValueError(f"Unknown model: {model_name}. Available: {list(model_mapping.keys())}")
+            
+            repo_id, filename = model_mapping[model_name]
+            
+            downloaded_path = hf_hub_download(
+                repo_id=repo_id,
+                filename=filename,
+                local_dir=weights_dir,
+                local_dir_use_symlinks=False,
+                resume_download=True
+            )
+            
+            weights_file = os.path.basename(weights_path)
+            if filename != weights_file:
+                final_path = weights_path
+                if os.path.exists(downloaded_path) and downloaded_path != final_path:
+                    import shutil
+                    shutil.move(downloaded_path, final_path)
+            
+        except Exception as e:
+            raise RuntimeError(f"Failed to download weights for {model_name}: {str(e)}")

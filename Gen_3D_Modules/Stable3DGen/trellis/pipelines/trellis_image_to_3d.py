@@ -17,7 +17,8 @@ from ..representations import MeshExtractResult
 from contextlib import contextmanager
 from typing import Literal
 import folder_paths
-from trellis_model_manager import TrellisModelManager
+from stable_trellis_model_manager import TrellisModelManager as StableTrellisModelManager
+
 import os
 import logging
 
@@ -84,7 +85,12 @@ class TrellisImageTo3DPipeline(Pipeline):
 
         # Use user-specified model if provided, otherwise use config
         model_name = dinov2_model or args['image_cond_model']
-        new_pipeline._init_image_cond_model(model_name)
+        
+        try:
+            new_pipeline._init_image_cond_model(model_name)
+        except Exception as e:
+            logger.error(f"Error initializing image conditioning model: {str(e)}")
+            raise
 
         return new_pipeline
     
@@ -97,7 +103,7 @@ class TrellisImageTo3DPipeline(Pipeline):
             
         # Create model manager instance with proper config
         config = getattr(self, 'config', {})
-        model_manager = TrellisModelManager(self.model_dir, config=config)
+        model_manager = StableTrellisModelManager(self.model_dir, config=config)
         
         try:
             # This will handle downloading if needed

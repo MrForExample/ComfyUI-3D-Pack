@@ -15,8 +15,6 @@ import torchvision.transforms.functional as TF
 import numpy as np
 from safetensors.torch import load_file
 from einops import rearrange
-from accelerate import init_empty_weights
-from accelerate.utils import set_module_tensor_to_device
 
 from diffusers import (
     DiffusionPipeline, 
@@ -32,7 +30,6 @@ from diffusers import (
     KDPM2AncestralDiscreteScheduler,
     KDPM2DiscreteScheduler,
 )
-from diffusers.models import AutoencoderKL, UNet2DConditionModel
 
 from huggingface_hub import snapshot_download
 
@@ -106,10 +103,8 @@ from TRELLIS.trellis.pipelines import TrellisImageTo3DPipeline
 from TRELLIS.trellis.utils import postprocessing_utils
 from TripoSG.pipelines.pipeline_triposg import TripoSGPipeline
 from TripoSG.pipelines.pipeline_triposg_scribble import TripoSGScribblePipeline
-from Stable3DGen.trellis.pipelines.trellis_image_to_3d import TrellisImageTo3DPipeline as Stable3DGenTrellisImageTo3DPipeline
-from Stable3DGen.stablex.pipeline_yoso import YosoPipeline
-from Stable3DGen.stablex.controlnetvae import ControlNetVAEModel
-from Stable3DGen.trellis.backend_config import set_attention_backend, set_sparse_backend, get_available_backends, get_available_sparse_backends
+from Stable3DGen.trellis.backend_config import get_available_backends, get_available_sparse_backends
+from Stable3DGen.pipeline_builders import StableGenPipelineBuilder
 
 os.environ['SPCONV_ALGO'] = 'native'
 
@@ -4541,7 +4536,7 @@ class Hunyuan3D_V2_ShapeGen_MV:
 
         return (Mesh.load_trimesh(given_mesh=mesh),)
 
-
+#--------------------------------
 class Load_StableGen_Trellis_Pipeline:
     CATEGORY      = "Comfy3D/Algorithm"
     RETURN_TYPES  = ("DIFFUSERS_PIPE",)
@@ -4557,20 +4552,7 @@ class Load_StableGen_Trellis_Pipeline:
 
     @classmethod
     def INPUT_TYPES(cls):
-        try:
-            attn_backends = get_available_backends()
-            sparse_backends = get_available_sparse_backends()
-        except:
-            attn_backends = {'flash_attn': True, 'sdpa': True}
-            sparse_backends = {'spconv': True}
-
-        available_attn = [k for k, v in attn_backends.items() if v]
-        if not available_attn:
-            available_attn = ['flash_attn']
-
-        available_sparse = [k for k, v in sparse_backends.items() if v]
-        if not available_sparse:
-            available_sparse = ['spconv']
+        available_attn, available_sparse = StableGenPipelineBuilder.get_available_backends()
 
         return {
             "required": {
@@ -4585,77 +4567,19 @@ class Load_StableGen_Trellis_Pipeline:
         }
 
     @classmethod
-    def _ensure_weights(cls, repo: str):
-        base_dir = os.path.join(cls.CKPT_STABLEGEN_PATH, "trellis", repo)
-        
-        if not os.path.exists(base_dir) or not os.listdir(base_dir):
-            print(f"Downloading {repo} to {base_dir}")
-            os.makedirs(base_dir, exist_ok=True)
-            snapshot_download(
-                repo_id=f"{cls._REPO_ID_BASE}/{repo}",
-                repo_type="model",
-                local_dir=base_dir,
-                resume_download=True,
-                ignore_patterns=HF_DOWNLOAD_IGNORE
-            )
-
-    @staticmethod
-    def _setup_environment(attn_backend: str, sparse_backend: str, spconv_algo: str, smooth_k: bool):
-        """Setup environment variables and backends"""
-        try:
-            success = set_attention_backend(attn_backend)
-            if not success:
-                print(f"Warning: Failed to set {attn_backend}, fallback to default")
-
-            success2 = set_sparse_backend(sparse_backend, spconv_algo)
-            if not success2:
-                print(f"Warning: Failed to set {sparse_backend}, fallback to default")
-
-            os.environ['SAGEATTN_SMOOTH_K'] = '1' if smooth_k else '0'
-        except Exception as e:
-            print(f"Warning: Could not setup environment: {e}")
-
-    @staticmethod
-    def _optimize_pipeline(pipeline, use_fp16: bool = True):
-        """Apply typical optimizations, half-precision, etc."""
-        if DEVICE.type == "cuda":
-            try:
-                if hasattr(pipeline, 'cuda'):
-                    pipeline.cuda()
-
-                if use_fp16:
-                    if hasattr(pipeline, 'enable_attention_slicing'):
-                        pipeline.enable_attention_slicing(slice_size="auto")
-                    if hasattr(pipeline, 'half'):
-                        pipeline.half()
-            except Exception as e:
-                print(f"Warning: Some pipeline optimizations failed: {str(e)}")
-
-        return pipeline
-
-    @classmethod
     def _build_pipe(cls, repo: str, dinov2_model: str, use_fp16: bool, attn_backend: str, 
                    sparse_backend: str, spconv_algo: str, smooth_k: bool):
         
-        cls._ensure_weights(repo)
-        cls._setup_environment(attn_backend, sparse_backend, spconv_algo, smooth_k)
-
-        model_dir = os.path.join(cls.CKPT_STABLEGEN_PATH, "trellis", repo)
-
-        try:
-            pipe = Stable3DGenTrellisImageTo3DPipeline.from_pretrained(
-                model_dir,
-                dinov2_model=dinov2_model
-            )
-
-            if pipe is None:
-                raise Exception("Pipeline returned None from from_pretrained")
-
-            pipe = cls._optimize_pipeline(pipe, use_fp16)
-
-            return pipe
-        except Exception as e:
-            raise Exception(f"Failed to build Trellis pipeline: {e}")
+        return StableGenPipelineBuilder.build_trellis_pipeline(
+            repo=repo,
+            dinov2_model=dinov2_model,
+            use_fp16=use_fp16,
+            attn_backend=attn_backend,
+            sparse_backend=sparse_backend,
+            spconv_algo=spconv_algo,
+            smooth_k=smooth_k,
+            ckpt_path=cls.CKPT_STABLEGEN_PATH
+        )
 
     def load(self, model_name, dinov2_model, use_fp16, attn_backend, sparse_backend, spconv_algo, smooth_k):
         repo, ss_steps, slat_steps = self._MODES[model_name]
@@ -4691,78 +4615,12 @@ class Load_StableGen_StableX_Pipeline:
         }
 
     @classmethod
-    def _ensure_weights(cls, repo: str):
-        base_dir = os.path.join(cls.CKPT_STABLEGEN_PATH, "stablex", repo)
-        
-        if not os.path.exists(base_dir) or not os.listdir(base_dir):
-            print(f"Downloading {repo} to {base_dir}")
-            os.makedirs(base_dir, exist_ok=True)
-            snapshot_download(
-                repo_id=f"{cls._REPO_ID_BASE}/{repo}",
-                repo_type="model",
-                local_dir=base_dir,
-                resume_download=True,
-                ignore_patterns=["*text_encoder*", "tokenizer*", "*scheduler*"]
-            )
-
-    @classmethod
     def _build_pipe(cls, repo: str, use_fp16: bool):
-        cls._ensure_weights(repo)
-
-        model_dir = os.path.join(cls.CKPT_STABLEGEN_PATH, "stablex", repo)
-        torch_dtype = torch.float16 if use_fp16 else torch.float32
-
-        try:
-            config_path = os.path.join(model_dir, 'unet', 'config.json')
-            unet_ckpt_path = os.path.join(model_dir, 'unet', 'diffusion_pytorch_model.fp16.safetensors')
-            
-            if not os.path.exists(config_path):
-                raise FileNotFoundError(f"Config not found at {config_path}")
-            
-            with open(config_path, 'r', encoding='utf-8') as file:
-                config = json.load(file)
-
-            with init_empty_weights():
-                unet = UNet2DConditionModel(**config)
-
-            if os.path.exists(unet_ckpt_path):
-                unet_sd = load_file(unet_ckpt_path)
-            else:
-                raise FileNotFoundError(f"No checkpoint found at {unet_ckpt_path}")
-
-            for name, param in unet.named_parameters():
-                set_module_tensor_to_device(unet, name, device=DEVICE, dtype=torch_dtype, value=unet_sd[name])
-
-            vae = AutoencoderKL.from_pretrained(
-                model_dir, 
-                subfolder="vae", 
-                variant="fp16" if use_fp16 else None,
-                torch_dtype=torch_dtype
-            )
-            
-            controlnet = ControlNetVAEModel.from_pretrained(
-                model_dir, 
-                subfolder="controlnet", 
-                variant="fp16" if use_fp16 else None,
-                torch_dtype=torch_dtype
-            )
-
-            pipeline = YosoPipeline(
-                unet=unet,
-                vae=vae,
-                controlnet=controlnet,
-            )
-
-            pipeline.to(DEVICE)
-            
-            if torch_dtype == torch.float16 and DEVICE.type == "cuda":
-                pipeline.unet = pipeline.unet.half()
-                pipeline.vae = pipeline.vae.half()
-                pipeline.controlnet = pipeline.controlnet.half()
-            
-            return pipeline
-        except Exception as e:
-            raise Exception(f"Failed to build StableX pipeline: {e}")
+        return StableGenPipelineBuilder.build_stablex_pipeline(
+            repo=repo,
+            use_fp16=use_fp16,
+            ckpt_path=cls.CKPT_STABLEGEN_PATH
+        )
 
     def load(self, model_name, use_fp16):
         repo = self._MODES[model_name]
@@ -4815,51 +4673,34 @@ class StableGen_Trellis_Image_To_3D:
         if not isinstance(images, list) or len(images) == 0:
             raise Exception(f"[StableGen_Trellis_Image_To_3D] 'images' must be a non-empty list of PIL images. Got type: {type(images)}, len: {len(images) if hasattr(images, '__len__') else 'no len'}")
 
-        # Use inference context like in working version
         with trellis_pipe.inference_context():
-            # Prepare input based on mode
             if mode == "single":
                 if len(images) > 1:
                     print(f"Warning: Single mode selected but {len(images)} images provided. Using first image.")
                 image_input = images[0]
                 
-                # Set up generation parameters for single image
-                pipeline_params = {
-                    "num_samples": 1,
-                    "seed": seed,
-                    "formats": ["mesh"],
-                    "preprocess_image": True,
-                    "sparse_structure_sampler_params": {
-                        "steps": ss_sampling_steps,
-                        "cfg_strength": ss_guidance_strength,
-                    },
-                    "slat_sampler_params": {
-                        "steps": slat_sampling_steps,
-                        "cfg_strength": slat_guidance_strength,
-                    }
-                }
+                pipeline_params = StableGenPipelineBuilder.create_trellis_pipeline_params(
+                    seed=seed,
+                    ss_sampling_steps=ss_sampling_steps,
+                    ss_guidance_strength=ss_guidance_strength,
+                    slat_sampling_steps=slat_sampling_steps,
+                    slat_guidance_strength=slat_guidance_strength,
+                    formats=["mesh"]
+                )
                 
-                # Generate 3D mesh using single image method
                 outputs = trellis_pipe.run(
                     image_input,
                     **pipeline_params
                 )
-            else:  # multi mode
-                # Set up generation parameters for multi image
-                pipeline_params = {
-                    "num_samples": 1,
-                    "seed": seed,
-                    "formats": ["mesh"],
-                    "preprocess_image": True,
-                    "sparse_structure_sampler_params": {
-                        "steps": ss_sampling_steps,
-                        "cfg_strength": ss_guidance_strength,
-                    },
-                    "slat_sampler_params": {
-                        "steps": slat_sampling_steps,
-                        "cfg_strength": slat_guidance_strength,
-                    }
-                }
+            else:  
+                pipeline_params = StableGenPipelineBuilder.create_trellis_pipeline_params(
+                    seed=seed,
+                    ss_sampling_steps=ss_sampling_steps,
+                    ss_guidance_strength=ss_guidance_strength,
+                    slat_sampling_steps=slat_sampling_steps,
+                    slat_guidance_strength=slat_guidance_strength,
+                    formats=["mesh"]
+                )
                 
                 outputs = trellis_pipe.run_multi_image(
                     images,
@@ -4877,7 +4718,6 @@ class StableGen_Trellis_Image_To_3D:
             
             tri_mesh = trimesh.Trimesh(vertices, faces)
             
-            # Simplify mesh if requested
             if mesh_simplify < 1.0:
                 try:
                     target_faces = int(len(faces) * mesh_simplify)
@@ -4885,7 +4725,6 @@ class StableGen_Trellis_Image_To_3D:
                 except Exception as e:
                     print(f"Warning: Mesh simplification failed: {e}. Using original mesh.")
             
-            # Convert to Mesh object
             mesh = Mesh.load_trimesh(given_mesh=tri_mesh)
             mesh.auto_normal()
             
