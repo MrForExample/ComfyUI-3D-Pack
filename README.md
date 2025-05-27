@@ -46,6 +46,15 @@ Your ComfyUI Root Directory\python_embeded\python.exe install.py
 - For use cases please check out [Example Workflows](./_Example_Workflows/). [**Last update: 29/April/2025**]
   - **Note:** you need to put [Example Inputs Files & Folders](_Example_Workflows/_Example_Inputs_Files/) under ComfyUI Root Directory\ComfyUI\input folder before you can run the example workflow
 
+- **Stable3DGen**: [Stable-X/Stable3DGen](https://github.com/Stable-X/Stable3DGen)
+  - Two models pipeline:
+    - Stable3DGen: Single image to 3D Mesh
+    - StableNormal: Image processing for normal map generation
+  - Model weights: 
+    - Stable3DGen: https://huggingface.co/Stable-X/trellis-normal-v0-1
+    - StableNormal: https://huggingface.co/Stable-X/yoso-normal-v1-8-1
+  - [Workflow](./_Example_Workflows/Stable3DGen.json)
+
 - **Hunyuan3D_V2**: turbo, mini, fast, multiview
   - Single image to 3D Mesh
   - Multi-views to 3D Mesh with RGB texture
