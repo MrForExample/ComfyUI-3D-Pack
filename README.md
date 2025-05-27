@@ -54,7 +54,9 @@ Your ComfyUI Root Directory\python_embeded\python.exe install.py
     - Stable3DGen: https://huggingface.co/Stable-X/trellis-normal-v0-1
     - StableNormal: https://huggingface.co/Stable-X/yoso-normal-v1-8-1
   - [Workflow](./_Example_Workflows/Stable3DGen.json)
-
+    
+  <video controls autoplay loop src="https://github.com/user-attachments/assets/2a38fa0a-4028-4fe5-a67a-bbc7c305da75"></video>
+ 
 - **Hunyuan3D_V2**: turbo, mini, fast, multiview
   - Single image to 3D Mesh
   - Multi-views to 3D Mesh with RGB texture
