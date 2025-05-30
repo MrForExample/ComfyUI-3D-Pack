@@ -105,6 +105,12 @@ from TripoSG.pipelines.pipeline_triposg import TripoSGPipeline
 from TripoSG.pipelines.pipeline_triposg_scribble import TripoSGScribblePipeline
 from Stable3DGen.trellis.backend_config import get_available_backends, get_available_sparse_backends
 from Stable3DGen.pipeline_builders import StableGenPipelineBuilder
+from MV_Adapter.mvadapter_node_utils import (
+        prepare_pipeline as mvadapter_prepare_pipeline,
+        run_pipeline as mvadapter_run_pipeline, 
+        create_bg_remover,
+    )
+from MV_Adapter.mvadapter.utils import make_image_grid
 
 os.environ['SPCONV_ALGO'] = 'native'
 
@@ -4781,3 +4787,130 @@ class StableGen_StableX_Process_Image:
             
         except Exception as e:
             raise Exception(f"[StableGen_StableX_Process_Image] Image processing failed: {str(e)}")
+
+class Load_MVAdapter_Pipeline:
+    """Loader pipeline for MV-Adapter (Image to Multi-View)"""
+    CATEGORY = "Comfy3D/Algorithm"
+    RETURN_TYPES = ("DIFFUSERS_PIPE",)
+    RETURN_NAMES = ("mvadapter_pipe",)
+    FUNCTION = "load"
+
+    CKPT_MVADAPTER_PATH = os.path.join(CKPT_DIFFUSERS_PATH, "huanngzh", "MV-Adapter")
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "base_model": (["stabilityai/stable-diffusion-xl-base-1.0"], 
+                             {"default": "stabilityai/stable-diffusion-xl-base-1.0"}),
+                "vae_model": (["madebyollin/sdxl-vae-fp16-fix", "None"], 
+                             {"default": "madebyollin/sdxl-vae-fp16-fix"}),
+                "adapter_path": (["huanngzh/mv-adapter"], {"default": "huanngzh/mv-adapter"}),
+                "scheduler": (["default", "ddpm", "lcm"], {"default": "default"}),
+                "num_views": ("INT", {"default": 6, "min": 1, "max": 16}),
+                "use_fp16": ("BOOLEAN", {"default": True}),
+                "use_mmgp": ("BOOLEAN", {"default": True}),
+            },
+            "optional": {
+                "unet_model": ("STRING", {"default": ""}),
+                "lora_model": ("STRING", {"default": ""}),
+            }
+        }
+    @classmethod
+    def load(cls, base_model, vae_model, adapter_path, scheduler, num_views, 
+            use_fp16, use_mmgp, unet_model="", lora_model=""):
+        
+        
+        dtype = torch.float16 if use_fp16 else torch.float32
+        vae_model = None if vae_model == "None" else vae_model
+        unet_model = None if not unet_model else unet_model
+        lora_model = None if not lora_model else lora_model
+        
+        pipe = mvadapter_prepare_pipeline(
+            base_model=base_model,
+            vae_model=vae_model,
+            unet_model=unet_model,
+            lora_model=lora_model,
+            adapter_path=adapter_path,
+            scheduler=scheduler,
+            num_views=num_views,
+            device=DEVICE_STR,
+            dtype=dtype,
+            use_mmgp=use_mmgp,
+            adapter_local_path=cls.CKPT_MVADAPTER_PATH
+        )
+        
+        print("MV-Adapter pipeline loaded successfully")
+        return (pipe,)
+            
+
+class MVAdapter_Image_To_MultiView:
+    """Generate multi-view images from single image and 3D mesh"""
+    CATEGORY = "Comfy3D/Algorithm"
+    RETURN_TYPES = ("IMAGE",)
+    RETURN_NAMES = ("multiview_images",)
+    FUNCTION = "run"
+
+    @classmethod  
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "mvadapter_pipe": ("DIFFUSERS_PIPE",),
+                "mesh_path": ("STRING", {"default": ""}),
+                "reference_image": ("IMAGE",),
+                "prompt": ("STRING", {"default": "high quality", "multiline": True}),
+                "negative_prompt": ("STRING", {"default": "watermark, ugly, deformed, noisy, blurry, low contrast", "multiline": True}),
+                "num_inference_steps": ("INT", {"default": 50, "min": 1, "max": 200}),
+                "guidance_scale": ("FLOAT", {"default": 3.0, "min": 0.0, "max": 20.0, "step": 0.1}),
+                "reference_conditioning_scale": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 2.0, "step": 0.1}),
+                "height": ("INT", {"default": 768, "min": 256, "max": 2048, "step": 8}),
+                "width": ("INT", {"default": 768, "min": 256, "max": 2048, "step": 8}),
+                "seed": ("INT", {"default": -1, "min": -1, "max": 0xffffffffffffffff}),
+                "remove_background": ("BOOLEAN", {"default": False}),
+            },
+            "optional": {
+                "lora_scale": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 2.0, "step": 0.1}),
+            }
+        }
+
+    def run(self, mvadapter_pipe, mesh_path, reference_image, prompt, negative_prompt, 
+            num_inference_steps, guidance_scale, reference_conditioning_scale,
+            height, width, seed, remove_background, lora_scale=1.0):
+        
+        if isinstance(reference_image, torch.Tensor):
+            reference_images = torch_imgs_to_pils(reference_image)
+            reference_image = reference_images[0]
+        
+        if not mesh_path or not os.path.exists(mesh_path):
+            raise ValueError(f"Mesh path does not exist: {mesh_path}")
+        
+        remove_bg_fn = None
+        if remove_background:
+            remove_bg_fn = create_bg_remover(DEVICE_STR)
+        
+        num_views = 6 
+        images, pos_images, normal_images, processed_ref_image = mvadapter_run_pipeline(
+            pipe=mvadapter_pipe,
+            mesh_path=mesh_path,
+            num_views=num_views,
+            text=prompt,
+            image=reference_image,
+            height=height,
+            width=width,
+            num_inference_steps=num_inference_steps,
+            guidance_scale=guidance_scale,
+            seed=seed,
+            remove_bg_fn=remove_bg_fn,
+            reference_conditioning_scale=reference_conditioning_scale,
+            negative_prompt=negative_prompt,
+            lora_scale=lora_scale,
+            device=DEVICE_STR,
+        )
+        
+        grid_image = make_image_grid(images, rows=1)
+        
+        grid_tensor = pils_to_torch_imgs([grid_image], device=DEVICE_STR)
+        
+        print(f"Generated multiview images: {grid_tensor.shape}")
+        return (grid_tensor,)
+            

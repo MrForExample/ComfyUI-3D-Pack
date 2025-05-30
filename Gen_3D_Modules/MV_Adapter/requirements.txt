@@ -1,0 +1,28 @@
+controlnet_aux
+diffusers
+transformers
+peft
+numpy
+huggingface_hub
+accelerate
+opencv-python
+safetensors
+pillow
+omegaconf
+trimesh
+einops
+gradio
+timm
+kornia
+scikit-image
+sentencepiece
+git+https://github.com/NVlabs/nvdiffrast.git
+
+# new added for training
+pytorch-lightning
+
+# new added for texturing
+spandrel==0.4.1
+open3d
+pymeshlab
+cvcuda_cu12
