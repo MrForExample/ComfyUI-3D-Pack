@@ -46,6 +46,14 @@ Your ComfyUI Root Directory\python_embeded\python.exe install.py
 - For use cases please check out [Example Workflows](./_Example_Workflows/). [**Last update: 29/April/2025**]
   - **Note:** you need to put [Example Inputs Files & Folders](_Example_Workflows/_Example_Inputs_Files/) under ComfyUI Root Directory\ComfyUI\input folder before you can run the example workflow
 
+- **MV-Adapter**: [huanngzh/MV-Adapter](https://github.com/huanngzh/MV-Adapter)
+  - Two generation methods:
+    - I2MV: Single image + 3D mesh to multi-view images
+    - T2MV: Text prompt to multi-view images
+  - Model weights: https://huggingface.co/huanngzh/mv-adapter
+  - [I2MV Workflow](./_Example_Workflows/MV-Adapter-ig2mv.json)
+  - [T2MV Workflow](./_Example_Workflows/MV-Adapter-t2mv.json)
+
 - **Stable3DGen**: [Stable-X/Stable3DGen](https://github.com/Stable-X/Stable3DGen)
   - Two models pipeline:
     - Stable3DGen: Single image to 3D Mesh
