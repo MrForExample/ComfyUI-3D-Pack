@@ -109,6 +109,8 @@ from MV_Adapter.mvadapter_node_utils import (
         prepare_pipeline as mvadapter_prepare_pipeline,
         run_pipeline as mvadapter_run_pipeline, 
         create_bg_remover,
+        prepare_t2mv_pipeline as mvadapter_prepare_t2mv_pipeline,
+        run_t2mv_pipeline as mvadapter_run_t2mv_pipeline
     )
 from MV_Adapter.mvadapter.utils import make_image_grid
 
@@ -4912,5 +4914,130 @@ class MVAdapter_Image_To_MultiView:
         grid_tensor = pils_to_torch_imgs([grid_image], device=DEVICE_STR)
         
         print(f"Generated multiview images: {grid_tensor.shape}")
+        return (grid_tensor,)
+
+
+class Load_MVAdapter_T2MV_Pipeline:
+    """Loader pipeline for MV-Adapter Text-to-Multi-View"""
+    CATEGORY = "Comfy3D/Algorithm"
+    RETURN_TYPES = ("DIFFUSERS_PIPE",)
+    RETURN_NAMES = ("mvadapter_t2mv_pipe",)
+    FUNCTION = "load"
+
+    CKPT_MVADAPTER_PATH = os.path.join(CKPT_DIFFUSERS_PATH, "huanngzh", "MV-Adapter")
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "base_model": (["stabilityai/stable-diffusion-xl-base-1.0"], 
+                             {"default": "stabilityai/stable-diffusion-xl-base-1.0"}),
+                "vae_model": (["madebyollin/sdxl-vae-fp16-fix", "None"], 
+                             {"default": "madebyollin/sdxl-vae-fp16-fix"}),
+                "adapter_path": (["huanngzh/mv-adapter"], {"default": "huanngzh/mv-adapter"}),
+                "scheduler": (["default", "ddpm", "lcm"], {"default": "default"}),
+                "num_views": ("INT", {"default": 6, "min": 1, "max": 16}),
+                "use_fp16": ("BOOLEAN", {"default": True}),
+                "use_mmgp": ("BOOLEAN", {"default": False}),
+            },
+            "optional": {
+                "unet_model": ("STRING", {"default": ""}),
+                "lora_model": ("STRING", {"default": ""}),
+            }
+        }
+
+    @classmethod
+    def load(cls, base_model, vae_model, adapter_path, scheduler, num_views, 
+             use_fp16, use_mmgp, unet_model="", lora_model=""):
+        
+        dtype = torch.float16 if use_fp16 else torch.float32
+        vae_model = None if vae_model == "None" else vae_model
+        unet_model = None if not unet_model else unet_model
+        lora_model = None if not lora_model else lora_model
+        
+        pipe = mvadapter_prepare_t2mv_pipeline(
+            base_model=base_model,
+            vae_model=vae_model,
+            unet_model=unet_model,
+            lora_model=lora_model,
+            adapter_path=adapter_path,
+            scheduler=scheduler,
+            num_views=num_views,
+            device=DEVICE_STR,
+            dtype=dtype,
+            use_mmgp=use_mmgp,
+            adapter_local_path=cls.CKPT_MVADAPTER_PATH
+        )
+        
+        print("MV-Adapter T2MV pipeline loaded successfully")
+        return (pipe,)
+
+class MVAdapter_Text_To_MultiView:
+    """Generate multi-view images from text prompt"""
+    CATEGORY = "Comfy3D/Algorithm"
+    RETURN_TYPES = ("IMAGE",)
+    RETURN_NAMES = ("multiview_images",)
+    FUNCTION = "run"
+
+    @classmethod  
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "mvadapter_t2mv_pipe": ("DIFFUSERS_PIPE",),
+                "prompt": ("STRING", {"default": "a high quality 3D model", "multiline": True}),
+                "negative_prompt": ("STRING", {"default": "watermark, ugly, deformed, noisy, blurry, low contrast", "multiline": True}),
+                "num_views": ("INT", {"default": 6, "min": 1, "max": 16}),
+                "num_inference_steps": ("INT", {"default": 50, "min": 1, "max": 200}),
+                "guidance_scale": ("FLOAT", {"default": 7.0, "min": 0.0, "max": 20.0, "step": 0.1}),
+                "height": ("INT", {"default": 768, "min": 256, "max": 2048, "step": 8}),
+                "width": ("INT", {"default": 768, "min": 256, "max": 2048, "step": 8}),
+                "seed": ("INT", {"default": -1, "min": -1, "max": 0xffffffffffffffff}),
+            },
+            "optional": {
+                "lora_scale": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 2.0, "step": 0.1}),
+                "azimuth_angles": ("STRING", {"default": "0,45,90,180,270,315"}),
+            }
+        }
+
+    def run(self, mvadapter_t2mv_pipe, prompt, negative_prompt, num_views,
+            num_inference_steps, guidance_scale, height, width, seed, 
+            lora_scale=1.0, azimuth_angles="0,45,90,180,270,315"):
+        
+        # Parse azimuth angles
+        try:
+            azimuth_deg = [int(x.strip()) for x in azimuth_angles.split(",")]
+            # Ensure we have enough angles for the number of views
+            if len(azimuth_deg) < num_views:
+                # Repeat the pattern if we don't have enough angles
+                while len(azimuth_deg) < num_views:
+                    azimuth_deg.extend(azimuth_deg[:min(len(azimuth_deg), num_views - len(azimuth_deg))])
+            azimuth_deg = azimuth_deg[:num_views]  # Take only the first num_views
+        except:
+            # Fallback to default angles
+            azimuth_deg = [0, 45, 90, 180, 270, 315][:num_views]
+        
+        # Execute generation
+        images = mvadapter_run_t2mv_pipeline(
+            pipe=mvadapter_t2mv_pipe,
+            num_views=num_views,
+            text=prompt,
+            height=height,
+            width=width,
+            num_inference_steps=num_inference_steps,
+            guidance_scale=guidance_scale,
+            seed=seed,
+            negative_prompt=negative_prompt,
+            lora_scale=lora_scale,
+            device=DEVICE_STR,
+            azimuth_deg=azimuth_deg,
+        )
+        
+        # Create image grid  
+        grid_image = make_image_grid(images, rows=1)
+        
+        # Convert PIL image to torch tensor using shared utils
+        grid_tensor = pils_to_torch_imgs([grid_image], device=DEVICE_STR)
+        
+        print(f"Generated T2MV multiview images: {grid_tensor.shape}")
         return (grid_tensor,)
             

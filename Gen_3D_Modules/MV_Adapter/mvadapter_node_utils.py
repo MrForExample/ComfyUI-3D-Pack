@@ -14,6 +14,7 @@ from diffusers import AutoencoderKL, DDPMScheduler, LCMScheduler, UNet2DConditio
 from huggingface_hub import snapshot_download
 
 from .mvadapter.pipelines.pipeline_mvadapter_i2mv_sdxl import MVAdapterI2MVSDXLPipeline
+from .mvadapter.pipelines.pipeline_mvadapter_t2mv_sdxl import MVAdapterT2MVSDXLPipeline
 from .mvadapter.models.attention_processor import DecoupledMVRowColSelfAttnProcessor2_0
 from .mvadapter.schedulers.scheduling_shift_snr import ShiftSNRScheduler
 from .mvadapter.utils.mesh_utils import (
@@ -23,6 +24,7 @@ from .mvadapter.utils.mesh_utils import (
     render,
 )
 from .mvadapter.utils import make_image_grid, tensor_to_image
+from .mvadapter.utils.geometry import get_plucker_embeds_from_cameras_ortho
 
 try:
     from mmgp import offload, profile_type
@@ -299,4 +301,156 @@ def pil_to_torch_tensor(image: Image.Image) -> torch.Tensor:
 def pils_to_torch_tensor(images: List[Image.Image]) -> torch.Tensor:
     """Конвертация списка PIL изображений в torch tensor"""
     tensors = [pil_to_torch_tensor(img).squeeze(0) for img in images]
-    return torch.stack(tensors, dim=0) 
+    return torch.stack(tensors, dim=0)
+
+
+def prepare_t2mv_pipeline(
+    base_model: str,
+    vae_model: Optional[str] = None,
+    unet_model: Optional[str] = None,
+    lora_model: Optional[str] = None,
+    adapter_path: str = "huanngzh/mv-adapter",
+    scheduler: str = "default",
+    num_views: int = 6,
+    device: str = "cuda",
+    dtype: torch.dtype = torch.float16,
+    use_mmgp: bool = False,
+    adapter_local_path: Optional[str] = None,
+):
+    """
+    Prepare MV-Adapter T2MV pipeline
+    
+    Args:
+        base_model: Base Stable Diffusion XL model
+        vae_model: Custom VAE model (optional)
+        unet_model: Custom UNet model (optional)
+        lora_model: LoRA model (optional)
+        adapter_path: Path to adapter weights
+        scheduler: Scheduler type ("default", "ddpm", "lcm")
+        num_views: Number of views to generate
+        device: Device for computation
+        dtype: Data type
+        use_mmgp: Use mmgp for memory optimization
+        adapter_local_path: Local path for adapter download
+    """
+    # Load vae and unet if provided
+    pipe_kwargs = {}
+    if vae_model is not None:
+        pipe_kwargs["vae"] = AutoencoderKL.from_pretrained(vae_model)
+    if unet_model is not None:
+        pipe_kwargs["unet"] = UNet2DConditionModel.from_pretrained(unet_model)
+
+    # Prepare pipeline
+    pipe = MVAdapterT2MVSDXLPipeline.from_pretrained(base_model, **pipe_kwargs)
+
+    # Load scheduler if provided
+    if scheduler != "default":
+        scheduler_class = None
+        if scheduler == "ddpm":
+            scheduler_class = DDPMScheduler
+        elif scheduler == "lcm":
+            scheduler_class = LCMScheduler
+
+        pipe.scheduler = ShiftSNRScheduler.from_scheduler(
+            pipe.scheduler,
+            shift_mode="interpolated",
+            shift_scale=8.0,
+            scheduler_class=scheduler_class,
+        )
+    
+    pipe.init_custom_adapter(num_views=num_views)
+    
+    # Load adapter weights
+    weight_name = "mvadapter_t2mv_sdxl.safetensors"
+    pipe.load_custom_adapter(adapter_path, weight_name=weight_name, local_cache_dir=adapter_local_path)
+
+    pipe.to(device=device, dtype=dtype)
+    pipe.cond_encoder.to(device=device, dtype=dtype)
+
+    # load lora if provided
+    if lora_model is not None:
+        model_, name_ = lora_model.rsplit("/", 1)
+        pipe.load_lora_weights(model_, weight_name=name_)
+
+    # Apply mmgp optimization if available and requested
+    if use_mmgp and MMGP_AVAILABLE:
+        import gc
+        torch.cuda.empty_cache()
+        gc.collect()
+        
+        all_models = {
+            "vae": pipe.vae,
+            "text_encoder": pipe.text_encoder,
+            "text_encoder_2": pipe.text_encoder_2,
+            "unet": pipe.unet,
+            "cond_encoder": pipe.cond_encoder,  
+        }
+        
+        if hasattr(pipe, 'image_encoder') and pipe.image_encoder is not None:
+            all_models["image_encoder"] = pipe.image_encoder
+        
+        offload.profile(all_models, profile_type.HighRAM_LowVRAM)
+        print("mmgp profiling applied successfully.")
+    
+    # Enable VAE slicing for memory efficiency
+    pipe.enable_vae_slicing()
+
+    return pipe
+
+
+def run_t2mv_pipeline(
+    pipe,
+    num_views: int,
+    text: str,
+    height: int,
+    width: int,
+    num_inference_steps: int,
+    guidance_scale: float,
+    seed: int,
+    negative_prompt: str = "watermark, ugly, deformed, noisy, blurry, low contrast",
+    lora_scale: float = 1.0,
+    device: str = "cuda",
+    azimuth_deg: Optional[List[int]] = None,
+):
+    """
+    Execute text-to-multiview generation
+    """
+    # Prepare cameras
+    if azimuth_deg is None:
+        azimuth_deg = [0, 45, 90, 180, 270, 315][:num_views]
+    
+    cameras = get_orthogonal_camera(
+        elevation_deg=[0] * num_views,
+        distance=[1.8] * num_views,
+        left=-0.55,
+        right=0.55,
+        bottom=-0.55,
+        top=0.55,
+        azimuth_deg=[x - 90 for x in azimuth_deg],
+        device=device,
+    )
+
+    plucker_embeds = get_plucker_embeds_from_cameras_ortho(
+        cameras.c2w, [1.1] * num_views, width
+    )
+    control_images = ((plucker_embeds + 1.0) / 2.0).clamp(0, 1)
+
+    pipe_kwargs = {}
+    if seed != -1 and isinstance(seed, int):
+        pipe_kwargs["generator"] = torch.Generator(device=device).manual_seed(seed)
+
+    images = pipe(
+        text,
+        height=height,
+        width=width,
+        num_inference_steps=num_inference_steps,
+        guidance_scale=guidance_scale,
+        num_images_per_prompt=num_views,
+        control_image=control_images,
+        control_conditioning_scale=1.0,
+        negative_prompt=negative_prompt,
+        cross_attention_kwargs={"scale": lora_scale},
+        **pipe_kwargs,
+    ).images
+
+    return images 
