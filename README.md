@@ -53,6 +53,9 @@ Your ComfyUI Root Directory\python_embeded\python.exe install.py
   - Model weights: https://huggingface.co/huanngzh/mv-adapter
   - [I2MV Workflow](./_Example_Workflows/MV-Adapter-ig2mv.json)
   - [T2MV Workflow](./_Example_Workflows/MV-Adapter-t2mv.json)
+ 
+   <video controls autoplay loop src="https://github.com/user-attachments/assets/d35b1583-156e-45ff-ba8e-e723a83608ee"></video>
+   <video controls autoplay loop src="https://github.com/user-attachments/assets/17e9dcf6-6e53-480c-8ba2-65696a00425b"></video>
 
 - **Stable3DGen**: [Stable-X/Stable3DGen](https://github.com/Stable-X/Stable3DGen)
   - Two models pipeline:
