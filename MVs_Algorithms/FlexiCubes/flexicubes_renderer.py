@@ -43,7 +43,7 @@ class FlexiCubesRenderer:
         '''
         v_pos_clip = util.xfm_points(mesh.vertices.unsqueeze(0), mvp)  # Rotate it to camera coordinates
         rast, db = dr.rasterize(
-            dr.RasterizeGLContext(), v_pos_clip, mesh.faces.int(), iter_res)
+            dr.RasterizeCudaContext(), v_pos_clip, mesh.faces.int(), iter_res)
 
         alpha_index = rast[..., -1:] > 0
         inv_alpha_index = rast[..., -1:] <= 0
