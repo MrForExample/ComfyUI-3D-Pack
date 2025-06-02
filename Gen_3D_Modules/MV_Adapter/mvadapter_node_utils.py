@@ -130,30 +130,30 @@ def prepare_pipeline(
     return pipe
 
 
-def create_bg_remover(device: str = "cuda"):
-    """Create background removal function"""
-    birefnet = AutoModelForImageSegmentation.from_pretrained(
-        "ZhengPeng7/BiRefNet", trust_remote_code=True
-    )
-    birefnet.to(device)
-    transform_image = transforms.Compose([
-        transforms.Resize((1024, 1024)),
-        transforms.ToTensor(),
-        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
-    ])
+# def create_bg_remover(device: str = "cuda"):
+#     """Create background removal function"""
+#     birefnet = AutoModelForImageSegmentation.from_pretrained(
+#         "ZhengPeng7/BiRefNet", trust_remote_code=True
+#     )
+#     birefnet.to(device)
+#     transform_image = transforms.Compose([
+#         transforms.Resize((1024, 1024)),
+#         transforms.ToTensor(),
+#         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+#     ])
     
-    def remove_bg(image):
-        image_size = image.size
-        input_images = transform_image(image).unsqueeze(0).to(device)
-        with torch.no_grad():
-            preds = birefnet(input_images)[-1].sigmoid().cpu()
-        pred = preds[0].squeeze()
-        pred_pil = transforms.ToPILImage()(pred)
-        mask = pred_pil.resize(image_size)
-        image.putalpha(mask)
-        return image
+#     def remove_bg(image):
+#         image_size = image.size
+#         input_images = transform_image(image).unsqueeze(0).to(device)
+#         with torch.no_grad():
+#             preds = birefnet(input_images)[-1].sigmoid().cpu()
+#         pred = preds[0].squeeze()
+#         pred_pil = transforms.ToPILImage()(pred)
+#         mask = pred_pil.resize(image_size)
+#         image.putalpha(mask)
+#         return image
     
-    return remove_bg
+#     return remove_bg
 
 
 def preprocess_image(image: Image.Image, height: int, width: int) -> Image.Image:
@@ -251,10 +251,10 @@ def run_pipeline(
 
     # Prepare image
     reference_image = Image.open(image) if isinstance(image, str) else image
-    if remove_bg_fn is not None:
-        reference_image = remove_bg_fn(reference_image)
-        reference_image = preprocess_image(reference_image, height, width)
-    elif reference_image.mode == "RGBA":
+    # if remove_bg_fn is not None:
+    #     reference_image = remove_bg_fn(reference_image)
+    #     reference_image = preprocess_image(reference_image, height, width)
+    if reference_image.mode == "RGBA":
         reference_image = preprocess_image(reference_image, height, width)
 
     pipe_kwargs = {}

@@ -108,7 +108,6 @@ from Stable3DGen.pipeline_builders import StableGenPipelineBuilder
 from MV_Adapter.mvadapter_node_utils import (
         prepare_pipeline as mvadapter_prepare_pipeline,
         run_pipeline as mvadapter_run_pipeline, 
-        create_bg_remover,
         prepare_t2mv_pipeline as mvadapter_prepare_t2mv_pipeline,
         run_t2mv_pipeline as mvadapter_run_t2mv_pipeline
     )
@@ -4886,10 +4885,6 @@ class MVAdapter_Image_To_MultiView:
         if not mesh_path or not os.path.exists(mesh_path):
             raise ValueError(f"Mesh path does not exist: {mesh_path}")
         
-        remove_bg_fn = None
-        if remove_background:
-            remove_bg_fn = create_bg_remover(DEVICE_STR)
-        
         num_views = 6 
         images, pos_images, normal_images, processed_ref_image = mvadapter_run_pipeline(
             pipe=mvadapter_pipe,
@@ -4902,19 +4897,22 @@ class MVAdapter_Image_To_MultiView:
             num_inference_steps=num_inference_steps,
             guidance_scale=guidance_scale,
             seed=seed,
-            remove_bg_fn=remove_bg_fn,
             reference_conditioning_scale=reference_conditioning_scale,
             negative_prompt=negative_prompt,
             lora_scale=lora_scale,
             device=DEVICE_STR,
         )
         
-        grid_image = make_image_grid(images, rows=1)
+        # grid_image = make_image_grid(images, rows=1)
         
-        grid_tensor = pils_to_torch_imgs([grid_image], device=DEVICE_STR)
+        # grid_tensor = pils_to_torch_imgs([grid_image], device=DEVICE_STR)
         
-        print(f"Generated multiview images: {grid_tensor.shape}")
-        return (grid_tensor,)
+        # print(f"Generated multiview images: {grid_tensor.shape}")
+        # return (grid_tensor,)
+        # return images
+
+        return_images = pils_to_torch_imgs(images, device=DEVICE_STR)
+        return (return_images,)
 
 
 class Load_MVAdapter_T2MV_Pipeline:
@@ -5033,11 +5031,13 @@ class MVAdapter_Text_To_MultiView:
         )
         
         # Create image grid  
-        grid_image = make_image_grid(images, rows=1)
+        # grid_image = make_image_grid(images, rows=1)
         
-        # Convert PIL image to torch tensor using shared utils
-        grid_tensor = pils_to_torch_imgs([grid_image], device=DEVICE_STR)
+        # # Convert PIL image to torch tensor using shared utils
+        # grid_tensor = pils_to_torch_imgs([grid_image], device=DEVICE_STR)
         
-        print(f"Generated T2MV multiview images: {grid_tensor.shape}")
-        return (grid_tensor,)
+        # print(f"Generated T2MV multiview images: {grid_tensor.shape}")
+        # return (grid_tensor,)
+        return_images = pils_to_torch_imgs(images, device=DEVICE_STR)
+        return (return_images,)
             
