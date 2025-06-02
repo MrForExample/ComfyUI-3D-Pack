@@ -54,8 +54,8 @@ Your ComfyUI Root Directory\python_embeded\python.exe install.py
   - [I2MV Workflow](./_Example_Workflows/MV-Adapter-ig2mv.json)
   - [T2MV Workflow](./_Example_Workflows/MV-Adapter-t2mv.json)
  
-   <video controls autoplay loop src="https://github.com/user-attachments/assets/d35b1583-156e-45ff-ba8e-e723a83608ee"></video>
-   <video controls autoplay loop src="https://github.com/user-attachments/assets/17e9dcf6-6e53-480c-8ba2-65696a00425b"></video>
+   <video controls autoplay loop src="https://github.com/user-attachments/assets/34a91fde-4d67-4ddb-b26b-6e85cb9854ca"></video>
+   <video controls autoplay loop src="https://github.com/user-attachments/assets/0d67dae6-2167-4bf7-83f6-d7c6c3b8e2e8"></video>
 
 - **Stable3DGen**: [Stable-X/Stable3DGen](https://github.com/Stable-X/Stable3DGen)
   - Two models pipeline:
