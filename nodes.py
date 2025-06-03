@@ -30,6 +30,7 @@ from diffusers import (
     KDPM2AncestralDiscreteScheduler,
     KDPM2DiscreteScheduler,
 )
+
 from huggingface_hub import snapshot_download
 
 from plyfile import PlyData
@@ -102,6 +103,8 @@ from TRELLIS.trellis.pipelines import TrellisImageTo3DPipeline
 from TRELLIS.trellis.utils import postprocessing_utils
 from TripoSG.pipelines.pipeline_triposg import TripoSGPipeline
 from TripoSG.pipelines.pipeline_triposg_scribble import TripoSGScribblePipeline
+from Stable3DGen.trellis.backend_config import get_available_backends, get_available_sparse_backends
+from Stable3DGen.pipeline_builders import StableGenPipelineBuilder
 
 os.environ['SPCONV_ALGO'] = 'native'
 
@@ -180,6 +183,7 @@ DEVICE_STR = "cuda" if torch.cuda.is_available() else "cpu"
 DEVICE = torch.device(DEVICE_STR)
 
 HF_DOWNLOAD_IGNORE = ["*.yaml", "*.json", "*.py", ".png", ".jpg", ".gif"]
+
 
 class Preview_3DGS:
 
@@ -4531,3 +4535,249 @@ class Hunyuan3D_V2_ShapeGen_MV:
             mesh = fn(mesh)
 
         return (Mesh.load_trimesh(given_mesh=mesh),)
+
+#--------------------------------
+class Load_StableGen_Trellis_Pipeline:
+    CATEGORY      = "Comfy3D/Algorithm"
+    RETURN_TYPES  = ("DIFFUSERS_PIPE",)
+    RETURN_NAMES  = ("trellis_pipe",)
+    FUNCTION      = "load"
+
+    _REPO_ID_BASE = "Stable-X"
+    CKPT_STABLEGEN_PATH = os.path.join(CKPT_DIFFUSERS_PATH, "Stable3DGen")
+
+    _MODES = {
+        "trellis-normal-v0-1": ("trellis-normal-v0-1", 12, 12),  # (repo, ss_steps, slat_steps)
+    }
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        available_attn, available_sparse = StableGenPipelineBuilder.get_available_backends()
+
+        return {
+            "required": {
+                "model_name": (list(cls._MODES.keys()),),
+                "dinov2_model": (["dinov2_vitl14_reg"],),
+                "use_fp16": ("BOOLEAN", {"default": True}),
+                "attn_backend": (available_attn,),
+                "sparse_backend": (available_sparse,),
+                "spconv_algo": (["implicit_gemm", "native", "auto"],),
+                "smooth_k": ("BOOLEAN", {"default": True}),
+            }
+        }
+
+    @classmethod
+    def _build_pipe(cls, repo: str, dinov2_model: str, use_fp16: bool, attn_backend: str, 
+                   sparse_backend: str, spconv_algo: str, smooth_k: bool):
+        
+        return StableGenPipelineBuilder.build_trellis_pipeline(
+            repo=repo,
+            dinov2_model=dinov2_model,
+            use_fp16=use_fp16,
+            attn_backend=attn_backend,
+            sparse_backend=sparse_backend,
+            spconv_algo=spconv_algo,
+            smooth_k=smooth_k,
+            ckpt_path=cls.CKPT_STABLEGEN_PATH
+        )
+
+    def load(self, model_name, dinov2_model, use_fp16, attn_backend, sparse_backend, spconv_algo, smooth_k):
+        repo, ss_steps, slat_steps = self._MODES[model_name]
+        
+        pipe = self.__class__._build_pipe(repo, dinov2_model, use_fp16, attn_backend, sparse_backend, spconv_algo, smooth_k)
+        # Store default steps
+        pipe.default_ss_steps = ss_steps
+        pipe.default_slat_steps = slat_steps
+        
+        return (pipe,)
+
+
+class Load_StableGen_StableX_Pipeline:
+    CATEGORY     = "Comfy3D/Algorithm"
+    RETURN_TYPES = ("DIFFUSERS_PIPE",)
+    RETURN_NAMES = ("stablex_pipe",)
+    FUNCTION     = "load"
+
+    _REPO_ID_BASE = "Stable-X"
+    CKPT_STABLEGEN_PATH = os.path.join(CKPT_DIFFUSERS_PATH, "Stable3DGen")
+
+    _MODES = {
+        "yoso-normal-v1-8-1": "yoso-normal-v1-8-1",
+    }
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "model_name": (list(cls._MODES.keys()),),
+                "use_fp16": ("BOOLEAN", {"default": True}),
+            }
+        }
+
+    @classmethod
+    def _build_pipe(cls, repo: str, use_fp16: bool):
+        return StableGenPipelineBuilder.build_stablex_pipeline(
+            repo=repo,
+            use_fp16=use_fp16,
+            ckpt_path=cls.CKPT_STABLEGEN_PATH
+        )
+
+    def load(self, model_name, use_fp16):
+        repo = self._MODES[model_name]
+        pipe = self.__class__._build_pipe(repo, use_fp16)
+        return (pipe,)
+
+
+class StableGen_Trellis_Image_To_3D:
+    """
+    3D generation pipeline using Trellis model.
+    """
+
+    CATEGORY = "Comfy3D/Algorithm"
+    RETURN_TYPES = ("MESH",)
+    RETURN_NAMES = ("mesh",)
+    FUNCTION = "run"
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "trellis_pipe": ("DIFFUSERS_PIPE",),
+                "images": ("IMAGE", {"list": True}),
+                "mode": (["single", "multi"], {"default": "single"}),
+                "seed": ("INT", {"default": 1234, "min": 0, "max": 0xffffffffffffffff}),
+                "ss_guidance_strength": ("FLOAT", {"default": 7.5, "min": 0.0, "step": 0.1}),
+                "ss_sampling_steps": ("INT", {"default": 12, "min": 1}),
+                "slat_guidance_strength": ("FLOAT", {"default": 3.0, "min": 0.0, "step": 0.1}),
+                "slat_sampling_steps": ("INT", {"default": 12, "min": 1}),
+                "mesh_simplify": ("FLOAT", {"default": 0.95, "min": 0.9, "max": 1.0, "step": 0.01}),
+            }
+        }
+
+    @torch.no_grad()
+    def run(
+        self,
+        trellis_pipe,
+        images,
+        mode="single",
+        seed=1234,
+        ss_guidance_strength=7.5,
+        ss_sampling_steps=12,
+        slat_guidance_strength=3.0,
+        slat_sampling_steps=12,
+        mesh_simplify=0.95
+    ):
+        if isinstance(images, torch.Tensor):
+            images = torch_imgs_to_pils(images)
+        
+        if not isinstance(images, list) or len(images) == 0:
+            raise Exception(f"[StableGen_Trellis_Image_To_3D] 'images' must be a non-empty list of PIL images. Got type: {type(images)}, len: {len(images) if hasattr(images, '__len__') else 'no len'}")
+
+        with trellis_pipe.inference_context():
+            if mode == "single":
+                if len(images) > 1:
+                    print(f"Warning: Single mode selected but {len(images)} images provided. Using first image.")
+                image_input = images[0]
+                
+                pipeline_params = StableGenPipelineBuilder.create_trellis_pipeline_params(
+                    seed=seed,
+                    ss_sampling_steps=ss_sampling_steps,
+                    ss_guidance_strength=ss_guidance_strength,
+                    slat_sampling_steps=slat_sampling_steps,
+                    slat_guidance_strength=slat_guidance_strength,
+                    formats=["mesh"]
+                )
+                
+                outputs = trellis_pipe.run(
+                    image_input,
+                    **pipeline_params
+                )
+            else:  
+                pipeline_params = StableGenPipelineBuilder.create_trellis_pipeline_params(
+                    seed=seed,
+                    ss_sampling_steps=ss_sampling_steps,
+                    ss_guidance_strength=ss_guidance_strength,
+                    slat_sampling_steps=slat_sampling_steps,
+                    slat_guidance_strength=slat_guidance_strength,
+                    formats=["mesh"]
+                )
+                
+                outputs = trellis_pipe.run_multi_image(
+                    images,
+                    **pipeline_params
+                )
+            
+        try:
+            mesh_output = outputs['mesh'][0]
+            
+            vertices = mesh_output.vertices.cpu().numpy()
+            faces = mesh_output.faces.cpu().numpy()
+            
+            transformation_matrix = np.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]])
+            vertices = vertices @ transformation_matrix
+            
+            tri_mesh = trimesh.Trimesh(vertices, faces)
+            
+            if mesh_simplify < 1.0:
+                try:
+                    target_faces = int(len(faces) * mesh_simplify)
+                    tri_mesh = tri_mesh.simplify_quadric_decimation(target_faces)
+                except Exception as e:
+                    print(f"Warning: Mesh simplification failed: {e}. Using original mesh.")
+            
+            mesh = Mesh.load_trimesh(given_mesh=tri_mesh)
+            mesh.auto_normal()
+            
+            return (mesh,)
+            
+        except Exception as e:
+            raise Exception(f"[StableGen_Trellis_Image_To_3D] 3D generation failed: {str(e)}")
+
+
+class StableGen_StableX_Process_Image:
+    """
+    Image processing pipeline using StableX model.
+    """
+
+    CATEGORY = "Comfy3D/Algorithm"
+    RETURN_TYPES = ("IMAGE",)
+    RETURN_NAMES = ("processed_image",)
+    FUNCTION = "run"
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "stablex_pipe": ("DIFFUSERS_PIPE",),
+                "image": ("IMAGE",),
+                "processing_resolution": ("INT", {"default": 2048, "min": 64, "max": 4096, "step": 16}),
+                "controlnet_strength": ("FLOAT", {"default": 1.0, "min": 0.01, "max": 10.0, "step": 0.01}),
+                "seed": ("INT", {"default": 42, "min": 0, "max": 0xffffffffffffffff}),
+            }
+        }
+
+    @torch.no_grad()
+    def run(self, stablex_pipe, image, processing_resolution=2048, controlnet_strength=1.0, seed=42):
+        if image.dim() == 4:
+            image = image.squeeze(0)
+        
+        image_tensor = image.permute(2, 0, 1).unsqueeze(0).to(DEVICE).to(torch.float16)
+
+        generator = torch.Generator(device=DEVICE).manual_seed(seed)
+
+        try:
+            pipe_out = stablex_pipe(
+                image_tensor,
+                controlnet_conditioning_scale=controlnet_strength,
+                processing_resolution=processing_resolution,
+                generator=generator,
+                output_type="pt",
+            )
+            
+            processed = (pipe_out.prediction.clip(-1, 1) + 1) / 2
+            out_tensor = processed.permute(0, 2, 3, 1).cpu().float()
+            
+            return (out_tensor,)
+            
+        except Exception as e:
+            raise Exception(f"[StableGen_StableX_Process_Image] Image processing failed: {str(e)}")

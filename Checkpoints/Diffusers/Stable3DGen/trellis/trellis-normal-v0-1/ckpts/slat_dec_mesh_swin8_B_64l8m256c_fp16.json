@@ -1,0 +1,17 @@
+{
+    "name": "SLatMeshDecoder",
+    "args": {
+        "resolution": 64,
+        "model_channels": 768,
+        "latent_channels": 8,
+        "num_blocks": 12,
+        "num_heads": 12,
+        "mlp_ratio": 4,
+        "attn_mode": "swin",
+        "window_size": 8,
+        "use_fp16": true,
+        "representation_config": {
+            "use_color": true
+        }
+    }
+}

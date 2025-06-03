@@ -1,0 +1,385 @@
+{
+  "id": "e7d35c6d-c1bf-4f60-9b88-7dc8e70a7b70",
+  "revision": 0,
+  "last_node_id": 14,
+  "last_link_id": 13,
+  "nodes": [
+    {
+      "id": 2,
+      "type": "[Comfy3D] Load StableGen StableX Pipeline",
+      "pos": [
+        2504.408203125,
+        -819.4630737304688
+      ],
+      "size": [
+        307.7193298339844,
+        82
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "stablex_pipe",
+          "type": "DIFFUSERS_PIPE",
+          "links": [
+            1
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Load StableGen StableX Pipeline"
+      },
+      "widgets_values": [
+        "yoso-normal-v1-8-1",
+        true
+      ]
+    },
+    {
+      "id": 9,
+      "type": "PreviewImage",
+      "pos": [
+        2508.2578125,
+        -465.621337890625
+      ],
+      "size": [
+        308.8748779296875,
+        287.5449523925781
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 8
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 4,
+      "type": "[Comfy3D] StableGen StableX Process Image",
+      "pos": [
+        2500.21044921875,
+        -672.3021850585938
+      ],
+      "size": [
+        316.2437438964844,
+        150
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "stablex_pipe",
+          "type": "DIFFUSERS_PIPE",
+          "link": 1
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 4
+        }
+      ],
+      "outputs": [
+        {
+          "name": "processed_image",
+          "type": "IMAGE",
+          "links": [
+            8,
+            11
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] StableGen StableX Process Image"
+      },
+      "widgets_values": [
+        2048,
+        1,
+        124803681813284,
+        "randomize"
+      ]
+    },
+    {
+      "id": 10,
+      "type": "[Comfy3D] StableGen Trellis Image To 3D",
+      "pos": [
+        2856.419189453125,
+        -632.1043701171875
+      ],
+      "size": [
+        290.0210876464844,
+        246
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "trellis_pipe",
+          "type": "DIFFUSERS_PIPE",
+          "link": 13
+        },
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 11
+        }
+      ],
+      "outputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "links": [
+            12
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] StableGen Trellis Image To 3D"
+      },
+      "widgets_values": [
+        "single",
+        1101073855966261,
+        "randomize",
+        7.5,
+        12,
+        3,
+        12,
+        0.95
+      ]
+    },
+    {
+      "id": 7,
+      "type": "[Comfy3D] Preview 3DMesh",
+      "pos": [
+        3214.147705078125,
+        -658.788330078125
+      ],
+      "size": [
+        600,
+        500
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh_file_path",
+          "type": "STRING",
+          "widget": {
+            "name": "mesh_file_path"
+          },
+          "link": 7
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Preview 3DMesh"
+      },
+      "widgets_values": [
+        "",
+        null
+      ]
+    },
+    {
+      "id": 8,
+      "type": "[Comfy3D] Save 3D Mesh",
+      "pos": [
+        3228.152587890625,
+        -800.8438110351562
+      ],
+      "size": [
+        270,
+        58
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 12
+        }
+      ],
+      "outputs": [
+        {
+          "name": "save_path",
+          "type": "STRING",
+          "links": [
+            7
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Save 3D Mesh"
+      },
+      "widgets_values": [
+        "StableGenTest/mesh.glb"
+      ]
+    },
+    {
+      "id": 14,
+      "type": "[Comfy3D] Load StableGen Trellis Pipeline",
+      "pos": [
+        2850.626220703125,
+        -921.305908203125
+      ],
+      "size": [
+        295.4966735839844,
+        202
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "trellis_pipe",
+          "type": "DIFFUSERS_PIPE",
+          "links": [
+            13
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Load StableGen Trellis Pipeline"
+      },
+      "widgets_values": [
+        "trellis-normal-v0-1",
+        "dinov2_vitl14_reg",
+        true,
+        "xformers",
+        "spconv",
+        "implicit_gemm",
+        true
+      ]
+    },
+    {
+      "id": 5,
+      "type": "LoadImage",
+      "pos": [
+        2164.98193359375,
+        -667.2369384765625
+      ],
+      "size": [
+        274.080078125,
+        314
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            4
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "squirrel_girl_1.png",
+        "image"
+      ]
+    }
+  ],
+  "links": [
+    [
+      1,
+      2,
+      0,
+      4,
+      0,
+      "DIFFUSERS_PIPE"
+    ],
+    [
+      4,
+      5,
+      0,
+      4,
+      1,
+      "IMAGE"
+    ],
+    [
+      7,
+      8,
+      0,
+      7,
+      0,
+      "STRING"
+    ],
+    [
+      8,
+      4,
+      0,
+      9,
+      0,
+      "IMAGE"
+    ],
+    [
+      11,
+      4,
+      0,
+      10,
+      1,
+      "IMAGE"
+    ],
+    [
+      12,
+      10,
+      0,
+      8,
+      0,
+      "MESH"
+    ],
+    [
+      13,
+      14,
+      0,
+      10,
+      0,
+      "DIFFUSERS_PIPE"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 1.05,
+      "offset": [
+        -1983.6539415508826,
+        996.2888539420522
+      ]
+    },
+    "frontendVersion": "1.20.4",
+    "node_versions": {
+      "ComfyUI-3D-Pack": "a1ce74e056c61e3e3eb3d927232b5f93bd3980e3",
+      "comfy-core": "0.3.35"
+    },
+    "VHS_latentpreview": false,
+    "VHS_latentpreviewrate": 0,
+    "VHS_MetadataImage": true,
+    "VHS_KeepIntermediate": true
+  },
+  "version": 0.4
+}
