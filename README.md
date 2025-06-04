@@ -48,14 +48,15 @@ Your ComfyUI Root Directory\python_embeded\python.exe install.py
 
 - **MV-Adapter**: [huanngzh/MV-Adapter](https://github.com/huanngzh/MV-Adapter)
   - Two generation methods:
-    - I2MV: Single image + 3D mesh to multi-view images
+    - IG2MV: Single image + 3D mesh to multi-view images
     - T2MV: Text prompt to multi-view images
+    - Texturing: Grid image + 3D mesh to textured mesh
   - Model weights: https://huggingface.co/huanngzh/mv-adapter
-  - [I2MV Workflow](./_Example_Workflows/MV-Adapter-ig2mv.json)
-  - [T2MV Workflow](./_Example_Workflows/MV-Adapter-t2mv.json)
- 
-   <video controls autoplay loop src="https://github.com/user-attachments/assets/34a91fde-4d67-4ddb-b26b-6e85cb9854ca"></video>
+  - Workflows: [IG2MV](./_Example_Workflows/MV-Adapter/MV-Adapter-ig2mv.json), [T2MV](./_Example_Workflows/MV-Adapter/MV-Adapter-t2mv.json), [Texturing](./_Example_Workflows/MV-Adapter/MV-Adapter-Texturing.json)
+    
+   <video controls autoplay loop src="https://github.com/user-attachments/assets/c03fe162-c2fd-4499-aa8d-43e5863ceb3e"></video>
    <video controls autoplay loop src="https://github.com/user-attachments/assets/0d67dae6-2167-4bf7-83f6-d7c6c3b8e2e8"></video>
+   <video controls autoplay loop src="https://github.com/user-attachments/assets/943d8d31-30e0-4b9f-968d-a68b5899d83d"></video>
 
 - **Stable3DGen**: [Stable-X/Stable3DGen](https://github.com/Stable-X/Stable3DGen)
   - Two models pipeline:
