@@ -281,12 +281,10 @@ def run_pipeline(
 
 
 def create_image_grid(images: List[Image.Image], rows: int = 1) -> Image.Image:
-    """Создание сетки изображений"""
     return make_image_grid(images, rows=rows)
 
 
 def pil_to_torch_tensor(image: Image.Image) -> torch.Tensor:
-    """Конвертация PIL изображения в torch tensor"""
     import numpy as np
     array = np.array(image)
     tensor = torch.from_numpy(array).float() / 255.0
@@ -299,7 +297,6 @@ def pil_to_torch_tensor(image: Image.Image) -> torch.Tensor:
 
 
 def pils_to_torch_tensor(images: List[Image.Image]) -> torch.Tensor:
-    """Конвертация списка PIL изображений в torch tensor"""
     tensors = [pil_to_torch_tensor(img).squeeze(0) for img in images]
     return torch.stack(tensors, dim=0)
 
@@ -454,3 +451,222 @@ def run_t2mv_pipeline(
     ).images
 
     return images 
+
+
+def prepare_texture_pipeline(
+    upscaler_ckpt_path: Optional[str] = None,
+    inpaint_ckpt_path: Optional[str] = None,
+    device: str = "cuda",
+    use_mmgp: bool = False,
+):
+    """
+    Prepare texture projection pipeline
+    
+    Args:
+        upscaler_ckpt_path: Path to upscaler checkpoint (optional)
+        inpaint_ckpt_path: Path to inpaint checkpoint (optional)
+        device: Device for computation
+        use_mmgp: Use mmgp for memory optimization
+    """
+    from .mvadapter.pipelines.pipeline_texture import TexturePipeline
+    
+    if upscaler_ckpt_path and not os.path.exists(upscaler_ckpt_path):
+        print(f"Warning: Upscaler checkpoint not found: {upscaler_ckpt_path}, using None")
+        upscaler_ckpt_path = None
+        
+    if inpaint_ckpt_path and not os.path.exists(inpaint_ckpt_path):
+        print(f"Warning: Inpaint checkpoint not found: {inpaint_ckpt_path}, using None")
+        inpaint_ckpt_path = None
+    
+    texture_pipe = TexturePipeline(
+        upscaler_ckpt_path=upscaler_ckpt_path,
+        inpaint_ckpt_path=inpaint_ckpt_path,
+        device=device
+    )
+    
+    # Apply mmgp optimization if available and requested
+    if use_mmgp and MMGP_AVAILABLE:
+        import gc
+        torch.cuda.empty_cache()
+        gc.collect()
+        
+        all_models = {}
+        
+        if hasattr(texture_pipe, 'upscaler') and texture_pipe.upscaler is not None:
+            all_models["upscaler"] = texture_pipe.upscaler
+            
+        if hasattr(texture_pipe, 'inpainter') and texture_pipe.inpainter is not None:
+            all_models["inpainter"] = texture_pipe.inpainter
+        
+        if all_models:
+            offload.profile(all_models, profile_type.HighRAM_LowVRAM)
+            print("mmgp profiling applied to texture pipeline successfully.")
+        else:
+            print("No models loaded for texture pipeline, skipping mmgp profiling.")
+    
+    return texture_pipe
+
+
+def run_texture_pipeline(
+    texture_pipe,
+    multiview_images: List[Image.Image],
+    mesh_path: str,
+    save_dir: str,
+    save_name: str = "textured_model",
+    uv_size: int = 4096,
+    view_upscale: bool = True,
+    inpaint_mode: str = "view",
+    uv_unwarp: bool = True,
+    preprocess_mesh: bool = False,
+    move_to_center: bool = False,
+    front_x: bool = True,
+    camera_azimuth_deg: List[float] = None,
+    camera_elevation_deg: List[float] = None,
+    camera_distance: float = 1.0,
+    camera_ortho_scale: float = 1.1,
+    debug_mode: bool = False,
+    apply_dilate: bool = True,
+):
+    """
+    Execute texture projection pipeline
+    
+    Args:
+        texture_pipe: Prepared texture pipeline
+        multiview_images: List of PIL images (6 views)
+        mesh_path: Path to 3D mesh file
+        save_dir: Directory to save results
+        save_name: Name for saved files
+        uv_size: UV texture resolution
+        view_upscale: Enable view upscaling
+        inpaint_mode: Inpainting mode ("none", "uv", "view")
+        uv_unwarp: Enable UV unwrapping
+        preprocess_mesh: Enable mesh preprocessing
+        move_to_center: Move mesh to center
+        front_x: Front face along X axis
+        camera_azimuth_deg: Camera azimuth angles
+        camera_elevation_deg: Camera elevation angles
+        camera_distance: Camera distance
+        camera_ortho_scale: Orthographic scale
+        debug_mode: Enable debug mode
+        apply_dilate: Apply dilate to remove texture seams
+    """
+    from .mvadapter.pipelines.pipeline_texture import ModProcessConfig
+    from .mvadapter.utils import make_image_grid
+    
+    if not mesh_path or not os.path.exists(mesh_path):
+        raise ValueError(f"Mesh file does not exist: {mesh_path}")
+    
+    os.makedirs(save_dir, exist_ok=True)
+    
+    if camera_azimuth_deg is None:
+        camera_azimuth_deg = [0, 90, 180, 270, 180, 180]
+    if camera_elevation_deg is None:
+        camera_elevation_deg = [0, 0, 0, 0, 89.99, -89.99]
+    
+    # Adjust azimuth angles (subtract 90 as in original code)
+    azimuth_deg_corrected = [x - 90 for x in camera_azimuth_deg]
+    
+    grid_image = make_image_grid(multiview_images, rows=1)
+    temp_grid_path = os.path.join(save_dir, f"{save_name}_temp_grid.png")
+    grid_image.save(temp_grid_path)
+    
+    try:
+        rgb_process_config = ModProcessConfig(
+            view_upscale=view_upscale,
+            inpaint_mode=inpaint_mode
+        )
+        
+        output = texture_pipe(
+            mesh_path=mesh_path,
+            save_dir=save_dir,
+            save_name=save_name,
+            move_to_center=move_to_center,
+            front_x=front_x,
+            uv_unwarp=uv_unwarp,
+            preprocess_mesh=preprocess_mesh,
+            uv_size=uv_size,
+            rgb_path=temp_grid_path,
+            rgb_process_config=rgb_process_config,
+            camera_elevation_deg=camera_elevation_deg,
+            camera_azimuth_deg=azimuth_deg_corrected,
+            camera_distance=camera_distance,
+            camera_ortho_scale=camera_ortho_scale,
+            debug_mode=debug_mode,
+            apply_dilate=apply_dilate,
+        )
+        
+        if os.path.exists(temp_grid_path):
+            os.remove(temp_grid_path)
+        
+        return output
+        
+    except Exception as e:
+        if os.path.exists(temp_grid_path):
+            os.remove(temp_grid_path)
+        raise e
+
+
+def download_texture_checkpoints(texture_ckpt_dir, upscaler_ckpt_path, inpaint_ckpt_path):
+    """Download texture checkpoint files if they don't exist"""
+    import subprocess
+    
+    os.makedirs(texture_ckpt_dir, exist_ok=True)
+    
+    checkpoints = [
+        {
+            "url": "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.1/RealESRGAN_x2plus.pth",
+            "path": upscaler_ckpt_path,
+            "name": "RealESRGAN upscaler"
+        },
+        {
+            "url": "https://github.com/Sanster/models/releases/download/add_big_lama/big-lama.pt", 
+            "path": inpaint_ckpt_path,
+            "name": "Big-LaMa inpainter"
+        }
+    ]
+    
+    for ckpt in checkpoints:
+        if not os.path.exists(ckpt["path"]):
+            print(f"Downloading {ckpt['name']} to {ckpt['path']}...")
+            
+            success = False
+            
+            # Try wget first
+            try:
+                subprocess.run([
+                    "wget", ckpt["url"], "-O", ckpt["path"]
+                ], check=True, capture_output=True, text=True)
+                print(f"Successfully downloaded {ckpt['name']} using wget")
+                success = True
+            except (subprocess.CalledProcessError, FileNotFoundError):
+                pass
+            
+            # Try curl if wget failed
+            if not success:
+                try:
+                    subprocess.run([
+                        "curl", "-L", ckpt["url"], "-o", ckpt["path"]
+                    ], check=True, capture_output=True, text=True)
+                    print(f"Successfully downloaded {ckpt['name']} using curl")
+                    success = True
+                except (subprocess.CalledProcessError, FileNotFoundError):
+                    pass
+            
+            # Try Python urllib as fallback
+            if not success:
+                try:
+                    import urllib.request
+                    urllib.request.urlretrieve(ckpt["url"], ckpt["path"])
+                    print(f"Successfully downloaded {ckpt['name']} using urllib")
+                    success = True
+                except Exception as e:
+                    print(f"Failed to download {ckpt['name']} using urllib: {e}")
+            
+            # If all methods failed
+            if not success:
+                print(f"Failed to download {ckpt['name']}. Please download manually:")
+                print(f"wget {ckpt['url']} -O {ckpt['path']}")
+                print(f"or")
+                print(f"curl -L {ckpt['url']} -o {ckpt['path']}")
+        else:
+            print(f"{ckpt['name']} already exists at {ckpt['path']}") 

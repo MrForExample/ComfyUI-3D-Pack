@@ -103,13 +103,14 @@ from TRELLIS.trellis.pipelines import TrellisImageTo3DPipeline
 from TRELLIS.trellis.utils import postprocessing_utils
 from TripoSG.pipelines.pipeline_triposg import TripoSGPipeline
 from TripoSG.pipelines.pipeline_triposg_scribble import TripoSGScribblePipeline
-from Stable3DGen.trellis.backend_config import get_available_backends, get_available_sparse_backends
 from Stable3DGen.pipeline_builders import StableGenPipelineBuilder
 from MV_Adapter.mvadapter_node_utils import (
         prepare_pipeline as mvadapter_prepare_pipeline,
         run_pipeline as mvadapter_run_pipeline, 
         prepare_t2mv_pipeline as mvadapter_prepare_t2mv_pipeline,
-        run_t2mv_pipeline as mvadapter_run_t2mv_pipeline
+        run_t2mv_pipeline as mvadapter_run_t2mv_pipeline,
+        prepare_texture_pipeline as mvadapter_prepare_texture_pipeline,
+        download_texture_checkpoints,
     )
 from MV_Adapter.mvadapter.utils import make_image_grid
 
@@ -4789,7 +4790,7 @@ class StableGen_StableX_Process_Image:
         except Exception as e:
             raise Exception(f"[StableGen_StableX_Process_Image] Image processing failed: {str(e)}")
 
-class Load_MVAdapter_Pipeline:
+class Load_MVAdapter_IG2MV_Pipeline:
     """Loader pipeline for MV-Adapter (Image to Multi-View)"""
     CATEGORY = "Comfy3D/Algorithm"
     RETURN_TYPES = ("DIFFUSERS_PIPE",)
@@ -5040,4 +5041,177 @@ class MVAdapter_Text_To_MultiView:
         # return (grid_tensor,)
         return_images = pils_to_torch_imgs(images, device=DEVICE_STR)
         return (return_images,)
+            
+class Load_MVAdapter_Texture_Pipeline:
+    """Load texture projection pipeline for MVAdapter"""
+    CATEGORY = "Comfy3D/Algorithm"
+    RETURN_TYPES = ("TEXTURE_PIPE",)
+    RETURN_NAMES = ("texture_pipeline",)
+    FUNCTION = "load"
+
+    TEXTURE_CKPT_DIR = os.path.join(CKPT_DIFFUSERS_PATH, "huanngzh/MV-Adapter")
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "upscaler_ckpt_name": ("STRING", {"default": "RealESRGAN_x2plus.pth"}),
+                "inpaint_ckpt_name": ("STRING", {"default": "big-lama.pt"}),
+                "use_mmgp": ("BOOLEAN", {"default": False}),
+                "auto_download": ("BOOLEAN", {"default": True}),
+            }
+        }
+
+    @classmethod
+    def load(cls, upscaler_ckpt_name, inpaint_ckpt_name, use_mmgp, auto_download):
+        
+        # Form full paths from model names
+        upscaler_ckpt_path = os.path.join(cls.TEXTURE_CKPT_DIR, upscaler_ckpt_name) if upscaler_ckpt_name.strip() else None
+        inpaint_ckpt_path = os.path.join(cls.TEXTURE_CKPT_DIR, inpaint_ckpt_name) if inpaint_ckpt_name.strip() else None
+        
+        # Auto-download checkpoints if enabled
+        if auto_download:
+            download_texture_checkpoints(cls.TEXTURE_CKPT_DIR, upscaler_ckpt_path, inpaint_ckpt_path)
+        
+        texture_pipe = mvadapter_prepare_texture_pipeline(
+            upscaler_ckpt_path=upscaler_ckpt_path,
+            inpaint_ckpt_path=inpaint_ckpt_path,
+            device=DEVICE_STR,
+            use_mmgp=use_mmgp,
+        )
+        
+        print("Texture pipeline loaded successfully")
+        return (texture_pipe,)
+    
+
+class MVAdapter_Texture_Projection:
+    """Project grid image onto 3D mesh using pre-loaded texture pipeline"""
+    CATEGORY = "Comfy3D/Algorithm"
+    RETURN_TYPES = ("STRING", "STRING")
+    RETURN_NAMES = ("shaded_model_path", "pbr_model_path") 
+    FUNCTION = "run"
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "texture_pipeline": ("TEXTURE_PIPE",),
+                "grid_image": ("IMAGE",),
+                "mesh_path": ("STRING", {"default": ""}),
+                "save_dir": ("STRING", {"default": "./output"}),
+                "save_name": ("STRING", {"default": "textured_model"}),
+                "uv_size": ("INT", {"default": 4096, "min": 512, "max": 8192, "step": 256}),
+                "view_upscale": ("BOOLEAN", {"default": True}),
+                "inpaint_mode": (["none", "uv", "view"], {"default": "view"}),
+                "uv_unwarp": ("BOOLEAN", {"default": True}),
+                "preprocess_mesh": ("BOOLEAN", {"default": False}),
+                "move_to_center": ("BOOLEAN", {"default": False}),
+                "front_x": ("BOOLEAN", {"default": True}),
+                "create_pbr_model": ("BOOLEAN", {"default": True}),
+                "apply_dilate": ("BOOLEAN", {"default": True}),
+            },
+            "optional": {
+                "camera_azimuth_deg": ("STRING", {"default": "0,90,180,270,180,180"}),
+                "camera_elevation_deg": ("STRING", {"default": "0,0,0,0,89.99,-89.99"}),
+                "camera_distance": ("FLOAT", {"default": 1.0, "min": 0.1, "max": 10.0, "step": 0.1}),
+                "camera_ortho_scale": ("FLOAT", {"default": 1.1, "min": 0.1, "max": 5.0, "step": 0.1}),
+                "debug_mode": ("BOOLEAN", {"default": False}),
+            }
+        }
+
+    def run(self, texture_pipeline, grid_image, mesh_path, save_dir, save_name, 
+            uv_size, view_upscale, inpaint_mode, uv_unwarp, preprocess_mesh, 
+            move_to_center, front_x, create_pbr_model, apply_dilate,
+            camera_azimuth_deg="0,90,180,270,180,180",
+            camera_elevation_deg="0,0,0,0,89.99,-89.99", 
+            camera_distance=1.0, camera_ortho_scale=1.1, debug_mode=False):
+        
+        if isinstance(grid_image, torch.Tensor):
+            pil_grid = torch_imgs_to_pils(grid_image)[0]  # Get first (and only) image
+        else:
+            raise ValueError("grid_image must be torch.Tensor")
+        
+        if not mesh_path or not os.path.exists(mesh_path):
+            raise ValueError(f"Mesh file does not exist: {mesh_path}")
+        
+        # Convert to absolute paths
+        save_dir = os.path.abspath(save_dir)
+        os.makedirs(save_dir, exist_ok=True)
+        
+        # Parse camera angles with fallback to defaults
+        try:
+            azimuth_deg = [float(x.strip()) for x in camera_azimuth_deg.split(",")]
+            elevation_deg = [float(x.strip()) for x in camera_elevation_deg.split(",")]
+        except:
+            azimuth_deg = [0, 90, 180, 270, 180, 180]
+            elevation_deg = [0, 0, 0, 0, 89.99, -89.99]
+        
+        # Adjust azimuth angles (subtract 90 as in original code)
+        azimuth_deg_corrected = [x - 90 for x in azimuth_deg]
+        
+        # Save grid image temporarily
+        temp_grid_path = os.path.join(save_dir, f"{save_name}_temp_grid.png")
+        pil_grid.save(temp_grid_path)
+        
+        try:
+            from .Gen_3D_Modules.MV_Adapter.mvadapter.pipelines.pipeline_texture import ModProcessConfig
+            
+            rgb_process_config = ModProcessConfig(
+                view_upscale=view_upscale,
+                inpaint_mode=inpaint_mode
+            )
+            
+            base_color_process_config = ModProcessConfig(
+                view_upscale=view_upscale,
+                inpaint_mode=inpaint_mode
+            )
+            
+            # Prepare texture pipeline arguments
+            texture_args = {
+                "mesh_path": mesh_path,
+                "save_dir": save_dir,
+                "save_name": save_name,
+                "move_to_center": move_to_center,
+                "front_x": front_x,
+                "uv_unwarp": uv_unwarp,
+                "preprocess_mesh": preprocess_mesh,
+                "uv_size": uv_size,
+                "rgb_path": temp_grid_path,
+                "rgb_process_config": rgb_process_config,
+                "camera_elevation_deg": elevation_deg,
+                "camera_azimuth_deg": azimuth_deg_corrected,
+                "camera_distance": camera_distance,
+                "camera_ortho_scale": camera_ortho_scale,
+                "debug_mode": debug_mode,
+                "apply_dilate": apply_dilate,
+            }
+            
+            # Add PBR settings if enabled
+            if create_pbr_model:
+                texture_args.update({
+                    "base_color_path": temp_grid_path,
+                    "base_color_process_config": base_color_process_config,
+                })
+            
+            output = texture_pipeline(**texture_args)
+            
+            # Cleanup temp file
+            if os.path.exists(temp_grid_path):
+                os.remove(temp_grid_path)
+            
+            # Convert to absolute paths
+            shaded_path = os.path.abspath(output.shaded_model_save_path) if output.shaded_model_save_path else ""
+            pbr_path = os.path.abspath(output.pbr_model_save_path) if output.pbr_model_save_path else ""
+            
+            print(f"Texturing from grid completed:")
+            print(f"  Shaded model: {shaded_path}")
+            print(f"  PBR model: {pbr_path}")
+                
+            return (shaded_path, pbr_path)
+            
+        except Exception as e:
+            # Cleanup temp file on error
+            if os.path.exists(temp_grid_path):
+                os.remove(temp_grid_path)
+            raise e
             
