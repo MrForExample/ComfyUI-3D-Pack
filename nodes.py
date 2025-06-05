@@ -4105,34 +4105,33 @@ class Trellis_Structured_3D_Latents_Models:
     ):
         single_image = torch_imgs_to_pils(reference_image, reference_mask)[0]
 
-        with torch.inference_mode(False):
-            outputs = trellis_pipe.run(
-                single_image,
-                # Optional parameters
-                seed=seed,
-                formats=["gaussian", "mesh"],
-                sparse_structure_sampler_params={
-                    "cfg_strength": sparse_structure_guidance_scale,
-                    "steps": sparse_structure_sample_steps,
-                },
-                slat_sampler_params={
-                    "cfg_strength": structured_latent_guidance_scale,
-                    "steps": structured_latent_sample_steps,
-                },
-            )
+        outputs = trellis_pipe.run(
+            single_image,
+            # Optional parameters
+            seed=seed,
+            formats=["gaussian", "mesh"],
+            sparse_structure_sampler_params={
+                "cfg_strength": sparse_structure_guidance_scale,
+                "steps": sparse_structure_sample_steps,
+            },
+            slat_sampler_params={
+                "cfg_strength": structured_latent_guidance_scale,
+                "steps": structured_latent_sample_steps,
+            },
+        )
 
-            # GLB files can be extracted from the outputs
-            vertices, faces, uvs, texture = postprocessing_utils.finalize_mesh(
-                outputs['gaussian'][0],
-                outputs['mesh'][0],
-                # Optional parameters
-                simplify=0.95,          # Ratio of triangles to remove in the simplification process
-                texture_size=1024,      # Size of the texture used for the GLB
-            )
+        # GLB files can be extracted from the outputs
+        vertices, faces, uvs, texture = postprocessing_utils.finalize_mesh(
+            outputs['gaussian'][0],
+            outputs['mesh'][0],
+            # Optional parameters
+            simplify=0.95,          # Ratio of triangles to remove in the simplification process
+            texture_size=1024,      # Size of the texture used for the GLB
+        )
 
-            vertices, faces, uvs, texture = torch.from_numpy(vertices).to(DEVICE), torch.from_numpy(faces).to(torch.int64).to(DEVICE), torch.from_numpy(uvs).to(DEVICE), torch.from_numpy(texture).to(DEVICE)
-            mesh = Mesh(v=vertices, f=faces, vt=uvs, ft=faces, albedo=texture, device=DEVICE)
-            mesh.auto_normal()
+        vertices, faces, uvs, texture = torch.from_numpy(vertices).to(DEVICE), torch.from_numpy(faces).to(torch.int64).to(DEVICE), torch.from_numpy(uvs).to(DEVICE), torch.from_numpy(texture).to(DEVICE)
+        mesh = Mesh(v=vertices, f=faces, vt=uvs, ft=faces, albedo=texture, device=DEVICE)
+        mesh.auto_normal()
 
         return (mesh,)
 
@@ -4245,23 +4244,22 @@ class TripoSG_Scribble_Model:
         
         single_image = torch_imgs_to_pils(scribble_image)[0]
         
-        with torch.inference_mode(False):
-            outputs = tsg_scribble_pipe(
-                image=single_image,
-                prompt=prompt,
-                generator=torch.Generator(device=DEVICE).manual_seed(seed),
-                num_inference_steps=num_inference_steps,
-                guidance_scale=0, # this is a CFG-distilled model
-                attention_kwargs={"cross_attention_scale": prompt_confidence, "cross_attention_2_scale": scribble_confidence},
-                use_flash_decoder=use_flash_decoder,
-                flash_octree_depth=flash_octree_depth, # there're some boundary problems when using flash decoder with this model
-                hierarchical_octree_depth=hierarchical_octree_depth,
-                dense_octree_depth=dense_octree_depth,
-            ).samples[0]
+        outputs = tsg_scribble_pipe(
+            image=single_image,
+            prompt=prompt,
+            generator=torch.Generator(device=DEVICE).manual_seed(seed),
+            num_inference_steps=num_inference_steps,
+            guidance_scale=0, # this is a CFG-distilled model
+            attention_kwargs={"cross_attention_scale": prompt_confidence, "cross_attention_2_scale": scribble_confidence},
+            use_flash_decoder=use_flash_decoder,
+            flash_octree_depth=flash_octree_depth, # there're some boundary problems when using flash decoder with this model
+            hierarchical_octree_depth=hierarchical_octree_depth,
+            dense_octree_depth=dense_octree_depth,
+        ).samples[0]
 
-            vertices, faces = torch.from_numpy(outputs[0].astype(np.float32)).to(DEVICE), torch.from_numpy(np.ascontiguousarray(outputs[1])).to(torch.int64).to(DEVICE)
-            mesh = Mesh(v=vertices, f=faces.to(torch.int64), device=DEVICE)
-            mesh.auto_normal()
+        vertices, faces = torch.from_numpy(outputs[0].astype(np.float32)).to(DEVICE), torch.from_numpy(np.ascontiguousarray(outputs[1])).to(torch.int64).to(DEVICE)
+        mesh = Mesh(v=vertices, f=faces.to(torch.int64), device=DEVICE)
+        mesh.auto_normal()
 
         return (mesh,)
 
