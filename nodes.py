@@ -1002,7 +1002,7 @@ class Mesh_Orbit_Renderer:
                 "render_background_color_r": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001}),
                 "render_background_color_g": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001}),
                 "render_background_color_b": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001}),
-                "force_cuda_rasterize": ("BOOLEAN", {"default": False},),
+                "force_cuda_rasterize": ("BOOLEAN", {"default": True},),
             },
             
             "optional": {
@@ -1317,7 +1317,7 @@ class Fitting_Mesh_With_Multiview_Images:
                 "ms_ssim_loss_weight": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.01}),
                 "remesh_after_n_iteration": ("INT", {"default": 512, "min": 128, "max": 100000}),
                 "invert_background_probability": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.1}),
-                "force_cuda_rasterize": ("BOOLEAN", {"default": False},),
+                "force_cuda_rasterize": ("BOOLEAN", {"default": True},),
             },
         }
 

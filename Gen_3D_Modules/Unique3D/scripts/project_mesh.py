@@ -68,7 +68,7 @@ def _warmup(glctx, device=None):
 
 class Pix2FacesRenderer:
     def __init__(self, device="cuda"):
-        self._glctx = dr.RasterizeGLContext(output_db=False, device=device)
+        self._glctx = dr.RasterizeCudaContext(device=device)
         self.device = device
         _warmup(self._glctx, device)
 
