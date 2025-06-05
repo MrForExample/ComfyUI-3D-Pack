@@ -103,8 +103,16 @@ from TRELLIS.trellis.pipelines import TrellisImageTo3DPipeline
 from TRELLIS.trellis.utils import postprocessing_utils
 from TripoSG.pipelines.pipeline_triposg import TripoSGPipeline
 from TripoSG.pipelines.pipeline_triposg_scribble import TripoSGScribblePipeline
-from Stable3DGen.trellis.backend_config import get_available_backends, get_available_sparse_backends
 from Stable3DGen.pipeline_builders import StableGenPipelineBuilder
+from MV_Adapter.mvadapter_node_utils import (
+        prepare_pipeline as mvadapter_prepare_pipeline,
+        run_pipeline as mvadapter_run_pipeline, 
+        prepare_t2mv_pipeline as mvadapter_prepare_t2mv_pipeline,
+        run_t2mv_pipeline as mvadapter_run_t2mv_pipeline,
+        prepare_texture_pipeline as mvadapter_prepare_texture_pipeline,
+        download_texture_checkpoints,
+    )
+from MV_Adapter.mvadapter.utils import make_image_grid
 
 os.environ['SPCONV_ALGO'] = 'native'
 
@@ -4781,3 +4789,429 @@ class StableGen_StableX_Process_Image:
             
         except Exception as e:
             raise Exception(f"[StableGen_StableX_Process_Image] Image processing failed: {str(e)}")
+
+class Load_MVAdapter_IG2MV_Pipeline:
+    """Loader pipeline for MV-Adapter (Image to Multi-View)"""
+    CATEGORY = "Comfy3D/Algorithm"
+    RETURN_TYPES = ("DIFFUSERS_PIPE",)
+    RETURN_NAMES = ("mvadapter_pipe",)
+    FUNCTION = "load"
+
+    CKPT_MVADAPTER_PATH = os.path.join(CKPT_DIFFUSERS_PATH, "huanngzh", "MV-Adapter")
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "base_model": (["stabilityai/stable-diffusion-xl-base-1.0"], 
+                             {"default": "stabilityai/stable-diffusion-xl-base-1.0"}),
+                "vae_model": (["madebyollin/sdxl-vae-fp16-fix", "None"], 
+                             {"default": "madebyollin/sdxl-vae-fp16-fix"}),
+                "adapter_path": (["huanngzh/mv-adapter"], {"default": "huanngzh/mv-adapter"}),
+                "scheduler": (["default", "ddpm", "lcm"], {"default": "default"}),
+                "num_views": ("INT", {"default": 6, "min": 1, "max": 16}),
+                "use_fp16": ("BOOLEAN", {"default": True}),
+                "use_mmgp": ("BOOLEAN", {"default": True}),
+            },
+            "optional": {
+                "unet_model": ("STRING", {"default": ""}),
+                "lora_model": ("STRING", {"default": ""}),
+            }
+        }
+    @classmethod
+    def load(cls, base_model, vae_model, adapter_path, scheduler, num_views, 
+            use_fp16, use_mmgp, unet_model="", lora_model=""):
+        
+        
+        dtype = torch.float16 if use_fp16 else torch.float32
+        vae_model = None if vae_model == "None" else vae_model
+        unet_model = None if not unet_model else unet_model
+        lora_model = None if not lora_model else lora_model
+        
+        pipe = mvadapter_prepare_pipeline(
+            base_model=base_model,
+            vae_model=vae_model,
+            unet_model=unet_model,
+            lora_model=lora_model,
+            adapter_path=adapter_path,
+            scheduler=scheduler,
+            num_views=num_views,
+            device=DEVICE_STR,
+            dtype=dtype,
+            use_mmgp=use_mmgp,
+            adapter_local_path=cls.CKPT_MVADAPTER_PATH
+        )
+        
+        print("MV-Adapter pipeline loaded successfully")
+        return (pipe,)
+            
+
+class MVAdapter_Image_To_MultiView:
+    """Generate multi-view images from single image and 3D mesh"""
+    CATEGORY = "Comfy3D/Algorithm"
+    RETURN_TYPES = ("IMAGE",)
+    RETURN_NAMES = ("multiview_images",)
+    FUNCTION = "run"
+
+    @classmethod  
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "mvadapter_pipe": ("DIFFUSERS_PIPE",),
+                "mesh_path": ("STRING", {"default": ""}),
+                "reference_image": ("IMAGE",),
+                "prompt": ("STRING", {"default": "high quality", "multiline": True}),
+                "negative_prompt": ("STRING", {"default": "watermark, ugly, deformed, noisy, blurry, low contrast", "multiline": True}),
+                "num_inference_steps": ("INT", {"default": 50, "min": 1, "max": 200}),
+                "guidance_scale": ("FLOAT", {"default": 3.0, "min": 0.0, "max": 20.0, "step": 0.1}),
+                "reference_conditioning_scale": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 2.0, "step": 0.1}),
+                "height": ("INT", {"default": 768, "min": 256, "max": 2048, "step": 8}),
+                "width": ("INT", {"default": 768, "min": 256, "max": 2048, "step": 8}),
+                "seed": ("INT", {"default": -1, "min": -1, "max": 0xffffffffffffffff}),
+                "remove_background": ("BOOLEAN", {"default": False}),
+            },
+            "optional": {
+                "lora_scale": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 2.0, "step": 0.1}),
+            }
+        }
+
+    def run(self, mvadapter_pipe, mesh_path, reference_image, prompt, negative_prompt, 
+            num_inference_steps, guidance_scale, reference_conditioning_scale,
+            height, width, seed, remove_background, lora_scale=1.0):
+        
+        if isinstance(reference_image, torch.Tensor):
+            reference_images = torch_imgs_to_pils(reference_image)
+            reference_image = reference_images[0]
+        
+        if not mesh_path or not os.path.exists(mesh_path):
+            raise ValueError(f"Mesh path does not exist: {mesh_path}")
+        
+        num_views = 6 
+        images, pos_images, normal_images, processed_ref_image = mvadapter_run_pipeline(
+            pipe=mvadapter_pipe,
+            mesh_path=mesh_path,
+            num_views=num_views,
+            text=prompt,
+            image=reference_image,
+            height=height,
+            width=width,
+            num_inference_steps=num_inference_steps,
+            guidance_scale=guidance_scale,
+            seed=seed,
+            reference_conditioning_scale=reference_conditioning_scale,
+            negative_prompt=negative_prompt,
+            lora_scale=lora_scale,
+            device=DEVICE_STR,
+        )
+        
+        # grid_image = make_image_grid(images, rows=1)
+        
+        # grid_tensor = pils_to_torch_imgs([grid_image], device=DEVICE_STR)
+        
+        # print(f"Generated multiview images: {grid_tensor.shape}")
+        # return (grid_tensor,)
+        # return images
+
+        return_images = pils_to_torch_imgs(images, device=DEVICE_STR)
+        return (return_images,)
+
+
+class Load_MVAdapter_T2MV_Pipeline:
+    """Loader pipeline for MV-Adapter Text-to-Multi-View"""
+    CATEGORY = "Comfy3D/Algorithm"
+    RETURN_TYPES = ("DIFFUSERS_PIPE",)
+    RETURN_NAMES = ("mvadapter_t2mv_pipe",)
+    FUNCTION = "load"
+
+    CKPT_MVADAPTER_PATH = os.path.join(CKPT_DIFFUSERS_PATH, "huanngzh", "MV-Adapter")
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "base_model": (["stabilityai/stable-diffusion-xl-base-1.0"], 
+                             {"default": "stabilityai/stable-diffusion-xl-base-1.0"}),
+                "vae_model": (["madebyollin/sdxl-vae-fp16-fix", "None"], 
+                             {"default": "madebyollin/sdxl-vae-fp16-fix"}),
+                "adapter_path": (["huanngzh/mv-adapter"], {"default": "huanngzh/mv-adapter"}),
+                "scheduler": (["default", "ddpm", "lcm"], {"default": "default"}),
+                "num_views": ("INT", {"default": 6, "min": 1, "max": 16}),
+                "use_fp16": ("BOOLEAN", {"default": True}),
+                "use_mmgp": ("BOOLEAN", {"default": False}),
+            },
+            "optional": {
+                "unet_model": ("STRING", {"default": ""}),
+                "lora_model": ("STRING", {"default": ""}),
+            }
+        }
+
+    @classmethod
+    def load(cls, base_model, vae_model, adapter_path, scheduler, num_views, 
+             use_fp16, use_mmgp, unet_model="", lora_model=""):
+        
+        dtype = torch.float16 if use_fp16 else torch.float32
+        vae_model = None if vae_model == "None" else vae_model
+        unet_model = None if not unet_model else unet_model
+        lora_model = None if not lora_model else lora_model
+        
+        pipe = mvadapter_prepare_t2mv_pipeline(
+            base_model=base_model,
+            vae_model=vae_model,
+            unet_model=unet_model,
+            lora_model=lora_model,
+            adapter_path=adapter_path,
+            scheduler=scheduler,
+            num_views=num_views,
+            device=DEVICE_STR,
+            dtype=dtype,
+            use_mmgp=use_mmgp,
+            adapter_local_path=cls.CKPT_MVADAPTER_PATH
+        )
+        
+        print("MV-Adapter T2MV pipeline loaded successfully")
+        return (pipe,)
+
+class MVAdapter_Text_To_MultiView:
+    """Generate multi-view images from text prompt"""
+    CATEGORY = "Comfy3D/Algorithm"
+    RETURN_TYPES = ("IMAGE",)
+    RETURN_NAMES = ("multiview_images",)
+    FUNCTION = "run"
+
+    @classmethod  
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "mvadapter_t2mv_pipe": ("DIFFUSERS_PIPE",),
+                "prompt": ("STRING", {"default": "a high quality 3D model", "multiline": True}),
+                "negative_prompt": ("STRING", {"default": "watermark, ugly, deformed, noisy, blurry, low contrast", "multiline": True}),
+                "num_views": ("INT", {"default": 6, "min": 1, "max": 16}),
+                "num_inference_steps": ("INT", {"default": 50, "min": 1, "max": 200}),
+                "guidance_scale": ("FLOAT", {"default": 7.0, "min": 0.0, "max": 20.0, "step": 0.1}),
+                "height": ("INT", {"default": 768, "min": 256, "max": 2048, "step": 8}),
+                "width": ("INT", {"default": 768, "min": 256, "max": 2048, "step": 8}),
+                "seed": ("INT", {"default": -1, "min": -1, "max": 0xffffffffffffffff}),
+            },
+            "optional": {
+                "lora_scale": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 2.0, "step": 0.1}),
+                "azimuth_angles": ("STRING", {"default": "0,45,90,180,270,315"}),
+            }
+        }
+
+    def run(self, mvadapter_t2mv_pipe, prompt, negative_prompt, num_views,
+            num_inference_steps, guidance_scale, height, width, seed, 
+            lora_scale=1.0, azimuth_angles="0,45,90,180,270,315"):
+        
+        # Parse azimuth angles
+        try:
+            azimuth_deg = [int(x.strip()) for x in azimuth_angles.split(",")]
+            # Ensure we have enough angles for the number of views
+            if len(azimuth_deg) < num_views:
+                # Repeat the pattern if we don't have enough angles
+                while len(azimuth_deg) < num_views:
+                    azimuth_deg.extend(azimuth_deg[:min(len(azimuth_deg), num_views - len(azimuth_deg))])
+            azimuth_deg = azimuth_deg[:num_views]  # Take only the first num_views
+        except:
+            # Fallback to default angles
+            azimuth_deg = [0, 45, 90, 180, 270, 315][:num_views]
+        
+        # Execute generation
+        images = mvadapter_run_t2mv_pipeline(
+            pipe=mvadapter_t2mv_pipe,
+            num_views=num_views,
+            text=prompt,
+            height=height,
+            width=width,
+            num_inference_steps=num_inference_steps,
+            guidance_scale=guidance_scale,
+            seed=seed,
+            negative_prompt=negative_prompt,
+            lora_scale=lora_scale,
+            device=DEVICE_STR,
+            azimuth_deg=azimuth_deg,
+        )
+        
+        # Create image grid  
+        # grid_image = make_image_grid(images, rows=1)
+        
+        # # Convert PIL image to torch tensor using shared utils
+        # grid_tensor = pils_to_torch_imgs([grid_image], device=DEVICE_STR)
+        
+        # print(f"Generated T2MV multiview images: {grid_tensor.shape}")
+        # return (grid_tensor,)
+        return_images = pils_to_torch_imgs(images, device=DEVICE_STR)
+        return (return_images,)
+            
+class Load_MVAdapter_Texture_Pipeline:
+    """Load texture projection pipeline for MVAdapter"""
+    CATEGORY = "Comfy3D/Algorithm"
+    RETURN_TYPES = ("TEXTURE_PIPE",)
+    RETURN_NAMES = ("texture_pipeline",)
+    FUNCTION = "load"
+
+    TEXTURE_CKPT_DIR = os.path.join(CKPT_DIFFUSERS_PATH, "huanngzh/MV-Adapter")
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "upscaler_ckpt_name": ("STRING", {"default": "RealESRGAN_x2plus.pth"}),
+                "inpaint_ckpt_name": ("STRING", {"default": "big-lama.pt"}),
+                "use_mmgp": ("BOOLEAN", {"default": False}),
+                "auto_download": ("BOOLEAN", {"default": True}),
+            }
+        }
+
+    @classmethod
+    def load(cls, upscaler_ckpt_name, inpaint_ckpt_name, use_mmgp, auto_download):
+        
+        # Form full paths from model names
+        upscaler_ckpt_path = os.path.join(cls.TEXTURE_CKPT_DIR, upscaler_ckpt_name) if upscaler_ckpt_name.strip() else None
+        inpaint_ckpt_path = os.path.join(cls.TEXTURE_CKPT_DIR, inpaint_ckpt_name) if inpaint_ckpt_name.strip() else None
+        
+        # Auto-download checkpoints if enabled
+        if auto_download:
+            download_texture_checkpoints(cls.TEXTURE_CKPT_DIR, upscaler_ckpt_path, inpaint_ckpt_path)
+        
+        texture_pipe = mvadapter_prepare_texture_pipeline(
+            upscaler_ckpt_path=upscaler_ckpt_path,
+            inpaint_ckpt_path=inpaint_ckpt_path,
+            device=DEVICE_STR,
+            use_mmgp=use_mmgp,
+        )
+        
+        print("Texture pipeline loaded successfully")
+        return (texture_pipe,)
+    
+
+class MVAdapter_Texture_Projection:
+    """Project grid image onto 3D mesh using pre-loaded texture pipeline"""
+    CATEGORY = "Comfy3D/Algorithm"
+    RETURN_TYPES = ("STRING", "STRING")
+    RETURN_NAMES = ("shaded_model_path", "pbr_model_path") 
+    FUNCTION = "run"
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "texture_pipeline": ("TEXTURE_PIPE",),
+                "grid_image": ("IMAGE",),
+                "mesh_path": ("STRING", {"default": ""}),
+                "save_dir": ("STRING", {"default": "./output"}),
+                "save_name": ("STRING", {"default": "textured_model"}),
+                "uv_size": ("INT", {"default": 4096, "min": 512, "max": 8192, "step": 256}),
+                "view_upscale": ("BOOLEAN", {"default": True}),
+                "inpaint_mode": (["none", "uv", "view"], {"default": "view"}),
+                "uv_unwarp": ("BOOLEAN", {"default": True}),
+                "preprocess_mesh": ("BOOLEAN", {"default": False}),
+                "move_to_center": ("BOOLEAN", {"default": False}),
+                "front_x": ("BOOLEAN", {"default": True}),
+                "create_pbr_model": ("BOOLEAN", {"default": True}),
+                "apply_dilate": ("BOOLEAN", {"default": True}),
+            },
+            "optional": {
+                "camera_azimuth_deg": ("STRING", {"default": "0,90,180,270,180,180"}),
+                "camera_elevation_deg": ("STRING", {"default": "0,0,0,0,89.99,-89.99"}),
+                "camera_distance": ("FLOAT", {"default": 1.0, "min": 0.1, "max": 10.0, "step": 0.1}),
+                "camera_ortho_scale": ("FLOAT", {"default": 1.1, "min": 0.1, "max": 5.0, "step": 0.1}),
+                "debug_mode": ("BOOLEAN", {"default": False}),
+            }
+        }
+
+    def run(self, texture_pipeline, grid_image, mesh_path, save_dir, save_name, 
+            uv_size, view_upscale, inpaint_mode, uv_unwarp, preprocess_mesh, 
+            move_to_center, front_x, create_pbr_model, apply_dilate,
+            camera_azimuth_deg="0,90,180,270,180,180",
+            camera_elevation_deg="0,0,0,0,89.99,-89.99", 
+            camera_distance=1.0, camera_ortho_scale=1.1, debug_mode=False):
+        
+        if isinstance(grid_image, torch.Tensor):
+            pil_grid = torch_imgs_to_pils(grid_image)[0]  # Get first (and only) image
+        else:
+            raise ValueError("grid_image must be torch.Tensor")
+        
+        if not mesh_path or not os.path.exists(mesh_path):
+            raise ValueError(f"Mesh file does not exist: {mesh_path}")
+        
+        # Convert to absolute paths
+        save_dir = os.path.abspath(save_dir)
+        os.makedirs(save_dir, exist_ok=True)
+        
+        # Parse camera angles with fallback to defaults
+        try:
+            azimuth_deg = [float(x.strip()) for x in camera_azimuth_deg.split(",")]
+            elevation_deg = [float(x.strip()) for x in camera_elevation_deg.split(",")]
+        except:
+            azimuth_deg = [0, 90, 180, 270, 180, 180]
+            elevation_deg = [0, 0, 0, 0, 89.99, -89.99]
+        
+        # Adjust azimuth angles (subtract 90 as in original code)
+        azimuth_deg_corrected = [x - 90 for x in azimuth_deg]
+        
+        # Save grid image temporarily
+        temp_grid_path = os.path.join(save_dir, f"{save_name}_temp_grid.png")
+        pil_grid.save(temp_grid_path)
+        
+        try:
+            from .Gen_3D_Modules.MV_Adapter.mvadapter.pipelines.pipeline_texture import ModProcessConfig
+            
+            rgb_process_config = ModProcessConfig(
+                view_upscale=view_upscale,
+                inpaint_mode=inpaint_mode
+            )
+            
+            base_color_process_config = ModProcessConfig(
+                view_upscale=view_upscale,
+                inpaint_mode=inpaint_mode
+            )
+            
+            # Prepare texture pipeline arguments
+            texture_args = {
+                "mesh_path": mesh_path,
+                "save_dir": save_dir,
+                "save_name": save_name,
+                "move_to_center": move_to_center,
+                "front_x": front_x,
+                "uv_unwarp": uv_unwarp,
+                "preprocess_mesh": preprocess_mesh,
+                "uv_size": uv_size,
+                "rgb_path": temp_grid_path,
+                "rgb_process_config": rgb_process_config,
+                "camera_elevation_deg": elevation_deg,
+                "camera_azimuth_deg": azimuth_deg_corrected,
+                "camera_distance": camera_distance,
+                "camera_ortho_scale": camera_ortho_scale,
+                "debug_mode": debug_mode,
+                "apply_dilate": apply_dilate,
+            }
+            
+            # Add PBR settings if enabled
+            if create_pbr_model:
+                texture_args.update({
+                    "base_color_path": temp_grid_path,
+                    "base_color_process_config": base_color_process_config,
+                })
+            
+            output = texture_pipeline(**texture_args)
+            
+            # Cleanup temp file
+            if os.path.exists(temp_grid_path):
+                os.remove(temp_grid_path)
+            
+            # Convert to absolute paths
+            shaded_path = os.path.abspath(output.shaded_model_save_path) if output.shaded_model_save_path else ""
+            pbr_path = os.path.abspath(output.pbr_model_save_path) if output.pbr_model_save_path else ""
+            
+            print(f"Texturing from grid completed:")
+            print(f"  Shaded model: {shaded_path}")
+            print(f"  PBR model: {pbr_path}")
+                
+            return (shaded_path, pbr_path)
+            
+        except Exception as e:
+            # Cleanup temp file on error
+            if os.path.exists(temp_grid_path):
+                os.remove(temp_grid_path)
+            raise e
+            
