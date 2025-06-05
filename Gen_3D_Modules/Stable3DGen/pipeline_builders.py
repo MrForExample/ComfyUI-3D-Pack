@@ -101,6 +101,27 @@ class StableGenPipelineBuilder:
             pipe = StableGenPipelineBuilder._optimize_trellis_pipeline(pipe, use_fp16)
             return pipe
             
+        except FileNotFoundError as e:
+            if "Weights file not found" in str(e):
+                print(f"Trellis weights missing, re-downloading {repo}...")
+                StableGenPipelineBuilder._ensure_trellis_weights(repo, ckpt_path)
+                
+                try:
+                    pipe = Stable3DGenTrellisImageTo3DPipeline.from_pretrained(
+                        model_dir,
+                        dinov2_model=dinov2_model
+                    )
+                    
+                    if pipe is None:
+                        raise Exception("Pipeline returned None from from_pretrained")
+
+                    pipe = StableGenPipelineBuilder._optimize_trellis_pipeline(pipe, use_fp16)
+                    return pipe
+                    
+                except Exception as retry_e:
+                    raise Exception(f"Failed to build Trellis pipeline after re-download: {retry_e}")
+            else:
+                raise Exception(f"Failed to build Trellis pipeline: {e}")
         except Exception as e:
             raise Exception(f"Failed to build Trellis pipeline: {e}")
     
@@ -221,16 +242,54 @@ class StableGenPipelineBuilder:
     def _ensure_trellis_weights(repo: str, ckpt_path: str):
         base_dir = os.path.join(ckpt_path, "trellis", repo)
         
-        if not os.path.exists(base_dir) or not os.listdir(base_dir):
+        def check_files_exist():
+            required_files = [
+                "ckpts/ss_dec_conv3d_16l8_fp16.safetensors",
+                "ckpts/ss_flow_normal_dit_L_16l8_fp16.safetensors", 
+                "ckpts/slat_dec_mesh_swin8_B_64l8m256c_fp16.safetensors",
+                "ckpts/slat_flow_normal_dit_L_64l8p2_fp16.safetensors",
+                "ckpts/ss_dec_conv3d_16l8_fp16.json",
+                "ckpts/ss_flow_normal_dit_L_16l8_fp16.json",
+                "ckpts/slat_dec_mesh_swin8_B_64l8m256c_fp16.json", 
+                "ckpts/slat_flow_normal_dit_L_64l8p2_fp16.json"
+            ]
+            
+            for req_file in required_files:
+                if not os.path.exists(os.path.join(base_dir, req_file)):
+                    print(f"Missing required file: {req_file}")
+                    return False
+                    
+            return True
+        
+        if not os.path.exists(base_dir) or not os.listdir(base_dir) or not check_files_exist():
             print(f"Downloading {repo} to {base_dir}")
             os.makedirs(base_dir, exist_ok=True)
-            snapshot_download(
-                repo_id=f"Stable-X/{repo}",
-                repo_type="model",
-                local_dir=base_dir,
-                resume_download=True,
-                ignore_patterns=HF_DOWNLOAD_IGNORE
-            )
+            
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    print(f"Download attempt {attempt + 1}/{max_retries}")
+                    snapshot_download(
+                        repo_id=f"Stable-X/{repo}",
+                        repo_type="model",
+                        local_dir=base_dir,
+                        resume_download=True,
+                        ignore_patterns=HF_DOWNLOAD_IGNORE
+                    )
+                    
+                    if check_files_exist():
+                        print(f"Successfully downloaded {repo}")
+                        break
+                    else:
+                        print(f"Download incomplete, retrying... ({attempt + 1}/{max_retries})")
+                        
+                except Exception as e:
+                    print(f"Download failed on attempt {attempt + 1}: {e}")
+                    if attempt == max_retries - 1:
+                        raise Exception(f"Failed to download {repo} after {max_retries} attempts")
+                    
+            if not check_files_exist():
+                raise Exception(f"Failed to download required files for {repo}")
     
     @staticmethod
     def _ensure_stablex_weights(repo: str, ckpt_path: str):
