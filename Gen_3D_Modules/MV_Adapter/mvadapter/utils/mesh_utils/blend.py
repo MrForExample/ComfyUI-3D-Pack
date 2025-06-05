@@ -3,8 +3,6 @@ from abc import ABC, abstractmethod
 
 import torch
 import torch.nn.functional as F
-import triton
-import triton.language as tl
 from torch.utils.cpp_extension import load_inline
 
 from .utils import SINGLE_IMAGE_TYPE, image_to_tensor
@@ -112,6 +110,8 @@ class PBBackend(ABC):
 
 
 try:
+    import triton
+    import triton.language as tl
 
     @triton.jit
     def pb_triton_step_kernel(
