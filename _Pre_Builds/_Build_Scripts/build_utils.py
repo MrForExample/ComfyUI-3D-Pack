@@ -4,6 +4,7 @@ from os.path import dirname
 import platform
 import subprocess
 import time
+import glob
 
 PYTHON_PATH = sys.executable
 
@@ -154,3 +155,17 @@ def install_remote_packages(package_names):
                 continue
 
         subprocess.run([PYTHON_PATH, "-s", "-m", "pip", "install", package_name])
+
+def install_platform_packages():
+    if hasattr(build_config, 'platform_packages') and OS_TYPE in build_config.platform_packages:
+        packages = build_config.platform_packages[OS_TYPE]
+        for package in packages:
+            subprocess.run([PYTHON_PATH, "-s", "-m", "pip", "install", package])
+
+def wheels_dir_exists_and_not_empty(builds_dir):
+    if not os.path.exists(builds_dir):
+        return False
+    
+    # Check if directory has any .whl files
+    wheel_files = glob.glob(os.path.join(builds_dir, "**/*.whl"), recursive=True)
+    return len(wheel_files) > 0

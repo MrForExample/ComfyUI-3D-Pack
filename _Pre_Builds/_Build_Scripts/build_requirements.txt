@@ -1,6 +1,7 @@
 # build tools
 cmake
 ninja
+pccm
 
 # web tools
 PyGithub

@@ -1,6 +1,7 @@
 # build tools
 cmake
 ninja
+pccm
 
 # web tools
 PyGithub
@@ -27,6 +28,7 @@ diffusers>=0.26.1
 transformers>=4.36.2
 safetensors
 open_clip_torch
+mmgp
 
 # for training differentiable tensors
 torchmetrics
