@@ -1,0 +1,340 @@
+{
+  "id": "867889cd-eeb4-48b0-853c-21e125a93896",
+  "revision": 0,
+  "last_node_id": 28,
+  "last_link_id": 25,
+  "nodes": [
+    {
+      "id": 8,
+      "type": "PreviewImage",
+      "pos": [
+        3033.075927734375,
+        -927.3829956054688
+      ],
+      "size": [
+        370.7532958984375,
+        288.39501953125
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 6
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 26,
+      "type": "[Comfy3D] Make Image Grid",
+      "pos": [
+        3033.62158203125,
+        -586.97265625
+      ],
+      "size": [
+        270,
+        82
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 22
+        }
+      ],
+      "outputs": [
+        {
+          "name": "image_grid",
+          "type": "IMAGE",
+          "links": [
+            23
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Make Image Grid"
+      },
+      "widgets_values": [
+        1,
+        true
+      ]
+    },
+    {
+      "id": 27,
+      "type": "PreviewImage",
+      "pos": [
+        3032.88818359375,
+        -449.5286865234375
+      ],
+      "size": [
+        420.0350036621094,
+        123.75502014160156
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 23
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 3,
+      "type": "LoadImage",
+      "pos": [
+        2153.30078125,
+        -839.7021484375
+      ],
+      "size": [
+        346.8450622558594,
+        326
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            19
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "squirrel_girl_1.png",
+        "image"
+      ]
+    },
+    {
+      "id": 9,
+      "type": "PrimitiveString",
+      "pos": [
+        2155.323974609375,
+        -452.05352783203125
+      ],
+      "size": [
+        343.5000305175781,
+        67.5549545288086
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            7
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PrimitiveString"
+      },
+      "widgets_values": [
+        "output/StableGenTest/mesh.glb"
+      ]
+    },
+    {
+      "id": 7,
+      "type": "[Comfy3D] MVAdapter Image To MultiView",
+      "pos": [
+        2557.745361328125,
+        -938.2529296875
+      ],
+      "size": [
+        406.614990234375,
+        407.14501953125
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mvadapter_pipe",
+          "type": "DIFFUSERS_PIPE",
+          "link": 25
+        },
+        {
+          "name": "reference_image",
+          "type": "IMAGE",
+          "link": 19
+        },
+        {
+          "name": "mesh_path",
+          "type": "STRING",
+          "widget": {
+            "name": "mesh_path"
+          },
+          "link": 7
+        }
+      ],
+      "outputs": [
+        {
+          "name": "multiview_images",
+          "type": "IMAGE",
+          "links": [
+            6,
+            22
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] MVAdapter Image To MultiView"
+      },
+      "widgets_values": [
+        "",
+        "high quality",
+        "watermark, ugly, deformed, noisy, blurry, low contrast",
+        50,
+        3,
+        1,
+        768,
+        768,
+        710491314281528,
+        "randomize",
+        false,
+        1
+      ]
+    },
+    {
+      "id": 28,
+      "type": "[Comfy3D] Load MVAdapter IG2MV Pipeline",
+      "pos": [
+        2154.555908203125,
+        -1155.862060546875
+      ],
+      "size": [
+        357.2724609375,
+        257.3499755859375
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "mvadapter_pipe",
+          "type": "DIFFUSERS_PIPE",
+          "links": [
+            25
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Load MVAdapter IG2MV Pipeline"
+      },
+      "widgets_values": [
+        "stabilityai/stable-diffusion-xl-base-1.0",
+        "madebyollin/sdxl-vae-fp16-fix",
+        "huanngzh/mv-adapter",
+        "default",
+        6,
+        true,
+        true,
+        "",
+        ""
+      ]
+    }
+  ],
+  "links": [
+    [
+      6,
+      7,
+      0,
+      8,
+      0,
+      "IMAGE"
+    ],
+    [
+      7,
+      9,
+      0,
+      7,
+      2,
+      "STRING"
+    ],
+    [
+      19,
+      3,
+      0,
+      7,
+      1,
+      "IMAGE"
+    ],
+    [
+      22,
+      7,
+      0,
+      26,
+      0,
+      "IMAGE"
+    ],
+    [
+      23,
+      26,
+      0,
+      27,
+      0,
+      "IMAGE"
+    ],
+    [
+      25,
+      28,
+      0,
+      7,
+      0,
+      "DIFFUSERS_PIPE"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.9070294784580498,
+      "offset": [
+        -1941.4116551684099,
+        1211.3556830868408
+      ]
+    },
+    "frontendVersion": "1.20.4",
+    "node_versions": {
+      "comfy-core": "0.3.35",
+      "ComfyUI-3D-Pack": "626a5ee60d6fbe3d76d69cd89261d445dbca2bc4"
+    },
+    "VHS_latentpreview": false,
+    "VHS_latentpreviewrate": 0,
+    "VHS_MetadataImage": true,
+    "VHS_KeepIntermediate": true
+  },
+  "version": 0.4
+}

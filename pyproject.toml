@@ -1,5 +1,5 @@
 [project]
-name = "comfyui-3d-pack"
+name = "ComfyUI-3D-Pack"
 description = "Make ComfyUI generates 3D assets as good & convenient as it generates image/video!"
 version = "0.1.4"
 license = { file = "LICENSE" }
