@@ -15,6 +15,11 @@ opencv-python
 pillow
 nerfacc>=0.5.3
 slangtorch
+cumm==0.7.11 # for spconv
+# for kiui
+varname
+objprint
+
 git+https://github.com/EasternJournalist/utils3d.git#egg=utils3d
 
 # for use ML models
