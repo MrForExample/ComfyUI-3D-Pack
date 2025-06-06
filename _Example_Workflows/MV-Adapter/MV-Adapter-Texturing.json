@@ -107,43 +107,6 @@
       ]
     },
     {
-      "id": 15,
-      "type": "LoadImage",
-      "pos": [
-        4655.7041015625,
-        132.22010803222656
-      ],
-      "size": [
-        325.982177734375,
-        338.67474365234375
-      ],
-      "flags": {},
-      "order": 1,
-      "mode": 0,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "IMAGE",
-          "type": "IMAGE",
-          "links": [
-            39
-          ]
-        },
-        {
-          "name": "MASK",
-          "type": "MASK",
-          "links": null
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "LoadImage"
-      },
-      "widgets_values": [
-        "squirel_girl_grid.png",
-        "image"
-      ]
-    },
-    {
       "id": 26,
       "type": "[Comfy3D] MVAdapter Texture Projection",
       "pos": [
@@ -217,6 +180,43 @@
       ]
     },
     {
+      "id": 15,
+      "type": "LoadImage",
+      "pos": [
+        4655.7041015625,
+        132.22010803222656
+      ],
+      "size": [
+        325.982177734375,
+        338.67474365234375
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            39
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "matermulti.png",
+        "image"
+      ]
+    },
+    {
       "id": 4,
       "type": "PrimitiveString",
       "pos": [
@@ -245,7 +245,7 @@
         "Node name for S&R": "PrimitiveString"
       },
       "widgets_values": [
-        "output/StableGenTest/mesh.glb"
+        "output/StableGenTest/mater.glb"
       ]
     }
   ],
@@ -295,15 +295,15 @@
   "config": {},
   "extra": {
     "ds": {
-      "scale": 4.321942375150668,
+      "scale": 0.8227024747918819,
       "offset": [
-        -4633.552682414396,
-        -263.1857272782662
+        -4472.103767929271,
+        239.69671269689613
       ]
     },
     "frontendVersion": "1.20.4",
     "node_versions": {
-      "ComfyUI-3D-Pack": "626a5ee60d6fbe3d76d69cd89261d445dbca2bc4",
+      "ComfyUI-3D-Pack": "1f6bd293b66069de8bb2182bea8308a9441c961e",
       "comfy-core": "0.3.35"
     },
     "VHS_latentpreview": false,
