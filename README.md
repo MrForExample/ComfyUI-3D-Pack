@@ -54,10 +54,10 @@ Your ComfyUI Root Directory\python_embeded\python.exe install.py
   - Model weights: https://huggingface.co/huanngzh/mv-adapter
   - Workflows: [IG2MV](./_Example_Workflows/MV-Adapter/MV-Adapter-ig2mv.json), [T2MV](./_Example_Workflows/MV-Adapter/MV-Adapter-tg2mv.json), [Texturing](./_Example_Workflows/MV-Adapter/MV-Adapter-Texturing.json)
     
-   <video controls autoplay loop src="https://github.com/user-attachments/assets/c03fe162-c2fd-4499-aa8d-43e5863ceb3e"></video>
-   <video controls autoplay loop src="https://github.com/user-attachments/assets/0d67dae6-2167-4bf7-83f6-d7c6c3b8e2e8"></video>
-   <video controls autoplay loop src="https://github.com/user-attachments/assets/943d8d31-30e0-4b9f-968d-a68b5899d83d"></video>
-
+   <video controls autoplay loop src="https://github.com/user-attachments/assets/47b77c9e-a121-45c4-a6d0-f307bda1579c"></video>
+   <video controls autoplay loop src="https://github.com/user-attachments/assets/35c6cee5-d408-4559-88aa-753741eacb95"></video>
+   <video controls autoplay loop src="https://github.com/user-attachments/assets/dcf33c27-0ff7-4379-91b5-a0efe229d63c"></video>
+   
 - **Stable3DGen**: [Stable-X/Stable3DGen](https://github.com/Stable-X/Stable3DGen)
   - Two models pipeline:
     - Stable3DGen: Single image to 3D Mesh
