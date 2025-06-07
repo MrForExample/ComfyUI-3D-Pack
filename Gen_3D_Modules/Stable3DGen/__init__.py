@@ -24,18 +24,18 @@ if parent_dir not in sys.path:
 trellis_path = os.path.join(current_dir, "trellis")
 if os.path.exists(trellis_path) and trellis_path not in sys.path:
     sys.path.insert(0, trellis_path)
-    logger.info(f"Added trellis path to sys.path: {trellis_path}")
+    # logger.info(f"Added trellis path to sys.path: {trellis_path}")
 
 # Add stablx package path
 stablex_path = os.path.join(current_dir, "stablex")
 if os.path.exists(trellis_path) and trellis_path not in sys.path:
     sys.path.insert(0, trellis_path)
-    logger.info(f"Added stablex path to sys.path: {trellis_path}")
+    # logger.info(f"Added stablex path to sys.path: {trellis_path}")
 
 # Verify trellis package is importable
 try:
     import trellis
-    logger.info("Trellis package imported successfully")
+    # logger.info("Trellis package imported successfully")
 except ImportError as e:
     logger.error(f"Failed to import trellis package: {e}")
     logger.error(f"Current sys.path: {sys.path}")
@@ -44,7 +44,7 @@ except ImportError as e:
 # Verify stablex package is importable
 try:
     import stablex
-    logger.info("stablex package imported successfully")
+    # logger.info("stablex package imported successfully")
 except ImportError as e:
     logger.error(f"Failed to import stablex package: {e}")
     logger.error(f"Current sys.path: {sys.path}")

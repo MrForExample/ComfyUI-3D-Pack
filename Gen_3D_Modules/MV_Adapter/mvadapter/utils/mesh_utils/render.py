@@ -30,7 +30,7 @@ class RenderOutput:
 class NVDiffRastContextWrapper:
     def __init__(self, device: str, context_type: str = "gl"):
         if context_type == "gl":
-            self.ctx = dr.RasterizeGLContext(device=device)
+            self.ctx = dr.RasterizeCudaContext(device=device)
         elif context_type == "cuda":
             self.ctx = dr.RasterizeCudaContext(device=device)
         else:

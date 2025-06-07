@@ -10,7 +10,7 @@ from typing import Optional, Union, List
 from torchvision import transforms
 from transformers import AutoModelForImageSegmentation
 
-from diffusers import AutoencoderKL, DDPMScheduler, LCMScheduler, UNet2DConditionModel
+from diffusers import AutoencoderKL, DDPMScheduler, UNet2DConditionModel
 from huggingface_hub import snapshot_download
 
 from .mvadapter.pipelines.pipeline_mvadapter_i2mv_sdxl import MVAdapterI2MVSDXLPipeline
@@ -37,10 +37,9 @@ except ImportError:
 def prepare_pipeline(
     base_model: str,
     vae_model: Optional[str] = None,
-    unet_model: Optional[str] = None,
     lora_model: Optional[str] = None,
     adapter_path: str = "huanngzh/mv-adapter",
-    scheduler: str = "default",
+    scheduler: str = "ddpm",
     num_views: int = 6,
     device: str = "cuda",
     dtype: torch.dtype = torch.float16,
@@ -53,40 +52,30 @@ def prepare_pipeline(
     Args:
         base_model: Base Stable Diffusion XL model
         vae_model: Custom VAE model (optional)
-        unet_model: Custom UNet model (optional)
         lora_model: LoRA model (optional)
         adapter_path: Path to adapter weights
-        scheduler: Scheduler type ("default", "ddpm", "lcm")
+        scheduler: Scheduler type ("ddpm")
         num_views: Number of views to generate
         device: Device for computation
         dtype: Data type
         use_mmgp: Use mmgp for memory optimization
         adapter_local_path: Local path for adapter download
     """
-    # Load vae and unet if provided
+    # Load vae if provided
     pipe_kwargs = {}
     if vae_model is not None:
         pipe_kwargs["vae"] = AutoencoderKL.from_pretrained(vae_model)
-    if unet_model is not None:
-        pipe_kwargs["unet"] = UNet2DConditionModel.from_pretrained(unet_model)
-
+    
     # Prepare pipeline
     pipe = MVAdapterI2MVSDXLPipeline.from_pretrained(base_model, **pipe_kwargs)
 
-    # Load scheduler if provided
-    if scheduler != "default":
-        scheduler_class = None
-        if scheduler == "ddpm":
-            scheduler_class = DDPMScheduler
-        elif scheduler == "lcm":
-            scheduler_class = LCMScheduler
-
-        pipe.scheduler = ShiftSNRScheduler.from_scheduler(
-            pipe.scheduler,
-            shift_mode="interpolated",
-            shift_scale=8.0,
-            scheduler_class=scheduler_class,
-        )
+    # Load DDPM scheduler
+    pipe.scheduler = ShiftSNRScheduler.from_scheduler(
+        pipe.scheduler,
+        shift_mode="interpolated",
+        shift_scale=8.0,
+        scheduler_class=DDPMScheduler,
+    )
     
     pipe.init_custom_adapter(
         num_views=num_views, self_attn_processor=DecoupledMVRowColSelfAttnProcessor2_0
@@ -128,32 +117,6 @@ def prepare_pipeline(
     pipe.enable_vae_slicing()
 
     return pipe
-
-
-# def create_bg_remover(device: str = "cuda"):
-#     """Create background removal function"""
-#     birefnet = AutoModelForImageSegmentation.from_pretrained(
-#         "ZhengPeng7/BiRefNet", trust_remote_code=True
-#     )
-#     birefnet.to(device)
-#     transform_image = transforms.Compose([
-#         transforms.Resize((1024, 1024)),
-#         transforms.ToTensor(),
-#         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
-#     ])
-    
-#     def remove_bg(image):
-#         image_size = image.size
-#         input_images = transform_image(image).unsqueeze(0).to(device)
-#         with torch.no_grad():
-#             preds = birefnet(input_images)[-1].sigmoid().cpu()
-#         pred = preds[0].squeeze()
-#         pred_pil = transforms.ToPILImage()(pred)
-#         mask = pred_pil.resize(image_size)
-#         image.putalpha(mask)
-#         return image
-    
-#     return remove_bg
 
 
 def preprocess_image(image: Image.Image, height: int, width: int) -> Image.Image:
@@ -251,9 +214,6 @@ def run_pipeline(
 
     # Prepare image
     reference_image = Image.open(image) if isinstance(image, str) else image
-    # if remove_bg_fn is not None:
-    #     reference_image = remove_bg_fn(reference_image)
-    #     reference_image = preprocess_image(reference_image, height, width)
     if reference_image.mode == "RGBA":
         reference_image = preprocess_image(reference_image, height, width)
 
@@ -299,158 +259,6 @@ def pil_to_torch_tensor(image: Image.Image) -> torch.Tensor:
 def pils_to_torch_tensor(images: List[Image.Image]) -> torch.Tensor:
     tensors = [pil_to_torch_tensor(img).squeeze(0) for img in images]
     return torch.stack(tensors, dim=0)
-
-
-def prepare_t2mv_pipeline(
-    base_model: str,
-    vae_model: Optional[str] = None,
-    unet_model: Optional[str] = None,
-    lora_model: Optional[str] = None,
-    adapter_path: str = "huanngzh/mv-adapter",
-    scheduler: str = "default",
-    num_views: int = 6,
-    device: str = "cuda",
-    dtype: torch.dtype = torch.float16,
-    use_mmgp: bool = False,
-    adapter_local_path: Optional[str] = None,
-):
-    """
-    Prepare MV-Adapter T2MV pipeline
-    
-    Args:
-        base_model: Base Stable Diffusion XL model
-        vae_model: Custom VAE model (optional)
-        unet_model: Custom UNet model (optional)
-        lora_model: LoRA model (optional)
-        adapter_path: Path to adapter weights
-        scheduler: Scheduler type ("default", "ddpm", "lcm")
-        num_views: Number of views to generate
-        device: Device for computation
-        dtype: Data type
-        use_mmgp: Use mmgp for memory optimization
-        adapter_local_path: Local path for adapter download
-    """
-    # Load vae and unet if provided
-    pipe_kwargs = {}
-    if vae_model is not None:
-        pipe_kwargs["vae"] = AutoencoderKL.from_pretrained(vae_model)
-    if unet_model is not None:
-        pipe_kwargs["unet"] = UNet2DConditionModel.from_pretrained(unet_model)
-
-    # Prepare pipeline
-    pipe = MVAdapterT2MVSDXLPipeline.from_pretrained(base_model, **pipe_kwargs)
-
-    # Load scheduler if provided
-    if scheduler != "default":
-        scheduler_class = None
-        if scheduler == "ddpm":
-            scheduler_class = DDPMScheduler
-        elif scheduler == "lcm":
-            scheduler_class = LCMScheduler
-
-        pipe.scheduler = ShiftSNRScheduler.from_scheduler(
-            pipe.scheduler,
-            shift_mode="interpolated",
-            shift_scale=8.0,
-            scheduler_class=scheduler_class,
-        )
-    
-    pipe.init_custom_adapter(num_views=num_views)
-    
-    # Load adapter weights
-    weight_name = "mvadapter_t2mv_sdxl.safetensors"
-    pipe.load_custom_adapter(adapter_path, weight_name=weight_name, local_cache_dir=adapter_local_path)
-
-    pipe.to(device=device, dtype=dtype)
-    pipe.cond_encoder.to(device=device, dtype=dtype)
-
-    # load lora if provided
-    if lora_model is not None:
-        model_, name_ = lora_model.rsplit("/", 1)
-        pipe.load_lora_weights(model_, weight_name=name_)
-
-    # Apply mmgp optimization if available and requested
-    if use_mmgp and MMGP_AVAILABLE:
-        import gc
-        torch.cuda.empty_cache()
-        gc.collect()
-        
-        all_models = {
-            "vae": pipe.vae,
-            "text_encoder": pipe.text_encoder,
-            "text_encoder_2": pipe.text_encoder_2,
-            "unet": pipe.unet,
-            "cond_encoder": pipe.cond_encoder,  
-        }
-        
-        if hasattr(pipe, 'image_encoder') and pipe.image_encoder is not None:
-            all_models["image_encoder"] = pipe.image_encoder
-        
-        offload.profile(all_models, profile_type.HighRAM_LowVRAM)
-        print("mmgp profiling applied successfully.")
-    
-    # Enable VAE slicing for memory efficiency
-    pipe.enable_vae_slicing()
-
-    return pipe
-
-
-def run_t2mv_pipeline(
-    pipe,
-    num_views: int,
-    text: str,
-    height: int,
-    width: int,
-    num_inference_steps: int,
-    guidance_scale: float,
-    seed: int,
-    negative_prompt: str = "watermark, ugly, deformed, noisy, blurry, low contrast",
-    lora_scale: float = 1.0,
-    device: str = "cuda",
-    azimuth_deg: Optional[List[int]] = None,
-):
-    """
-    Execute text-to-multiview generation
-    """
-    # Prepare cameras
-    if azimuth_deg is None:
-        azimuth_deg = [0, 45, 90, 180, 270, 315][:num_views]
-    
-    cameras = get_orthogonal_camera(
-        elevation_deg=[0] * num_views,
-        distance=[1.8] * num_views,
-        left=-0.55,
-        right=0.55,
-        bottom=-0.55,
-        top=0.55,
-        azimuth_deg=[x - 90 for x in azimuth_deg],
-        device=device,
-    )
-
-    plucker_embeds = get_plucker_embeds_from_cameras_ortho(
-        cameras.c2w, [1.1] * num_views, width
-    )
-    control_images = ((plucker_embeds + 1.0) / 2.0).clamp(0, 1)
-
-    pipe_kwargs = {}
-    if seed != -1 and isinstance(seed, int):
-        pipe_kwargs["generator"] = torch.Generator(device=device).manual_seed(seed)
-
-    images = pipe(
-        text,
-        height=height,
-        width=width,
-        num_inference_steps=num_inference_steps,
-        guidance_scale=guidance_scale,
-        num_images_per_prompt=num_views,
-        control_image=control_images,
-        control_conditioning_scale=1.0,
-        negative_prompt=negative_prompt,
-        cross_attention_kwargs={"scale": lora_scale},
-        **pipe_kwargs,
-    ).images
-
-    return images 
 
 
 def prepare_texture_pipeline(
@@ -563,7 +371,6 @@ def run_texture_pipeline(
     if camera_elevation_deg is None:
         camera_elevation_deg = [0, 0, 0, 0, 89.99, -89.99]
     
-    # Adjust azimuth angles (subtract 90 as in original code)
     azimuth_deg_corrected = [x - 90 for x in camera_azimuth_deg]
     
     grid_image = make_image_grid(multiview_images, rows=1)
@@ -641,7 +448,6 @@ def download_texture_checkpoints(texture_ckpt_dir, upscaler_ckpt_path, inpaint_c
             except (subprocess.CalledProcessError, FileNotFoundError):
                 pass
             
-            # Try curl if wget failed
             if not success:
                 try:
                     subprocess.run([
@@ -652,7 +458,6 @@ def download_texture_checkpoints(texture_ckpt_dir, upscaler_ckpt_path, inpaint_c
                 except (subprocess.CalledProcessError, FileNotFoundError):
                     pass
             
-            # Try Python urllib as fallback
             if not success:
                 try:
                     import urllib.request
@@ -662,7 +467,6 @@ def download_texture_checkpoints(texture_ckpt_dir, upscaler_ckpt_path, inpaint_c
                 except Exception as e:
                     print(f"Failed to download {ckpt['name']} using urllib: {e}")
             
-            # If all methods failed
             if not success:
                 print(f"Failed to download {ckpt['name']}. Please download manually:")
                 print(f"wget {ckpt['url']} -O {ckpt['path']}")
@@ -670,3 +474,188 @@ def download_texture_checkpoints(texture_ckpt_dir, upscaler_ckpt_path, inpaint_c
                 print(f"curl -L {ckpt['url']} -o {ckpt['path']}")
         else:
             print(f"{ckpt['name']} already exists at {ckpt['path']}") 
+
+
+def prepare_tg2mv_pipeline(
+    base_model: str,
+    vae_model: Optional[str] = None,
+    lora_model: Optional[str] = None,
+    adapter_path: str = "huanngzh/mv-adapter",
+    scheduler: str = "ddpm",
+    num_views: int = 6,
+    device: str = "cuda",
+    dtype: torch.dtype = torch.float16,
+    use_mmgp: bool = False,
+    adapter_local_path: Optional[str] = None,
+):
+    """
+    Prepare MV-Adapter TG2MV (Text-Guided to Multi-View) pipeline
+    
+    Args:
+        base_model: Base Stable Diffusion XL model
+        vae_model: Custom VAE model (optional)
+        lora_model: LoRA model (optional)
+        adapter_path: Path to adapter weights
+        scheduler: Scheduler type ("ddpm")
+        num_views: Number of views to generate
+        device: Device for computation
+        dtype: Data type
+        use_mmgp: Use mmgp for memory optimization
+        adapter_local_path: Local path for adapter download
+    """
+    import gc
+    torch.cuda.empty_cache()
+    gc.collect()
+    
+    pipe_kwargs = {}
+    if vae_model is not None:
+        pipe_kwargs["vae"] = AutoencoderKL.from_pretrained(vae_model, torch_dtype=dtype)
+
+    pipe = MVAdapterT2MVSDXLPipeline.from_pretrained(base_model, torch_dtype=dtype, **pipe_kwargs)
+
+    pipe.scheduler = ShiftSNRScheduler.from_scheduler(
+        pipe.scheduler,
+        shift_mode="interpolated",
+        shift_scale=8.0,
+        scheduler_class=DDPMScheduler,
+    )
+    
+    pipe.init_custom_adapter(
+        num_views=num_views, self_attn_processor=DecoupledMVRowColSelfAttnProcessor2_0
+    )
+    
+    weight_name = "mvadapter_tg2mv_sdxl.safetensors"
+    pipe.load_custom_adapter(adapter_path, weight_name=weight_name, local_cache_dir=adapter_local_path)
+
+    pipe.to(device=device, dtype=dtype)
+    pipe.cond_encoder.to(device=device, dtype=dtype)
+
+    if lora_model is not None:
+        model_, name_ = lora_model.rsplit("/", 1)
+        pipe.load_lora_weights(model_, weight_name=name_)
+
+    pipe.enable_vae_slicing()
+    pipe.enable_vae_tiling()  
+    
+    if hasattr(pipe, 'enable_model_cpu_offload'):
+        if not use_mmgp:  
+            pipe.enable_model_cpu_offload()
+            print("[INFO] Включен CPU offload для экономии VRAM")
+
+    if use_mmgp and MMGP_AVAILABLE:
+        torch.cuda.empty_cache()
+        gc.collect()
+        
+        all_models = {
+            "vae": pipe.vae,
+            "text_encoder": pipe.text_encoder,
+            "text_encoder_2": pipe.text_encoder_2,
+            "unet": pipe.unet,
+            "cond_encoder": pipe.cond_encoder,  
+        }
+        
+        if hasattr(pipe, 'image_encoder') and pipe.image_encoder is not None:
+            all_models["image_encoder"] = pipe.image_encoder
+        
+        try:
+            offload.profile(all_models, profile_type.HighRAM_LowVRAM)
+            print("mmgp profiling applied successfully.")
+        except Exception as e:
+            print(f"[WARNING] mmgp failed, continuing without it: {e}")
+    
+    torch.cuda.empty_cache()
+    gc.collect()
+
+    return pipe
+
+
+def run_tg2mv_pipeline(
+    pipe,
+    mesh_path: str,
+    num_views: int,
+    text: str,
+    height: int,
+    width: int,
+    num_inference_steps: int,
+    guidance_scale: float,
+    seed: int,
+    negative_prompt: str = "watermark, ugly, deformed, noisy, blurry, low contrast",
+    lora_scale: float = 1.0,
+    device: str = "cuda",
+):
+    """
+    Execute text-guided multiview generation (TG2MV)
+    
+    Args:
+        pipe: TG2MV pipeline
+        mesh_path: Path to 3D mesh file for guidance
+        num_views: Number of views to generate
+        text: Text prompt
+        height: Image height
+        width: Image width
+        num_inference_steps: Number of denoising steps
+        guidance_scale: Guidance scale
+        seed: Random seed
+        negative_prompt: Negative prompt
+        lora_scale: LoRA scale
+        device: Device for computation
+    """
+    cameras = get_orthogonal_camera(
+        elevation_deg=[0, 0, 0, 0, 89.99, -89.99],
+        distance=[1.8] * num_views,
+        left=-0.55,
+        right=0.55,
+        bottom=-0.55,
+        top=0.55,
+        azimuth_deg=[x - 90 for x in [0, 90, 180, 270, 180, 180]],
+        device=device,
+    )
+    ctx = NVDiffRastContextWrapper(device=device)
+
+    mesh = load_mesh(mesh_path, rescale=True, device=device)
+    render_out = render(
+        ctx,
+        mesh,
+        cameras,
+        height=height,
+        width=width,
+        render_attr=False,
+        normal_background=0.0,
+    )
+    
+    pos_images = tensor_to_image((render_out.pos + 0.5).clamp(0, 1), batched=True)
+    normal_images = tensor_to_image(
+        (render_out.normal / 2 + 0.5).clamp(0, 1), batched=True
+    )
+    
+    control_images = (
+        torch.cat(
+            [
+                (render_out.pos + 0.5).clamp(0, 1),
+                (render_out.normal / 2 + 0.5).clamp(0, 1),
+            ],
+            dim=-1,
+        )
+        .permute(0, 3, 1, 2)
+        .to(device)
+    )
+
+    pipe_kwargs = {}
+    if seed != -1 and isinstance(seed, int):
+        pipe_kwargs["generator"] = torch.Generator(device=device).manual_seed(seed)
+
+    images = pipe(
+        text,
+        height=height,
+        width=width,
+        num_inference_steps=num_inference_steps,
+        guidance_scale=guidance_scale,
+        num_images_per_prompt=num_views,
+        control_image=control_images,
+        control_conditioning_scale=1.0,
+        negative_prompt=negative_prompt,
+        cross_attention_kwargs={"scale": lora_scale},
+        **pipe_kwargs,
+    ).images
+
+    return images, pos_images, normal_images 
