@@ -1,6 +1,6 @@
-repo_id: "MrForExample/Comfy3D_Pre_Builds"
-supported_cuda_versions: ["12.4", "12.1", "11.8"]
-cuda_version: "12.4"
+repo_id: "DenisKochetov/Comfy3D_Pre_Builds"
+supported_cuda_versions: ["12.8", "12.6", "12.4", "12.1", "11.8"]
+cuda_version: "12.8"
 
 # Packages inside this file will be pip downloaded before actual build start
 build_requirements: "build_requirements.txt"
@@ -13,19 +13,27 @@ libs_dir_name: "_Libs"
 # Folder used to store built wheels
 wheels_dir_name: "_Build_Wheels"
 
-build_base_packages: ["torch", "torchvision", "xformers", "spconv-${cuda_version}"]
+build_base_packages: ["torch", "torchvision", "xformers"]
+
+# Platform-specific packages
+platform_packages:
+  win:
+    - "triton-windows<3.4"
+  linux:
+    - "triton"
+
 # All packages will be automatically installed at beginning of install.py follwing orders from top to bottom 
 remote_packages:
   torch:
-    version: "2.5.1"
+    version: "2.7.0"
     url: "https://download.pytorch.org/whl/${cuda_version}"
   
   torchvision:
-    version: "0.20.1"
+    version: "0.22.0"
     url: "https://download.pytorch.org/whl/${cuda_version}"
 
   xformers:
-    version: "0.0.28.post3"
+    version: "0.0.30"
     url: "https://download.pytorch.org/whl/${cuda_version}"
 
   # At the time of writing, torch-scatter is not available for PyTorch 2.5.0
