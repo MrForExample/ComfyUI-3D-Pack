@@ -13,6 +13,7 @@ from build_utils import (
     calculate_runtime,
     git_folder_parallel,
     install_remote_packages,
+    install_platform_packages,
     build_config,
     PYTHON_PATH,
     DEPENDENCIES_FILE_ABS_PATH,
@@ -49,6 +50,7 @@ def setup_build_env():
     subprocess.run([PYTHON_PATH, "-s", "-m", "pip", "install", "-r", BUILD_REQUIREMENTS_FILE_ABS_PATH])
     
     install_remote_packages(build_config.build_base_packages)
+    install_platform_packages()
 
 def clone_or_update_read_dependency(dependency_url, dependency_dir):
     if os.path.exists(dependency_dir):

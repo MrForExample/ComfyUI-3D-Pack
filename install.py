@@ -20,12 +20,20 @@ try:
         get_platform_config_name,
         git_folder_parallel,
         install_remote_packages,
+        install_platform_packages,
+        wheels_dir_exists_and_not_empty,
         build_config,
         PYTHON_PATH,
         WHEELS_ROOT_ABS_PATH,
         PYTHON_VERSION
     )
     from shared_utils.log_utils import cstr
+    
+    # Ensure PyGithub is installed for downloading wheels
+    try:
+        import github
+    except ImportError:
+        subprocess.run([sys.executable, "-m", "pip", "install", "PyGithub"])
     
     def try_auto_build_all(builds_dir):
         cstr(f"Try building all required packages...").msg.print()
@@ -48,6 +56,7 @@ try:
     
     # Install packages that needs specify remote url
     install_remote_packages(build_config.build_base_packages)
+    install_platform_packages()
     
     # Get the target remote pre-built wheels directory name and path
     platform_config_name = get_platform_config_name()
@@ -56,8 +65,12 @@ try:
     builds_dir = os.path.join(WHEELS_ROOT_ABS_PATH, platform_config_name)
     
     build_succeed = False
+    # Check if wheels already exist locally
+    if wheels_dir_exists_and_not_empty(builds_dir):
+        cstr(f"Found existing wheels in {builds_dir}").msg.print()
+        build_succeed = True
     # Download pre-build wheels if exist
-    if git_folder_parallel(build_config.repo_id, remote_builds_dir_name, recursive=True, root_outdir=builds_dir):
+    elif git_folder_parallel(build_config.repo_id, remote_builds_dir_name, recursive=True, root_outdir=builds_dir):
         build_succeed = True
     # Build the wheels if couldn't find pre-build wheels
     elif try_auto_build_all(builds_dir):
