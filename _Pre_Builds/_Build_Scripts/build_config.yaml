@@ -1,4 +1,4 @@
-repo_id: "DenisKochetov/Comfy3D_Pre_Builds"
+repo_id: "MrForExample/Comfy3D_Pre_Builds"
 supported_cuda_versions: ["12.8", "12.6", "12.4", "12.1", "11.8"]
 cuda_version: "12.8"
 
