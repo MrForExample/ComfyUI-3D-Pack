@@ -30,6 +30,7 @@ from diffusers import (
     KDPM2AncestralDiscreteScheduler,
     KDPM2DiscreteScheduler,
 )
+
 from huggingface_hub import snapshot_download
 
 from plyfile import PlyData
@@ -97,8 +98,21 @@ from Hunyuan3D_V1.mvd.hunyuan3d_mvd_lite_pipeline import Hunyuan3D_MVD_Lite_Pipe
 from Hunyuan3D_V1.infer import Views2Mesh
 from Hunyuan3D_V2.hy3dgen.shapegen import FaceReducer, FloaterRemover, DegenerateFaceRemover, Hunyuan3DDiTFlowMatchingPipeline
 from Hunyuan3D_V2.hy3dgen.texgen import Hunyuan3DPaintPipeline
+from Hunyuan3D_V2.hy3dgen.rembg import BackgroundRemover
 from TRELLIS.trellis.pipelines import TrellisImageTo3DPipeline
 from TRELLIS.trellis.utils import postprocessing_utils
+from TripoSG.pipelines.pipeline_triposg import TripoSGPipeline
+from TripoSG.pipelines.pipeline_triposg_scribble import TripoSGScribblePipeline
+from Stable3DGen.pipeline_builders import StableGenPipelineBuilder
+from MV_Adapter.mvadapter_node_utils import (
+        prepare_pipeline as mvadapter_prepare_pipeline,
+        run_pipeline as mvadapter_run_pipeline, 
+        prepare_tg2mv_pipeline as mvadapter_prepare_tg2mv_pipeline,
+        run_tg2mv_pipeline as mvadapter_run_tg2mv_pipeline,
+        prepare_texture_pipeline as mvadapter_prepare_texture_pipeline,
+        download_texture_checkpoints,
+    )
+from MV_Adapter.mvadapter.utils import make_image_grid
 
 os.environ['SPCONV_ALGO'] = 'native'
 
@@ -126,6 +140,8 @@ DIFFUSERS_PIPE_DICT = OrderedDict([
     ("Hunyuan3DMVDLitePipeline", Hunyuan3D_MVD_Lite_Pipeline),
     ("Hunyuan3DDiTFlowMatchingPipeline", Hunyuan3DDiTFlowMatchingPipeline),
     ("Hunyuan3DPaintPipeline", Hunyuan3DPaintPipeline),
+    ("TripoSGPipeline", TripoSGPipeline),
+    ("TripoSGScribblePipeline", TripoSGScribblePipeline),
 ])
 
 DIFFUSERS_SCHEDULER_DICT = OrderedDict([
@@ -139,7 +155,7 @@ DIFFUSERS_SCHEDULER_DICT = OrderedDict([
     ("KDPM2DiscreteScheduler,", KDPM2DiscreteScheduler),
 ])
 
-ROOT_PATH = os.path.join(comfy_paths.get_folder_paths("custom_nodes")[0], "ComfyUI-3D-Pack")
+ROOT_PATH = os.path.dirname(os.path.realpath(__file__))
 CKPT_ROOT_PATH = os.path.join(ROOT_PATH, "Checkpoints")
 CKPT_DIFFUSERS_PATH = os.path.join(CKPT_ROOT_PATH, "Diffusers")
 CONFIG_ROOT_PATH = os.path.join(ROOT_PATH, "Configs")
@@ -175,6 +191,7 @@ DEVICE_STR = "cuda" if torch.cuda.is_available() else "cpu"
 DEVICE = torch.device(DEVICE_STR)
 
 HF_DOWNLOAD_IGNORE = ["*.yaml", "*.json", "*.py", ".png", ".jpg", ".gif"]
+
 
 class Preview_3DGS:
 
@@ -632,11 +649,9 @@ class Decimate_Mesh:
     CATEGORY = "Comfy3D/Preprocessor"
 
     def process_mesh(self, mesh, target, remesh, optimalplacement):
-        
-        vertices, faces = decimate_mesh(mesh.v, mesh.f, target, remesh, optimalplacement)
-        mesh.v = vertices
-        mesh.f = faces
-
+        vertices, faces = decimate_mesh(mesh.v.detach().cpu().numpy(), mesh.f.detach().cpu().numpy(), target, remesh, optimalplacement)
+        mesh.v, mesh.f = torch.from_numpy(vertices).to(DEVICE), torch.from_numpy(faces).to(torch.int64).to(DEVICE)
+        mesh.auto_normal()
         return (mesh,)
 
 class Switch_3DGS_Axis:
@@ -1486,6 +1501,7 @@ class Load_Diffusers_Pipeline:
             },
             "optional": {
                 "checkpoint_sub_dir": ("STRING", {"default": "", "multiline": False}),
+                "force_disable_xformers": ("BOOLEAN", {"default": False}),
             }
         }
     
@@ -1498,7 +1514,7 @@ class Load_Diffusers_Pipeline:
     FUNCTION = "load_diffusers_pipe"
     CATEGORY = "Comfy3D/Import|Export"
     
-    def load_diffusers_pipe(self, diffusers_pipeline_name, repo_id, custom_pipeline, force_download, checkpoint_sub_dir=""):
+    def load_diffusers_pipe(self, diffusers_pipeline_name, repo_id, custom_pipeline, force_download, checkpoint_sub_dir="", force_disable_xformers=False):
         
         # resume download pretrained checkpoint
         ckpt_download_dir = os.path.join(CKPT_DIFFUSERS_PATH, repo_id)
@@ -1515,9 +1531,9 @@ class Load_Diffusers_Pipeline:
             ckpt_path,
             torch_dtype=WEIGHT_DTYPE,
             custom_pipeline=custom_pipeline,
-        ).to(DEVICE)
+        ).to(DEVICE, WEIGHT_DTYPE)
         
-        if hasattr(pipe, 'enable_xformers_memory_efficient_attention'):
+        if hasattr(pipe, 'enable_xformers_memory_efficient_attention') and not force_disable_xformers:
             pipe.enable_xformers_memory_efficient_attention()
         
         return (pipe, )
@@ -3920,7 +3936,8 @@ class Hunyuan3D_V1_Reconstruction_Model:
         mesh.auto_normal()
         
         return (mesh,)
-
+    
+# deprecated
 class Hunyuan3D_V2_DiT_Flow_Matching_Model:
     
     @classmethod
@@ -3976,6 +3993,7 @@ class Hunyuan3D_V2_DiT_Flow_Matching_Model:
 
         return (mesh,)
 
+# deprecated
 class Hunyuan3D_V2_Paint_Model:
     
     @classmethod
@@ -4087,36 +4105,1077 @@ class Trellis_Structured_3D_Latents_Models:
     ):
         single_image = torch_imgs_to_pils(reference_image, reference_mask)[0]
 
+        outputs = trellis_pipe.run(
+            single_image,
+            # Optional parameters
+            seed=seed,
+            formats=["gaussian", "mesh"],
+            sparse_structure_sampler_params={
+                "cfg_strength": sparse_structure_guidance_scale,
+                "steps": sparse_structure_sample_steps,
+            },
+            slat_sampler_params={
+                "cfg_strength": structured_latent_guidance_scale,
+                "steps": structured_latent_sample_steps,
+            },
+        )
+
+        # GLB files can be extracted from the outputs
+        vertices, faces, uvs, texture = postprocessing_utils.finalize_mesh(
+            outputs['gaussian'][0],
+            outputs['mesh'][0],
+            # Optional parameters
+            simplify=0.95,          # Ratio of triangles to remove in the simplification process
+            texture_size=1024,      # Size of the texture used for the GLB
+        )
+
+        vertices, faces, uvs, texture = torch.from_numpy(vertices).to(DEVICE), torch.from_numpy(faces).to(torch.int64).to(DEVICE), torch.from_numpy(uvs).to(DEVICE), torch.from_numpy(texture).to(DEVICE)
+        mesh = Mesh(v=vertices, f=faces, vt=uvs, ft=faces, albedo=texture, device=DEVICE)
+        mesh.auto_normal()
+
+        return (mesh,)
+
+class TripoSG_I23D_Model:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "tsg_pipe": ("DIFFUSERS_PIPE",),
+                "reference_image": ("IMAGE",),
+                "seed": ("INT", {"default": 42, "min": 0, "max": 0xffffffffffffffff}),
+                "guidance_scale": ("FLOAT", {"default": 7.0, "min": 0.0, "step": 0.01}),
+                "num_inference_steps": ("INT", {"default": 50, "min": 1}),
+                "use_flash_decoder": ("BOOLEAN", {"default": True}),
+                "flash_octree_depth": ("INT", {"default": 9, "min": 1}),
+                "hierarchical_octree_depth": ("INT", {"default": 9, "min": 1}),
+                "dense_octree_depth": ("INT", {"default": 8, "min": 1}),
+            }
+        }
+    
+    RETURN_TYPES = (
+        "MESH",
+    )
+    RETURN_NAMES = (
+        "mesh",
+    )
+    FUNCTION = "run_model"
+    CATEGORY = "Comfy3D/Algorithm"
+    
+    @torch.no_grad()
+    def run_model(
+        self, 
+        tsg_pipe, 
+        reference_image, # [1, H, W, 3]
+        seed,
+        guidance_scale,
+        num_inference_steps,
+        use_flash_decoder,
+        flash_octree_depth,
+        hierarchical_octree_depth,
+        dense_octree_depth,
+    ):
+        
+        single_image = torch_imgs_to_pils(reference_image)[0]
+        
         with torch.inference_mode(False):
-            outputs = trellis_pipe.run(
-                single_image,
-                # Optional parameters
-                seed=seed,
-                formats=["gaussian", "mesh"],
-                sparse_structure_sampler_params={
-                    "cfg_strength": sparse_structure_guidance_scale,
-                    "steps": sparse_structure_sample_steps,
-                },
-                slat_sampler_params={
-                    "cfg_strength": structured_latent_guidance_scale,
-                    "steps": structured_latent_sample_steps,
-                },
-            )
+            outputs = tsg_pipe(
+                image=single_image,
+                generator=torch.Generator(device=DEVICE).manual_seed(seed),
+                num_inference_steps=num_inference_steps,
+                guidance_scale=guidance_scale,
+                use_flash_decoder=use_flash_decoder,
+                flash_octree_depth=flash_octree_depth,
+                hierarchical_octree_depth=hierarchical_octree_depth,
+                dense_octree_depth=dense_octree_depth,
+            ).samples[0]
 
-            # GLB files can be extracted from the outputs
-            vertices, faces, uvs, texture = postprocessing_utils.finalize_mesh(
-                outputs['gaussian'][0],
-                outputs['mesh'][0],
-                # Optional parameters
-                simplify=0.95,          # Ratio of triangles to remove in the simplification process
-                texture_size=1024,      # Size of the texture used for the GLB
-            )
-
-            vertices, faces, uvs, texture = torch.from_numpy(vertices).to(DEVICE), torch.from_numpy(faces).to(torch.int64).to(DEVICE), torch.from_numpy(uvs).to(DEVICE), torch.from_numpy(texture).to(DEVICE)
-            mesh = Mesh(v=vertices, f=faces, vt=uvs, ft=faces, albedo=texture, device=DEVICE)
+            vertices, faces = torch.from_numpy(outputs[0].astype(np.float32)).to(DEVICE), torch.from_numpy(np.ascontiguousarray(outputs[1])).to(torch.int64).to(DEVICE) 
+            mesh = Mesh(v=vertices, f=faces, device=DEVICE)
             mesh.auto_normal()
 
         return (mesh,)
     
-
+class TripoSG_Scribble_Model:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "tsg_scribble_pipe": ("DIFFUSERS_PIPE",),
+                "scribble_image": ("IMAGE",),
+                "prompt": ("STRING", {
+                    "default": "3D assets",
+                    "multiline": True
+                }),
+                "seed": ("INT", {"default": 42, "min": 0, "max": 0xffffffffffffffff}),
+                "num_inference_steps": ("INT", {"default": 16, "min": 1}),
+                "scribble_confidence": ("FLOAT", {"default": 0.4, "min": 0.0, "step": 0.01}),
+                "prompt_confidence": ("FLOAT", {"default": 1.0, "min": 0.0, "step": 0.01}),
+                "use_flash_decoder": ("BOOLEAN", {"default": False}),
+                "flash_octree_depth": ("INT", {"default": 8, "min": 1}),
+                "hierarchical_octree_depth": ("INT", {"default": 8, "min": 1}),
+                "dense_octree_depth": ("INT", {"default": 8, "min": 1}),
+            }
+        }
     
+    RETURN_TYPES = (
+        "MESH",
+    )
+    RETURN_NAMES = (
+        "mesh",
+    )
+    FUNCTION = "run_model"
+    CATEGORY = "Comfy3D/Algorithm"
+    
+    @torch.no_grad()
+    def run_model(
+        self, 
+        tsg_scribble_pipe, 
+        scribble_image, # [1, H, W, 3]
+        prompt,
+        seed,
+        num_inference_steps,
+        scribble_confidence,
+        prompt_confidence,
+        use_flash_decoder,
+        flash_octree_depth,
+        hierarchical_octree_depth,
+        dense_octree_depth,
+    ):
+        
+        single_image = torch_imgs_to_pils(scribble_image)[0]
+        
+        outputs = tsg_scribble_pipe(
+            image=single_image,
+            prompt=prompt,
+            generator=torch.Generator(device=DEVICE).manual_seed(seed),
+            num_inference_steps=num_inference_steps,
+            guidance_scale=0, # this is a CFG-distilled model
+            attention_kwargs={"cross_attention_scale": prompt_confidence, "cross_attention_2_scale": scribble_confidence},
+            use_flash_decoder=use_flash_decoder,
+            flash_octree_depth=flash_octree_depth, # there're some boundary problems when using flash decoder with this model
+            hierarchical_octree_depth=hierarchical_octree_depth,
+            dense_octree_depth=dense_octree_depth,
+        ).samples[0]
+
+        vertices, faces = torch.from_numpy(outputs[0].astype(np.float32)).to(DEVICE), torch.from_numpy(np.ascontiguousarray(outputs[1])).to(torch.int64).to(DEVICE)
+        mesh = Mesh(v=vertices, f=faces.to(torch.int64), device=DEVICE)
+        mesh.auto_normal()
+
+        return (mesh,)
+
+class Load_Hunyuan3D_V2_ShapeGen_Pipeline:
+    CATEGORY      = "Comfy3D/Algorithm"
+    RETURN_TYPES  = ("DIFFUSERS_PIPE",)
+    RETURN_NAMES  = ("shapegen_pipe",)
+    FUNCTION      = "load"
+
+    _REPO_ID_BASE = "tencent"
+
+    _MODES = {
+        "Hunyuan3D-2":             ("Hunyuan3D-2",     "hunyuan3d-dit-v2-0",         30),
+        "Hunyuan3D-2-Fast":        ("Hunyuan3D-2",     "hunyuan3d-dit-v2-0-fast",    20),
+        "Hunyuan3D-2-Turbo":       ("Hunyuan3D-2",     "hunyuan3d-dit-v2-0-turbo",    5),
+        "Hunyuan3D-2mini":         ("Hunyuan3D-2mini", "hunyuan3d-dit-v2-mini",       30),
+        "Hunyuan3D-2mini-Fast":    ("Hunyuan3D-2mini", "hunyuan3d-dit-v2-mini-fast",   20),
+        "Hunyuan3D-2mini-Turbo":   ("Hunyuan3D-2mini", "hunyuan3d-dit-v2-mini-turbo",  5),
+        "Hunyuan3D-2mv":           ("Hunyuan3D-2mv",   "hunyuan3d-dit-v2-mv",   30),
+        "Hunyuan3D-2mv-Fast":      ("Hunyuan3D-2mv",   "hunyuan3d-dit-v2-mv-fast",    20),
+        "Hunyuan3D-2mv-Turbo":     ("Hunyuan3D-2mv",   "hunyuan3d-dit-v2-mv-turbo",   5),
+    }
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "generation_mode": (list(cls._MODES.keys()),),
+                "weights_format" : (["safetensors", "ckpt"],),
+                "flash_vdm"      : ("BOOLEAN", {"default": True}),
+            }
+        }
+
+    @staticmethod
+    def _ensure_weights(repo: str, subfolder: str, use_safetensors: bool):
+        base_dir = os.path.join(CKPT_DIFFUSERS_PATH, f"{Load_Hunyuan3D_V2_ShapeGen_Pipeline._REPO_ID_BASE}/{repo}")
+        ckpt_file = "model.fp16.safetensors" if use_safetensors else "model.fp16.ckpt"
+        ckpt_path = os.path.join(base_dir, subfolder, ckpt_file)
+
+        if not os.path.exists(ckpt_path):
+            snapshot_download(
+                repo_id=f"{Load_Hunyuan3D_V2_ShapeGen_Pipeline._REPO_ID_BASE}/{repo}",
+                repo_type="model",
+                local_dir=base_dir,
+                resume_download=True,
+                ignore_patterns = HF_DOWNLOAD_IGNORE
+            )
+
+    @staticmethod
+    def _build_pipe(repo: str, subfolder: str, use_safetensors: bool, flash_vdm: bool):
+        Load_Hunyuan3D_V2_ShapeGen_Pipeline._ensure_weights(repo, subfolder, use_safetensors)
+
+        model_dir = os.path.join(CKPT_DIFFUSERS_PATH,
+                                 f"{Load_Hunyuan3D_V2_ShapeGen_Pipeline._REPO_ID_BASE}/{repo}",
+                                 subfolder)
+        ckpt = os.path.join(model_dir, "model.fp16.safetensors" if use_safetensors else "model.fp16.ckpt")
+        cfg  = os.path.join(model_dir, "config.yaml")
+
+        pipe = Hunyuan3DDiTFlowMatchingPipeline.from_single_file(
+            ckpt_path=ckpt,
+            config_path=cfg,
+            device="cuda",
+            dtype=torch.float16,
+            use_safetensors=use_safetensors,
+            from_pretrained_kwargs={
+                "model_path": f"{Load_Hunyuan3D_V2_ShapeGen_Pipeline._REPO_ID_BASE}/{repo}",
+                "subfolder": subfolder,
+                "use_safetensors": use_safetensors,
+            },
+        )
+
+        if flash_vdm and any(tag in subfolder for tag in ("turbo", "fast")):
+            pipe.enable_flashvdm(replace_vae=False)
+
+        return pipe.to("cuda", torch.float16)
+
+    def load(self, generation_mode, weights_format, flash_vdm):
+        repo, subfolder, def_steps = self._MODES[generation_mode]
+        use_safe = (weights_format == "safetensors")
+        pipe = self._build_pipe(repo, subfolder, use_safe, flash_vdm)
+        pipe.num_inference_steps = def_steps
+        return (pipe,)
+    
+class Load_Hunyuan3D_V2_TexGen_Pipeline: 
+    CATEGORY     = "Comfy3D/Algorithm"
+    RETURN_TYPES = ("DIFFUSERS_PIPE",)
+    RETURN_NAMES = ("texgen_pipe",)
+    FUNCTION     = "load"
+
+    MODEL2REPO = {
+        "Standard": ("tencent/Hunyuan3D-2", "hunyuan3d-paint-v2-0"),
+        "Turbo":    ("tencent/Hunyuan3D-2", "hunyuan3d-paint-v2-0-turbo"),
+    }
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {"required": {
+            "generation_mode": (list(cls.MODEL2REPO.keys()),),
+        }}
+
+    def _download_required_weights(self, repo_id, subfolder):
+        ckpt_download_dir = os.path.join(CKPT_DIFFUSERS_PATH, repo_id)
+        os.makedirs(ckpt_download_dir, exist_ok=True)
+
+        # Only download the "delight" and target submodel directories
+        for folder in ["hunyuan3d-delight-v2-0", subfolder]:
+            snapshot_download(
+                repo_id=repo_id,
+                local_dir=ckpt_download_dir,
+                repo_type="model",
+                force_download=False,
+                ignore_patterns=HF_DOWNLOAD_IGNORE
+            )
+
+    def load(self, generation_mode):
+        repo_id, subfolder = self.MODEL2REPO[generation_mode]
+
+        self._download_required_weights(repo_id, subfolder)
+
+        local_repo_dir = os.path.join(CKPT_DIFFUSERS_PATH, repo_id)
+
+        pipe = Hunyuan3DPaintPipeline.from_pretrained(
+            model_path=local_repo_dir,
+            subfolder=subfolder
+        )
+
+        return (pipe.to("cuda", torch.float16),)
+
+class Hunyuan3D_V2_Paint_Model_Turbo_MV:
+    """
+    Texture-painting pipeline using a list of PIL images.
+    If list contains 1 image → single-view; if >1 → multi-view mode.
+    """
+
+    CATEGORY = "Comfy3D/Algorithm"
+    RETURN_TYPES = ("MESH",)
+    RETURN_NAMES = ("mesh",)
+    FUNCTION = "run"
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "hunyuan3d_v2_texgen_pipe": ("DIFFUSERS_PIPE",),
+                "mesh": ("MESH",),
+                "images": ("LIST",),
+            }
+        }
+
+    @torch.no_grad()
+    def run(self, hunyuan3d_v2_texgen_pipe, mesh, images):
+        if not isinstance(images, list) or len(images) == 0:
+            raise Exception("[Hunyuan3D_V2_Paint_Model_Turbo_MV] 'images' must be a non-empty list of PIL images")
+
+        v_np = mesh.v.detach().cpu().numpy()
+        f_np = mesh.f.detach().cpu().numpy()
+        tri = trimesh.Trimesh(vertices=v_np, faces=f_np)
+
+        try:
+            textured = hunyuan3d_v2_texgen_pipe(tri, images)
+        except Exception as e:
+            raise Exception(f"[Hunyuan3D_V2_Paint_Model_Turbo_MV] Texture generation failed: {str(e)}")
+
+        m_out = Mesh.load_trimesh(given_mesh=textured)
+        m_out.auto_normal()
+        return (m_out,)
+
+class Multi_Background_Remover:
+    """
+    Converts 1 to 4 image inputs (front/back/left/right) to a list of processed PIL images.
+    Applies RGBA conversion and background removal.
+    Suitable for feeding directly into ShapeGen or Paint models.
+    """
+
+    CATEGORY = "Comfy3D/Preprocessors"
+    RETURN_TYPES = ("LIST",)  # List of PIL images
+    RETURN_NAMES = ("images",)
+    FUNCTION = "run"
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "image_front": ("IMAGE",),
+            },
+            "optional": {
+                "image_back": ("IMAGE",),
+                "image_left": ("IMAGE",),
+            }
+        }
+
+    @torch.no_grad()
+    def run(
+        self,
+        image_front,
+        image_back=None,
+        image_left=None,
+        image_right=None
+    ):
+        rmbg = BackgroundRemover()
+
+        mv_inputs = {
+            k: v for k, v in {
+                "front": image_front,
+                "back": image_back,
+                "left": image_left,
+                "right": image_right
+            }.items() if v is not None
+        }
+
+        images = []
+        for key, tensor_img in mv_inputs.items():
+            pil_img = torch_imgs_to_pils(tensor_img)[0].convert("RGBA")
+            if pil_img.mode == "RGB":
+                pil_img = rmbg(pil_img.convert("RGB"))
+            images.append(pil_img)
+
+        return (images,)        
+
+class Hunyuan3D_V2_ShapeGen_MV:
+    """
+    Shape generation pipeline using a list of processed PIL images.
+    If len(images) == 1 → single-view; if >1 → multi-view dict.
+    """
+
+    CATEGORY = "Comfy3D/Algorithm"
+    RETURN_TYPES = ("MESH",)
+    RETURN_NAMES = ("mesh",)
+    FUNCTION = "run"
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "shapegen_pipe": ("DIFFUSERS_PIPE",),
+                "images": ("LIST",),
+                "seed": ("INT", {"default": 1234, "min": 0, "max": 0xffffffffffffffff}),
+                "guidance_scale": ("FLOAT", {"default": 5.0, "min": 0.0, "step": 0.1}),
+                "num_inference_steps": ("INT", {"default": 5, "min": 0, "tooltip": "Turbo: 5; Fast/Standard: 30–40"}),
+                "octree_resolution": ("INT", {"default": 256, "min": 64}),
+            }
+        }
+
+    @torch.no_grad()
+    def run(
+        self,
+        shapegen_pipe,
+        images,
+        seed=1234,
+        guidance_scale=5.0,
+        num_inference_steps=5,
+        octree_resolution=256
+    ):
+        if not isinstance(images, list) or len(images) == 0:
+            raise Exception("[Hunyuan3D_V2_ShapeGen_MV] 'images' must be a non-empty list of PIL images")
+
+        if len(images) == 1:
+            image = images[0]
+        else:
+            directions = ["front", "back", "left", "right"]
+            image = {k: v for k, v in zip(directions, images)}
+
+        steps = shapegen_pipe.default_steps if num_inference_steps == 0 else num_inference_steps
+        gen = torch.Generator(device=shapegen_pipe.device).manual_seed(seed)
+
+        try:
+            mesh = shapegen_pipe(
+                image=image,
+                num_inference_steps=steps,
+                guidance_scale=guidance_scale,
+                generator=gen,
+                octree_resolution=octree_resolution,
+                output_type="trimesh",
+            )[0]
+        except Exception as e:
+            raise Exception(f"[Hunyuan3D_V2_ShapeGen_MV] Shape generation failed: {str(e)}")
+
+        for fn in (FloaterRemover(), DegenerateFaceRemover(), FaceReducer()):
+            mesh = fn(mesh)
+
+        return (Mesh.load_trimesh(given_mesh=mesh),)
+
+#--------------------------------
+class Load_StableGen_Trellis_Pipeline:
+    CATEGORY      = "Comfy3D/Algorithm"
+    RETURN_TYPES  = ("DIFFUSERS_PIPE",)
+    RETURN_NAMES  = ("trellis_pipe",)
+    FUNCTION      = "load"
+
+    _REPO_ID_BASE = "Stable-X"
+    CKPT_STABLEGEN_PATH = os.path.join(CKPT_DIFFUSERS_PATH, "Stable3DGen")
+
+    _MODES = {
+        "trellis-normal-v0-1": ("trellis-normal-v0-1", 12, 12),  # (repo, ss_steps, slat_steps)
+    }
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        available_attn, available_sparse = StableGenPipelineBuilder.get_available_backends()
+
+        return {
+            "required": {
+                "model_name": (list(cls._MODES.keys()),),
+                "dinov2_model": (["dinov2_vitl14_reg"],),
+                "use_fp16": ("BOOLEAN", {"default": True}),
+                "attn_backend": (available_attn,),
+                "sparse_backend": (available_sparse,),
+                "spconv_algo": (["implicit_gemm", "native", "auto"],),
+                "smooth_k": ("BOOLEAN", {"default": True}),
+            }
+        }
+
+    @classmethod
+    def _build_pipe(cls, repo: str, dinov2_model: str, use_fp16: bool, attn_backend: str, 
+                   sparse_backend: str, spconv_algo: str, smooth_k: bool):
+        
+        return StableGenPipelineBuilder.build_trellis_pipeline(
+            repo=repo,
+            dinov2_model=dinov2_model,
+            use_fp16=use_fp16,
+            attn_backend=attn_backend,
+            sparse_backend=sparse_backend,
+            spconv_algo=spconv_algo,
+            smooth_k=smooth_k,
+            ckpt_path=cls.CKPT_STABLEGEN_PATH
+        )
+
+    def load(self, model_name, dinov2_model, use_fp16, attn_backend, sparse_backend, spconv_algo, smooth_k):
+        repo, ss_steps, slat_steps = self._MODES[model_name]
+        
+        pipe = self.__class__._build_pipe(repo, dinov2_model, use_fp16, attn_backend, sparse_backend, spconv_algo, smooth_k)
+        # Store default steps
+        pipe.default_ss_steps = ss_steps
+        pipe.default_slat_steps = slat_steps
+        
+        return (pipe,)
+
+
+class Load_StableGen_StableX_Pipeline:
+    CATEGORY     = "Comfy3D/Algorithm"
+    RETURN_TYPES = ("DIFFUSERS_PIPE",)
+    RETURN_NAMES = ("stablex_pipe",)
+    FUNCTION     = "load"
+
+    _REPO_ID_BASE = "Stable-X"
+    CKPT_STABLEGEN_PATH = os.path.join(CKPT_DIFFUSERS_PATH, "Stable3DGen")
+
+    _MODES = {
+        "yoso-normal-v1-8-1": "yoso-normal-v1-8-1",
+    }
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "model_name": (list(cls._MODES.keys()),),
+                "use_fp16": ("BOOLEAN", {"default": True}),
+            }
+        }
+
+    @classmethod
+    def _build_pipe(cls, repo: str, use_fp16: bool):
+        return StableGenPipelineBuilder.build_stablex_pipeline(
+            repo=repo,
+            use_fp16=use_fp16,
+            ckpt_path=cls.CKPT_STABLEGEN_PATH
+        )
+
+    def load(self, model_name, use_fp16):
+        repo = self._MODES[model_name]
+        pipe = self.__class__._build_pipe(repo, use_fp16)
+        return (pipe,)
+
+
+class StableGen_Trellis_Image_To_3D:
+    """
+    3D generation pipeline using Trellis model.
+    """
+
+    CATEGORY = "Comfy3D/Algorithm"
+    RETURN_TYPES = ("MESH",)
+    RETURN_NAMES = ("mesh",)
+    FUNCTION = "run"
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "trellis_pipe": ("DIFFUSERS_PIPE",),
+                "images": ("IMAGE", {"list": True}),
+                "mode": (["single", "multi"], {"default": "single"}),
+                "seed": ("INT", {"default": 1234, "min": 0, "max": 0xffffffffffffffff}),
+                "ss_guidance_strength": ("FLOAT", {"default": 7.5, "min": 0.0, "step": 0.1}),
+                "ss_sampling_steps": ("INT", {"default": 12, "min": 1}),
+                "slat_guidance_strength": ("FLOAT", {"default": 3.0, "min": 0.0, "step": 0.1}),
+                "slat_sampling_steps": ("INT", {"default": 12, "min": 1}),
+                "mesh_simplify": ("FLOAT", {"default": 0.95, "min": 0.9, "max": 1.0, "step": 0.01}),
+            }
+        }
+
+    @torch.no_grad()
+    def run(
+        self,
+        trellis_pipe,
+        images,
+        mode="single",
+        seed=1234,
+        ss_guidance_strength=7.5,
+        ss_sampling_steps=12,
+        slat_guidance_strength=3.0,
+        slat_sampling_steps=12,
+        mesh_simplify=0.95
+    ):
+        if isinstance(images, torch.Tensor):
+            images = torch_imgs_to_pils(images)
+        
+        if not isinstance(images, list) or len(images) == 0:
+            raise Exception(f"[StableGen_Trellis_Image_To_3D] 'images' must be a non-empty list of PIL images. Got type: {type(images)}, len: {len(images) if hasattr(images, '__len__') else 'no len'}")
+
+        with trellis_pipe.inference_context():
+            if mode == "single":
+                if len(images) > 1:
+                    print(f"Warning: Single mode selected but {len(images)} images provided. Using first image.")
+                image_input = images[0]
+                
+                pipeline_params = StableGenPipelineBuilder.create_trellis_pipeline_params(
+                    seed=seed,
+                    ss_sampling_steps=ss_sampling_steps,
+                    ss_guidance_strength=ss_guidance_strength,
+                    slat_sampling_steps=slat_sampling_steps,
+                    slat_guidance_strength=slat_guidance_strength,
+                    formats=["mesh"]
+                )
+                
+                outputs = trellis_pipe.run(
+                    image_input,
+                    **pipeline_params
+                )
+            else:  
+                pipeline_params = StableGenPipelineBuilder.create_trellis_pipeline_params(
+                    seed=seed,
+                    ss_sampling_steps=ss_sampling_steps,
+                    ss_guidance_strength=ss_guidance_strength,
+                    slat_sampling_steps=slat_sampling_steps,
+                    slat_guidance_strength=slat_guidance_strength,
+                    formats=["mesh"]
+                )
+                
+                outputs = trellis_pipe.run_multi_image(
+                    images,
+                    **pipeline_params
+                )
+            
+        try:
+            mesh_output = outputs['mesh'][0]
+            
+            vertices = mesh_output.vertices.cpu().numpy()
+            faces = mesh_output.faces.cpu().numpy()
+            
+            transformation_matrix = np.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]])
+            vertices = vertices @ transformation_matrix
+            
+            tri_mesh = trimesh.Trimesh(vertices, faces)
+            
+            if mesh_simplify < 1.0:
+                try:
+                    target_faces = int(len(faces) * mesh_simplify)
+                    tri_mesh = tri_mesh.simplify_quadric_decimation(target_faces)
+                except Exception as e:
+                    print(f"Warning: Mesh simplification failed: {e}. Using original mesh.")
+            
+            mesh = Mesh.load_trimesh(given_mesh=tri_mesh)
+            mesh.auto_normal()
+            
+            return (mesh,)
+            
+        except Exception as e:
+            raise Exception(f"[StableGen_Trellis_Image_To_3D] 3D generation failed: {str(e)}")
+
+
+class StableGen_StableX_Process_Image:
+    """
+    Image processing pipeline using StableX model.
+    """
+
+    CATEGORY = "Comfy3D/Algorithm"
+    RETURN_TYPES = ("IMAGE",)
+    RETURN_NAMES = ("processed_image",)
+    FUNCTION = "run"
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "stablex_pipe": ("DIFFUSERS_PIPE",),
+                "image": ("IMAGE",),
+                "processing_resolution": ("INT", {"default": 2048, "min": 64, "max": 4096, "step": 16}),
+                "controlnet_strength": ("FLOAT", {"default": 1.0, "min": 0.01, "max": 10.0, "step": 0.01}),
+                "seed": ("INT", {"default": 42, "min": 0, "max": 0xffffffffffffffff}),
+            }
+        }
+
+    @torch.no_grad()
+    def run(self, stablex_pipe, image, processing_resolution=2048, controlnet_strength=1.0, seed=42):
+        if image.dim() == 4:
+            image = image.squeeze(0)
+        
+        image_tensor = image.permute(2, 0, 1).unsqueeze(0).to(DEVICE).to(torch.float16)
+
+        generator = torch.Generator(device=DEVICE).manual_seed(seed)
+
+        try:
+            pipe_out = stablex_pipe(
+                image_tensor,
+                controlnet_conditioning_scale=controlnet_strength,
+                processing_resolution=processing_resolution,
+                generator=generator,
+                output_type="pt",
+            )
+            
+            processed = (pipe_out.prediction.clip(-1, 1) + 1) / 2
+            out_tensor = processed.permute(0, 2, 3, 1).cpu().float()
+            
+            return (out_tensor,)
+            
+        except Exception as e:
+            raise Exception(f"[StableGen_StableX_Process_Image] Image processing failed: {str(e)}")
+# --- MV START ----
+class Load_MVAdapter_IG2MV_Pipeline:
+    """Loader pipeline for MV-Adapter (Image to Multi-View)"""
+    CATEGORY = "Comfy3D/Algorithm"
+    RETURN_TYPES = ("DIFFUSERS_PIPE",)
+    RETURN_NAMES = ("mvadapter_pipe",)
+    FUNCTION = "load"
+
+    CKPT_MVADAPTER_PATH = os.path.join(CKPT_DIFFUSERS_PATH, "huanngzh", "MV-Adapter")
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "base_model": (["stabilityai/stable-diffusion-xl-base-1.0"], 
+                             {"default": "stabilityai/stable-diffusion-xl-base-1.0"}),
+                "vae_model": (["madebyollin/sdxl-vae-fp16-fix", "None"], 
+                             {"default": "madebyollin/sdxl-vae-fp16-fix"}),
+                "adapter_path": (["huanngzh/mv-adapter"], {"default": "huanngzh/mv-adapter"}),
+                "scheduler": (["ddpm"], {"default": "ddpm"}),
+                "num_views": ("INT", {"default": 6, "min": 1, "max": 16}),
+                "use_fp16": ("BOOLEAN", {"default": True}),
+                "use_mmgp": ("BOOLEAN", {"default": True}),
+            },
+            "optional": {
+                "lora_model": ("STRING", {"default": ""}),
+            }
+        }
+        
+    @classmethod
+    def load(cls, base_model, vae_model, adapter_path, scheduler, num_views, 
+            use_fp16, use_mmgp, lora_model=""):
+        
+        dtype = torch.float16 if use_fp16 else torch.float32
+        vae_model = None if vae_model == "None" else vae_model
+        lora_model = None if not lora_model else lora_model
+        
+        # Подготавливаем параметры для пайплайна
+        pipeline_kwargs = {
+            "base_model": base_model,
+            "vae_model": vae_model,
+            "lora_model": lora_model,
+            "adapter_path": adapter_path,
+            "scheduler": scheduler,
+            "num_views": num_views,
+            "device": DEVICE_STR,
+            "dtype": dtype,
+            "use_mmgp": use_mmgp,
+            "adapter_local_path": cls.CKPT_MVADAPTER_PATH
+        }
+        
+        pipe = mvadapter_prepare_pipeline(**pipeline_kwargs)
+        
+        print("MV-Adapter IG2MV pipeline loaded successfully")
+        return (pipe,)
+
+class MVAdapter_IG2MV:
+    """Generate multi-view images from single image and 3D mesh"""
+    CATEGORY = "Comfy3D/Algorithm"
+    RETURN_TYPES = ("IMAGE",)
+    RETURN_NAMES = ("multiview_images",)
+    FUNCTION = "run"
+
+    @classmethod  
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "mvadapter_pipe": ("DIFFUSERS_PIPE",),
+                "mesh_path": ("STRING", {"default": ""}),
+                "reference_image": ("IMAGE",),
+                "prompt": ("STRING", {"default": "high quality", "multiline": True}),
+                "negative_prompt": ("STRING", {"default": "watermark, ugly, deformed, noisy, blurry, low contrast", "multiline": True}),
+                "num_inference_steps": ("INT", {"default": 50, "min": 1, "max": 200}),
+                "guidance_scale": ("FLOAT", {"default": 3.0, "min": 0.0, "max": 20.0, "step": 0.1}),
+                "reference_conditioning_scale": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 2.0, "step": 0.1}),
+                "height": ("INT", {"default": 768, "min": 256, "max": 2048, "step": 8}),
+                "width": ("INT", {"default": 768, "min": 256, "max": 2048, "step": 8}),
+                "seed": ("INT", {"default": -1, "min": -1, "max": 0xffffffffffffffff}),
+                "remove_background": ("BOOLEAN", {"default": False}),
+            },
+            "optional": {
+                "lora_scale": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 2.0, "step": 0.1}),
+            }
+        }
+
+    def run(self, mvadapter_pipe, mesh_path, reference_image, prompt, negative_prompt, 
+            num_inference_steps, guidance_scale, reference_conditioning_scale,
+            height, width, seed, remove_background, lora_scale=1.0):
+        
+        if isinstance(reference_image, torch.Tensor):
+            reference_images = torch_imgs_to_pils(reference_image)
+            reference_image = reference_images[0]
+        
+        if not mesh_path or not os.path.exists(mesh_path):
+            raise ValueError(f"Mesh path does not exist: {mesh_path}")
+        
+        num_views = 6 
+        images, pos_images, normal_images, processed_ref_image = mvadapter_run_pipeline(
+            pipe=mvadapter_pipe,
+            mesh_path=mesh_path,
+            num_views=num_views,
+            text=prompt,
+            image=reference_image,
+            height=height,
+            width=width,
+            num_inference_steps=num_inference_steps,
+            guidance_scale=guidance_scale,
+            seed=seed,
+            reference_conditioning_scale=reference_conditioning_scale,
+            negative_prompt=negative_prompt,
+            lora_scale=lora_scale,
+            device=DEVICE_STR,
+        )
+        
+        return_images = pils_to_torch_imgs(images, device=DEVICE_STR)
+        return (return_images,)
+
+class Load_MVAdapter_TG2MV_Pipeline:
+    """Loader pipeline for MV-Adapter Text-Guided to Multi-View (TG2MV)"""
+    CATEGORY = "Comfy3D/Algorithm"
+    RETURN_TYPES = ("DIFFUSERS_PIPE",)
+    RETURN_NAMES = ("mvadapter_tg2mv_pipe",)
+    FUNCTION = "load"
+
+    CKPT_MVADAPTER_PATH = os.path.join(CKPT_DIFFUSERS_PATH, "huanngzh", "MV-Adapter")
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "base_model": (["stabilityai/stable-diffusion-xl-base-1.0"], 
+                             {"default": "stabilityai/stable-diffusion-xl-base-1.0"}),
+                "vae_model": (["madebyollin/sdxl-vae-fp16-fix", "None"], 
+                             {"default": "madebyollin/sdxl-vae-fp16-fix"}),
+                "adapter_path": (["huanngzh/mv-adapter"], {"default": "huanngzh/mv-adapter"}),
+                "scheduler": (["ddpm"], {"default": "ddpm"}),
+                "num_views": ("INT", {"default": 6, "min": 1, "max": 16}),
+                "use_fp16": ("BOOLEAN", {"default": True}),
+                "use_mmgp": ("BOOLEAN", {"default": False}),
+            },
+            "optional": {
+                "lora_model": ("STRING", {"default": ""}),
+            }
+        }
+
+    @classmethod
+    def load(cls, base_model, vae_model, adapter_path, scheduler, num_views, 
+             use_fp16, use_mmgp, lora_model=""):
+        
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        
+        dtype = torch.float16 if use_fp16 else torch.float32
+        vae_model = None if vae_model == "None" else vae_model
+        lora_model = None if not lora_model else lora_model
+        
+        pipeline_kwargs = {
+            "base_model": base_model,
+            "vae_model": vae_model,
+            "lora_model": lora_model,
+            "adapter_path": adapter_path,
+            "scheduler": scheduler,
+            "num_views": num_views,
+            "device": DEVICE_STR,
+            "dtype": dtype,
+            "use_mmgp": use_mmgp,
+            "adapter_local_path": cls.CKPT_MVADAPTER_PATH
+        }
+        
+        try:
+            pipe = mvadapter_prepare_tg2mv_pipeline(**pipeline_kwargs)
+            print("MV-Adapter TG2MV pipeline loaded successfully")
+            return (pipe,)
+            
+        except Exception as e:
+            raise e
+
+
+class MVAdapter_TG2MV:
+    """Generate multi-view images from text prompt using 3D mesh guidance"""
+    CATEGORY = "Comfy3D/Algorithm"
+    RETURN_TYPES = ("IMAGE",)
+    RETURN_NAMES = ("multiview_images",)
+    FUNCTION = "run"
+
+    @classmethod  
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "mvadapter_tg2mv_pipe": ("DIFFUSERS_PIPE",),
+                "mesh_path": ("STRING", {"default": ""}),
+                "prompt": ("STRING", {"default": "a high quality 3D model", "multiline": True}),
+                "negative_prompt": ("STRING", {"default": "watermark, ugly, deformed, noisy, blurry, low contrast", "multiline": True}),
+                "num_views": ("INT", {"default": 6, "min": 1, "max": 16}),
+                "num_inference_steps": ("INT", {"default": 50, "min": 1, "max": 200}),
+                "guidance_scale": ("FLOAT", {"default": 7.0, "min": 0.0, "max": 20.0, "step": 0.1}),
+                "height": ("INT", {"default": 768, "min": 256, "max": 2048, "step": 8}),
+                "width": ("INT", {"default": 768, "min": 256, "max": 2048, "step": 8}),
+                "seed": ("INT", {"default": -1, "min": -1, "max": 0xffffffffffffffff}),
+            },
+            "optional": {
+                "lora_scale": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 2.0, "step": 0.1}),
+            }
+        }
+
+    def run(self, mvadapter_tg2mv_pipe, mesh_path, prompt, negative_prompt, num_views,
+            num_inference_steps, guidance_scale, height, width, seed, lora_scale=1.0):
+        
+        if not mesh_path or not os.path.exists(mesh_path):
+            raise ValueError(f"Mesh path does not exist: {mesh_path}")
+        
+        images, pos_images, normal_images = mvadapter_run_tg2mv_pipeline(
+            pipe=mvadapter_tg2mv_pipe,
+            mesh_path=mesh_path,
+            num_views=num_views,
+            text=prompt,
+            height=height,
+            width=width,
+            num_inference_steps=num_inference_steps,
+            guidance_scale=guidance_scale,
+            seed=seed,
+            negative_prompt=negative_prompt,
+            lora_scale=lora_scale,
+            device=DEVICE_STR,
+        )
+        
+        
+        return_images = pils_to_torch_imgs(images, device=DEVICE_STR)
+        return (return_images,)
+            
+class Load_MVAdapter_Texture_Pipeline:
+    """Load texture projection pipeline for MVAdapter"""
+    CATEGORY = "Comfy3D/Algorithm"
+    RETURN_TYPES = ("TEXTURE_PIPE",)
+    RETURN_NAMES = ("texture_pipeline",)
+    FUNCTION = "load"
+
+    TEXTURE_CKPT_DIR = os.path.join(CKPT_DIFFUSERS_PATH, "huanngzh/MV-Adapter")
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "upscaler_ckpt_name": ("STRING", {"default": "RealESRGAN_x2plus.pth"}),
+                "inpaint_ckpt_name": ("STRING", {"default": "big-lama.pt"}),
+                "use_mmgp": ("BOOLEAN", {"default": False}),
+                "auto_download": ("BOOLEAN", {"default": True}),
+            }
+        }
+
+    @classmethod
+    def load(cls, upscaler_ckpt_name, inpaint_ckpt_name, use_mmgp, auto_download):
+        
+        upscaler_ckpt_path = os.path.join(cls.TEXTURE_CKPT_DIR, upscaler_ckpt_name) if upscaler_ckpt_name.strip() else None
+        inpaint_ckpt_path = os.path.join(cls.TEXTURE_CKPT_DIR, inpaint_ckpt_name) if inpaint_ckpt_name.strip() else None
+        
+        if auto_download:
+            download_texture_checkpoints(cls.TEXTURE_CKPT_DIR, upscaler_ckpt_path, inpaint_ckpt_path)
+        
+        texture_pipe = mvadapter_prepare_texture_pipeline(
+            upscaler_ckpt_path=upscaler_ckpt_path,
+            inpaint_ckpt_path=inpaint_ckpt_path,
+            device=DEVICE_STR,
+            use_mmgp=use_mmgp,
+        )
+        
+        print("Texture pipeline loaded successfully")
+        return (texture_pipe,)
+    
+
+class MVAdapter_Texture_Projection:
+    """Project grid image onto 3D mesh using pre-loaded texture pipeline"""
+    CATEGORY = "Comfy3D/Algorithm"
+    RETURN_TYPES = ("STRING", "STRING")
+    RETURN_NAMES = ("shaded_model_path", "pbr_model_path") 
+    FUNCTION = "run"
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "texture_pipeline": ("TEXTURE_PIPE",),
+                "grid_image": ("IMAGE",),
+                "mesh_path": ("STRING", {"default": ""}),
+                "save_dir": ("STRING", {"default": "./output"}),
+                "save_name": ("STRING", {"default": "textured_model"}),
+                "uv_size": ("INT", {"default": 4096, "min": 512, "max": 8192, "step": 256}),
+                "view_upscale": ("BOOLEAN", {"default": True}),
+                "inpaint_mode": (["none", "uv", "view"], {"default": "view"}),
+                "uv_unwarp": ("BOOLEAN", {"default": True}),
+                "preprocess_mesh": ("BOOLEAN", {"default": False}),
+                "move_to_center": ("BOOLEAN", {"default": False}),
+                "front_x": ("BOOLEAN", {"default": True}),
+                "create_pbr_model": ("BOOLEAN", {"default": True}),
+                "apply_dilate": ("BOOLEAN", {"default": True}),
+            },
+            "optional": {
+                "camera_azimuth_deg": ("STRING", {"default": "0,90,180,270,180,180"}),
+                "camera_elevation_deg": ("STRING", {"default": "0,0,0,0,89.99,-89.99"}),
+                "camera_distance": ("FLOAT", {"default": 1.0, "min": 0.1, "max": 10.0, "step": 0.1}),
+                "camera_ortho_scale": ("FLOAT", {"default": 1.1, "min": 0.1, "max": 5.0, "step": 0.1}),
+                "debug_mode": ("BOOLEAN", {"default": False}),
+            }
+        }
+
+    def run(self, texture_pipeline, grid_image, mesh_path, save_dir, save_name, 
+            uv_size, view_upscale, inpaint_mode, uv_unwarp, preprocess_mesh, 
+            move_to_center, front_x, create_pbr_model, apply_dilate,
+            camera_azimuth_deg="0,90,180,270,180,180",
+            camera_elevation_deg="0,0,0,0,89.99,-89.99", 
+            camera_distance=1.0, camera_ortho_scale=1.1, debug_mode=False):
+        
+        if isinstance(grid_image, torch.Tensor):
+            pil_grid = torch_imgs_to_pils(grid_image)[0]  # Get first (and only) image
+        else:
+            raise ValueError("grid_image must be torch.Tensor")
+        
+        if not mesh_path or not os.path.exists(mesh_path):
+            raise ValueError(f"Mesh file does not exist: {mesh_path}")
+        
+        save_dir = os.path.abspath(save_dir)
+        os.makedirs(save_dir, exist_ok=True)
+        
+        try:
+            azimuth_deg = [float(x.strip()) for x in camera_azimuth_deg.split(",")]
+            elevation_deg = [float(x.strip()) for x in camera_elevation_deg.split(",")]
+        except:
+            azimuth_deg = [0, 90, 180, 270, 180, 180]
+            elevation_deg = [0, 0, 0, 0, 89.99, -89.99]
+        
+        azimuth_deg_corrected = [x - 90 for x in azimuth_deg]
+        
+        temp_grid_path = os.path.join(save_dir, f"{save_name}_temp_grid.png")
+        pil_grid.save(temp_grid_path)
+        
+        try:
+            from .Gen_3D_Modules.MV_Adapter.mvadapter.pipelines.pipeline_texture import ModProcessConfig
+            
+            rgb_process_config = ModProcessConfig(
+                view_upscale=view_upscale,
+                inpaint_mode=inpaint_mode
+            )
+            
+            base_color_process_config = ModProcessConfig(
+                view_upscale=view_upscale,
+                inpaint_mode=inpaint_mode
+            )
+            
+            texture_args = {
+                "mesh_path": mesh_path,
+                "save_dir": save_dir,
+                "save_name": save_name,
+                "move_to_center": move_to_center,
+                "front_x": front_x,
+                "uv_unwarp": uv_unwarp,
+                "preprocess_mesh": preprocess_mesh,
+                "uv_size": uv_size,
+                "rgb_path": temp_grid_path,
+                "rgb_process_config": rgb_process_config,
+                "camera_elevation_deg": elevation_deg,
+                "camera_azimuth_deg": azimuth_deg_corrected,
+                "camera_distance": camera_distance,
+                "camera_ortho_scale": camera_ortho_scale,
+                "debug_mode": debug_mode,
+                "apply_dilate": apply_dilate,
+            }
+            
+            if create_pbr_model:
+                texture_args.update({
+                    "base_color_path": temp_grid_path,
+                    "base_color_process_config": base_color_process_config,
+                })
+            
+            output = texture_pipeline(**texture_args)
+            
+            if os.path.exists(temp_grid_path):
+                os.remove(temp_grid_path)
+            
+            shaded_path = os.path.abspath(output.shaded_model_save_path) if output.shaded_model_save_path else ""
+            pbr_path = os.path.abspath(output.pbr_model_save_path) if output.pbr_model_save_path else ""
+            
+            print(f"Texturing from grid completed:")
+            print(f"  Shaded model: {shaded_path}")
+            print(f"  PBR model: {pbr_path}")
+                
+            return (shaded_path, pbr_path)
+            
+        except Exception as e:
+            if os.path.exists(temp_grid_path):
+                os.remove(temp_grid_path)
+            raise e
+

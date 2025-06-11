@@ -1,0 +1,315 @@
+{
+  "id": "4f7b5e42-a56c-480c-8bed-bb1a8a8006cd",
+  "revision": 0,
+  "last_node_id": 26,
+  "last_link_id": 43,
+  "nodes": [
+    {
+      "id": 22,
+      "type": "[Comfy3D] Preview 3DMesh",
+      "pos": [
+        5958.7109375,
+        -101.48223114013672
+      ],
+      "size": [
+        600,
+        500
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh_file_path",
+          "type": "STRING",
+          "widget": {
+            "name": "mesh_file_path"
+          },
+          "link": 42
+        }
+      ],
+      "outputs": [],
+      "title": "PBR Mesh",
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Preview 3DMesh"
+      },
+      "widgets_values": [
+        "",
+        null
+      ]
+    },
+    {
+      "id": 17,
+      "type": "[Comfy3D] Preview 3DMesh",
+      "pos": [
+        5346.52099609375,
+        -95.2625503540039
+      ],
+      "size": [
+        600,
+        500
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh_file_path",
+          "type": "STRING",
+          "widget": {
+            "name": "mesh_file_path"
+          },
+          "link": 41
+        }
+      ],
+      "outputs": [],
+      "title": "Shaded Mesh",
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Preview 3DMesh"
+      },
+      "widgets_values": [
+        "",
+        null
+      ]
+    },
+    {
+      "id": 24,
+      "type": "[Comfy3D] Load MVAdapter Texture Pipeline",
+      "pos": [
+        5015.30126953125,
+        -68.61071014404297
+      ],
+      "size": [
+        307.4322204589844,
+        130
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "texture_pipeline",
+          "type": "TEXTURE_PIPE",
+          "links": [
+            38
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Load MVAdapter Texture Pipeline"
+      },
+      "widgets_values": [
+        "RealESRGAN_x2plus.pth",
+        "big-lama.pt",
+        false,
+        true
+      ]
+    },
+    {
+      "id": 26,
+      "type": "[Comfy3D] MVAdapter Texture Projection",
+      "pos": [
+        5015.29931640625,
+        137.44638061523438
+      ],
+      "size": [
+        298.482421875,
+        462
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "texture_pipeline",
+          "type": "TEXTURE_PIPE",
+          "link": 38
+        },
+        {
+          "name": "grid_image",
+          "type": "IMAGE",
+          "link": 39
+        },
+        {
+          "name": "mesh_path",
+          "type": "STRING",
+          "widget": {
+            "name": "mesh_path"
+          },
+          "link": 40
+        }
+      ],
+      "outputs": [
+        {
+          "name": "shaded_model_path",
+          "type": "STRING",
+          "links": [
+            41
+          ]
+        },
+        {
+          "name": "pbr_model_path",
+          "type": "STRING",
+          "links": [
+            42
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] MVAdapter Texture Projection"
+      },
+      "widgets_values": [
+        "",
+        "./output",
+        "textured_model",
+        4096,
+        true,
+        "view",
+        true,
+        false,
+        false,
+        true,
+        true,
+        true,
+        "0,90,180,270,180,180",
+        "0,0,0,0,89.99,-89.99",
+        1,
+        1.1,
+        false
+      ]
+    },
+    {
+      "id": 15,
+      "type": "LoadImage",
+      "pos": [
+        4655.7041015625,
+        132.22010803222656
+      ],
+      "size": [
+        325.982177734375,
+        338.67474365234375
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            39
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "matermulti.png",
+        "image"
+      ]
+    },
+    {
+      "id": 4,
+      "type": "PrimitiveString",
+      "pos": [
+        4659.12890625,
+        -19.559751510620117
+      ],
+      "size": [
+        319.9439392089844,
+        92.46147918701172
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            40
+          ]
+        }
+      ],
+      "title": "Input mesh",
+      "properties": {
+        "Node name for S&R": "PrimitiveString"
+      },
+      "widgets_values": [
+        "output/StableGenTest/mater.glb"
+      ]
+    }
+  ],
+  "links": [
+    [
+      38,
+      24,
+      0,
+      26,
+      0,
+      "TEXTURE_PIPE"
+    ],
+    [
+      39,
+      15,
+      0,
+      26,
+      1,
+      "IMAGE"
+    ],
+    [
+      40,
+      4,
+      0,
+      26,
+      2,
+      "STRING"
+    ],
+    [
+      41,
+      26,
+      0,
+      17,
+      0,
+      "STRING"
+    ],
+    [
+      42,
+      26,
+      1,
+      22,
+      0,
+      "STRING"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.8227024747918819,
+      "offset": [
+        -4472.103767929271,
+        239.69671269689613
+      ]
+    },
+    "frontendVersion": "1.20.4",
+    "node_versions": {
+      "ComfyUI-3D-Pack": "1f6bd293b66069de8bb2182bea8308a9441c961e",
+      "comfy-core": "0.3.35"
+    },
+    "VHS_latentpreview": false,
+    "VHS_latentpreviewrate": 0,
+    "VHS_MetadataImage": true,
+    "VHS_KeepIntermediate": true
+  },
+  "version": 0.4
+}

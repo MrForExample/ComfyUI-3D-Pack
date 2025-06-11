@@ -1,0 +1,7 @@
+{
+  "_class_name": "RectifiedFlowScheduler",
+  "_diffusers_version": "0.33.1",
+  "num_train_timesteps": 1000,
+  "shift": 1,
+  "use_dynamic_shifting": false
+}

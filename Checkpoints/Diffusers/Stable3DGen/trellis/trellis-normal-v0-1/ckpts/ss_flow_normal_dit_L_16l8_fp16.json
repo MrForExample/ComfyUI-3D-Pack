@@ -1,0 +1,17 @@
+{
+    "name": "SparseStructureFlowModel",
+    "args": {
+        "resolution": 16,
+        "in_channels": 8,
+        "out_channels": 8,
+        "model_channels": 1024,
+        "cond_channels": 1024,
+        "num_blocks": 24,
+        "num_heads": 16,
+        "mlp_ratio": 4,
+        "patch_size": 1,
+        "pe_mode": "ape",
+        "qk_rms_norm": true,
+        "use_fp16": true
+    }
+}

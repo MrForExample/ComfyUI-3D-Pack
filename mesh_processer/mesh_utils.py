@@ -242,6 +242,8 @@ def decimate_mesh(
         m = pml.Mesh(verts, faces)
         ms = pml.MeshSet()
         ms.add_mesh(m, "mesh")  # will copy!
+        
+        ms.meshing_merge_close_vertices()
 
         # filters
         # ms.meshing_decimation_clustering(threshold=pml.PercentageValue(1))

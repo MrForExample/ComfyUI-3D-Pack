@@ -1,0 +1,122 @@
+name: i2mv
+tag: "r768-ortho-nv6-ele0-sdxl"
+exp_root_dir: "outputs"
+seed: 42
+
+data_cls: mvadapter.data.multiview.MultiviewDataModule
+data:
+  root_dir: "data/texture_ortho10view_easylight_objaverse"
+  scene_list: "data/objaverse_list_6w.json"
+  background_color: gray
+  image_names: ["0000", "0004", "0001", "0002", "0003", "0005"]
+  image_modality: color
+  num_views: 6
+
+  prompt_db_path: data/objaverse_short_captions.json
+  return_prompt: true
+
+  projection_type: ORTHO
+
+  source_image_modality: ["plucker"]
+  plucker_offset: 1.0
+  plucker_scale: 2.0
+
+  reference_root_dir: ["data/texture_rand_easylight_objaverse"]
+  reference_scene_list: ["data/objaverse_list_6w.json"]
+  reference_image_modality: color
+  reference_image_names: ["0000", "0001", "0002", "0003", "0004"]
+
+  train_indices: [0, -8]
+  val_indices: [-8, null]
+  test_indices: [-8, null]
+
+  height: 768
+  width: 768
+
+  batch_size: 1
+  num_workers: 16
+
+system_cls: mvadapter.systems.mvadapter_image_sdxl.MVAdapterImageSDXLSystem
+system:
+  check_train_every_n_steps: 1000
+  cleanup_after_validation_step: true
+  cleanup_after_test_step: true
+
+  # Model / Adapter
+  pretrained_model_name_or_path: "stabilityai/stable-diffusion-xl-base-1.0"
+  pretrained_vae_name_or_path: "madebyollin/sdxl-vae-fp16-fix"
+  pretrained_adapter_name_or_path: null
+  init_adapter_kwargs:
+    # Multi-view adapter
+    self_attn_processor: "mvadapter.models.attention_processor.DecoupledMVRowSelfAttnProcessor2_0"
+    # Condition encoder
+    cond_in_channels: 6
+    # For training
+    copy_attn_weights: true
+    zero_init_module_keys: ["to_out_mv", "to_out_ref"]
+
+  # Training
+  train_cond_encoder: true
+  trainable_modules: ["_mv", "_ref"]
+  prompt_drop_prob: 0.1
+  image_drop_prob: 0.1
+  cond_drop_prob: 0.1
+
+  # Noise sampler
+  shift_noise: true
+  shift_noise_mode: interpolated
+  shift_noise_scale: 8
+
+  # Evaluation
+  eval_seed: 42
+  eval_num_inference_steps: 30
+  eval_guidance_scale: 3.0
+  eval_height: ${data.height}
+  eval_width: ${data.width}
+
+  # optimizer definition
+  # you can set different learning rates separately for each group of parameters, but note that if you do this you should specify EVERY trainable parameters
+  optimizer:
+    name: AdamW
+    args:
+      lr: 5e-5
+      betas: [0.9, 0.999]
+      weight_decay: 0.01
+    params:
+      cond_encoder:
+        lr: 5e-5
+      unet:
+        lr: 5e-5
+
+  scheduler:
+    name: SequentialLR
+    interval: step
+    schedulers:
+      - name: LinearLR
+        interval: step
+        args:
+          start_factor: 1e-6
+          end_factor: 1.0
+          total_iters: 2000
+      - name: ConstantLR
+        interval: step
+        args:
+          factor: 1.0
+          total_iters: 9999999
+    milestones: [2000]
+
+trainer:
+  max_epochs: 10
+  log_every_n_steps: 10
+  num_sanity_val_steps: 1
+  val_check_interval: 2000
+  enable_progress_bar: true
+  precision: bf16-mixed
+  gradient_clip_val: 1.0
+  strategy: ddp
+  accumulate_grad_batches: 1
+
+checkpoint:
+  save_last: true # whether to save at each validation time
+  save_top_k: -1
+  every_n_epochs: 9999 # do not save at all for debug purpose

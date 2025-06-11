@@ -1,0 +1,340 @@
+{
+  "id": "867889cd-eeb4-48b0-853c-21e125a93896",
+  "revision": 0,
+  "last_node_id": 34,
+  "last_link_id": 41,
+  "nodes": [
+    {
+      "id": 26,
+      "type": "[Comfy3D] Make Image Grid",
+      "pos": [
+        3033.62158203125,
+        -586.97265625
+      ],
+      "size": [
+        270,
+        82
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 39
+        }
+      ],
+      "outputs": [
+        {
+          "name": "image_grid",
+          "type": "IMAGE",
+          "links": [
+            23
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Make Image Grid"
+      },
+      "widgets_values": [
+        1,
+        true
+      ]
+    },
+    {
+      "id": 8,
+      "type": "PreviewImage",
+      "pos": [
+        3033.075927734375,
+        -927.3829956054688
+      ],
+      "size": [
+        370.7532958984375,
+        288.39501953125
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 38
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 32,
+      "type": "[Comfy3D] Load MVAdapter IG2MV Pipeline",
+      "pos": [
+        2138.81591796875,
+        -1144.373291015625
+      ],
+      "size": [
+        353.38751220703125,
+        238.59991455078125
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "mvadapter_pipe",
+          "type": "DIFFUSERS_PIPE",
+          "links": [
+            36
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Load MVAdapter IG2MV Pipeline"
+      },
+      "widgets_values": [
+        "stabilityai/stable-diffusion-xl-base-1.0",
+        "madebyollin/sdxl-vae-fp16-fix",
+        "huanngzh/mv-adapter",
+        "ddpm",
+        6,
+        true,
+        true,
+        ""
+      ]
+    },
+    {
+      "id": 3,
+      "type": "LoadImage",
+      "pos": [
+        2151.8310546875,
+        -841.9072265625
+      ],
+      "size": [
+        346.8450622558594,
+        326
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            37
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "squirrel_girl_1.png",
+        "image"
+      ]
+    },
+    {
+      "id": 34,
+      "type": "[Comfy3D] MVAdapter IG2MV",
+      "pos": [
+        2552.5146484375,
+        -933.671875
+      ],
+      "size": [
+        400,
+        402
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mvadapter_pipe",
+          "type": "DIFFUSERS_PIPE",
+          "link": 36
+        },
+        {
+          "name": "reference_image",
+          "type": "IMAGE",
+          "link": 37
+        },
+        {
+          "name": "mesh_path",
+          "type": "STRING",
+          "widget": {
+            "name": "mesh_path"
+          },
+          "link": 41
+        }
+      ],
+      "outputs": [
+        {
+          "name": "multiview_images",
+          "type": "IMAGE",
+          "links": [
+            38,
+            39
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] MVAdapter IG2MV"
+      },
+      "widgets_values": [
+        "",
+        "high quality",
+        "watermark, ugly, deformed, noisy, blurry, low contrast",
+        50,
+        3,
+        1,
+        768,
+        768,
+        459568704818520,
+        "randomize",
+        false,
+        1
+      ]
+    },
+    {
+      "id": 27,
+      "type": "PreviewImage",
+      "pos": [
+        3035.859130859375,
+        -443.73687744140625
+      ],
+      "size": [
+        420.0350036621094,
+        246
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 23
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 9,
+      "type": "PrimitiveString",
+      "pos": [
+        2155.323974609375,
+        -452.05352783203125
+      ],
+      "size": [
+        343.5000305175781,
+        67.5549545288086
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            41
+          ]
+        }
+      ],
+      "title": "Mesh Path",
+      "properties": {
+        "Node name for S&R": "PrimitiveString"
+      },
+      "widgets_values": [
+        "output/StableGenTest/mesh.glb"
+      ]
+    }
+  ],
+  "links": [
+    [
+      23,
+      26,
+      0,
+      27,
+      0,
+      "IMAGE"
+    ],
+    [
+      36,
+      32,
+      0,
+      34,
+      0,
+      "DIFFUSERS_PIPE"
+    ],
+    [
+      37,
+      3,
+      0,
+      34,
+      1,
+      "IMAGE"
+    ],
+    [
+      38,
+      34,
+      0,
+      8,
+      0,
+      "IMAGE"
+    ],
+    [
+      39,
+      34,
+      0,
+      26,
+      0,
+      "IMAGE"
+    ],
+    [
+      41,
+      9,
+      0,
+      34,
+      2,
+      "STRING"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.9523809523809523,
+      "offset": [
+        -1889.6151044555788,
+        1117.4222501296233
+      ]
+    },
+    "frontendVersion": "1.20.4",
+    "node_versions": {
+      "ComfyUI-3D-Pack": "1f6bd293b66069de8bb2182bea8308a9441c961e",
+      "comfy-core": "0.3.35"
+    },
+    "VHS_latentpreview": false,
+    "VHS_latentpreviewrate": 0,
+    "VHS_MetadataImage": true,
+    "VHS_KeepIntermediate": true
+  },
+  "version": 0.4
+}

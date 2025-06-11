@@ -1,0 +1,17 @@
+{
+  "_class_name": "YOSONormalsPipeline",
+  "_diffusers_version": "0.28.0",
+  "controlnet": [
+    "controlnetvae",
+    "ControlNetVAEModel"
+  ],
+  "requires_safety_checker": true,
+  "unet": [
+    "diffusers",
+    "UNet2DConditionModel"
+  ],
+  "vae": [
+    "diffusers",
+    "AutoencoderKL"
+  ]
+}
