@@ -55,6 +55,7 @@ pyvista
 pymeshfix
 igraph
 diso
+open3d
 
 # configs & extra
 torchtyping>=0.1.5
