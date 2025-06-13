@@ -7,6 +7,7 @@ from os.path import dirname
 import glob
 import subprocess
 import traceback
+import platform
 
 if sys.argv[0] == 'install.py':
     sys.path.append('.')   # for portable version
@@ -21,6 +22,7 @@ try:
         git_folder_parallel,
         install_remote_packages,
         install_platform_packages,
+        install_spconv,
         wheels_dir_exists_and_not_empty,
         build_config,
         PYTHON_PATH,
@@ -34,9 +36,65 @@ try:
         import github
     except ImportError:
         subprocess.run([sys.executable, "-m", "pip", "install", "PyGithub"])
-    
+
+    def install_local_wheels(builds_dir):
+        """Install all wheels from local directory"""
+        wheel_files = glob.glob(os.path.join(builds_dir, "**/*.whl"), recursive=True)
+        if not wheel_files:
+            cstr("No wheel files found in directory").warning.print()
+            return False
+            
+        success_count = 0
+        for wheel_path in wheel_files:
+            result = subprocess.run([PYTHON_PATH, "-s", "-m", "pip", "install", "--no-deps", "--force-reinstall", wheel_path], 
+                                  text=True, capture_output=True)
+            if result.returncode == 0:
+                cstr(f"Successfully installed wheel: {os.path.basename(wheel_path)}").msg.print()
+                success_count += 1
+            else:
+                cstr(f"Failed to install wheel {os.path.basename(wheel_path)}: {result.stderr}").error.print()
+        
+        if success_count == len(wheel_files):
+            cstr(f"Successfully installed all {len(wheel_files)} wheels").msg.print()
+            return True
+        elif success_count > 0:
+            cstr(f"Partially successful: {success_count}/{len(wheel_files)} wheels installed").warning.print()
+            return False
+        else:
+            cstr("Failed to install any wheels").error.print()
+            return False
+
+    def try_wheels_first_approach():
+        """Try wheels-first approach for all platforms"""
+        platform_config_name = get_platform_config_name()
+        builds_dir = os.path.join(WHEELS_ROOT_ABS_PATH, platform_config_name)
+        
+        cstr("Trying wheels-first approach...").msg.print()
+        wheels_installed = False
+        
+        # Check existing wheels
+        if wheels_dir_exists_and_not_empty(builds_dir):
+            cstr(f"Found existing wheels in {builds_dir}").msg.print()
+            if install_local_wheels(builds_dir):
+                wheels_installed = True
+                cstr("Installed wheels from local directory").msg.print()
+        
+        # Try downloading wheels from repository if not found locally
+        if not wheels_installed:
+            remote_builds_dir_name = f"{build_config.wheels_dir_name}/{platform_config_name}"
+            if git_folder_parallel(build_config.repo_id, remote_builds_dir_name, recursive=True, root_outdir=builds_dir):
+                cstr("Downloaded wheels from repository").msg.print()
+                if install_local_wheels(builds_dir):
+                    wheels_installed = True
+                    cstr("Installed wheels from repository").msg.print()
+            else:
+                cstr("Could not download wheels from repository").warning.print()
+        
+        return wheels_installed
+
     def try_auto_build_all(builds_dir):
         cstr(f"Try building all required packages...").msg.print()
+        
         result = subprocess.run(
             [PYTHON_PATH, "auto_build_all.py", "--output_root_dir", builds_dir], 
             cwd=BUILD_SCRIPT_ROOT_ABS_PATH, text=True, capture_output=True
@@ -49,38 +107,66 @@ try:
             
         return build_succeed
     
-    def install_local_wheels(builds_dir):
-        for wheel_path in glob.glob(os.path.join(builds_dir, "**/*.whl"), recursive=True):
-            subprocess.run([PYTHON_PATH, "-s", "-m", "pip", "install", "--no-deps", "--force-reinstall", wheel_path])
-            cstr(f"pip install {wheel_path} to {PYTHON_PATH}").msg.print()
-    
     # Install packages that needs specify remote url
     install_remote_packages(build_config.build_base_packages)
     install_platform_packages()
     
+    # Check and install build tools if needed
+    cstr("Checking build tools...").msg.print()
+    build_tools = ["ninja", "cmake", "setuptools", "wheel"]
+    for tool in build_tools:
+        try:
+            __import__(tool)
+            cstr(f"{tool} is already installed").msg.print()
+        except ImportError:
+            cstr(f"Installing {tool}...").msg.print()
+            result = subprocess.run(
+                [PYTHON_PATH, "-m", "pip", "install", "--upgrade", tool],
+                text=True, capture_output=True
+            )
+            if result.returncode != 0:
+                cstr(f"[{tool} INSTALL ERROR]\n{result.stderr}").error.print()
+                raise RuntimeError(f"Failed to install {tool}")
+    
+    # Main installation logic
+    spconv_success = False
+    wheels_success = False
+    
     # Get the target remote pre-built wheels directory name and path
     platform_config_name = get_platform_config_name()
-    remote_builds_dir_name = f"{build_config.wheels_dir_name}/{platform_config_name}"
-    # Get the directory path which wheels will be downloaded or build into it
     builds_dir = os.path.join(WHEELS_ROOT_ABS_PATH, platform_config_name)
     
-    build_succeed = False
-    # Check if wheels already exist locally
-    if wheels_dir_exists_and_not_empty(builds_dir):
-        cstr(f"Found existing wheels in {builds_dir}").msg.print()
-        build_succeed = True
-    # Download pre-build wheels if exist
-    elif git_folder_parallel(build_config.repo_id, remote_builds_dir_name, recursive=True, root_outdir=builds_dir):
-        build_succeed = True
-    # Build the wheels if couldn't find pre-build wheels
-    elif try_auto_build_all(builds_dir):
-        build_succeed = True
-            
-    if build_succeed:
-        install_local_wheels(builds_dir)
-        cstr("Successfully installed all required wheels").msg.print()
+    # Unified wheels-first approach for all platforms
+    cstr("Starting unified installation process...").msg.print()
+    
+    # Step 1: Try wheels first
+    wheels_success = try_wheels_first_approach()
+    
+    # Step 2: Install missing packages (like spconv)
+    spconv_success = install_spconv()
+    
+    # Step 3: If wheels failed, try building
+    if not wheels_success:
+        cstr("Wheels installation failed, trying to build from source...").warning.print()
+        if try_auto_build_all(builds_dir):
+            install_local_wheels(builds_dir)
+            wheels_success = True
+            cstr("Successfully built and installed wheels").msg.print()
+        else:
+            cstr("Building wheels also failed").error.print()
+    
+    # Final verification
+    if not install_spconv():
+        raise RuntimeError("spconv failed final verification. Please check the installation.")
+    
+    if spconv_success:
+        cstr("Successfully installed spconv").msg.print()
+        if wheels_success:
+            cstr("Successfully installed all available wheels").msg.print()
+        else:
+            cstr("Note: Some wheels could not be installed, but this is not critical").warning.print()
     else:
-        raise RuntimeError("Comfy3D build failed")
+        raise RuntimeError("Failed to install spconv")
     
     # Download python cpp source files for current python environment
     remote_pycpp_dir_name = f"_Python_Source_cpp/{PYTHON_VERSION}"

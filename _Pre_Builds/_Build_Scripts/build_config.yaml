@@ -1,4 +1,4 @@
-repo_id: "MrForExample/Comfy3D_Pre_Builds"
+repo_id: "DenisKochetov/Comfy3D_Pre_Builds"
 supported_cuda_versions: ["12.8", "12.6", "12.4", "12.1", "11.8"]
 cuda_version: "12.8"
 
@@ -22,6 +22,14 @@ platform_packages:
   linux:
     - "triton"
 
+# Simple spconv installation with CUDA mapping
+spconv_cuda_mapping:
+  "12.8": "cu126"  # Default for 12.8 and maximum available
+  "12.6": "cu126"
+  "12.4": "cu124"
+  "12.1": "cu121"
+  "11.8": "cu118"
+
 # All packages will be automatically installed at beginning of install.py follwing orders from top to bottom 
 remote_packages:
   torch:
@@ -36,7 +44,6 @@ remote_packages:
     version: "0.0.30"
     url: "https://download.pytorch.org/whl/${cuda_version}"
 
-  # At the time of writing, torch-scatter is not available for PyTorch 2.5.0
-  #torch-scatter:
-  #  url_option: "--find-links"
-  #  url: "https://data.pyg.org/whl/torch-${remote_packages.torch.version}+${cuda_version}.html"
+  torch-scatter:
+   url_option: "--find-links"
+   url: "https://data.pyg.org/whl/torch-${remote_packages.torch.version}+${cuda_version}.html"
