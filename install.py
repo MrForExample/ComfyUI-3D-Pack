@@ -23,6 +23,7 @@ try:
         install_remote_packages,
         install_platform_packages,
         install_spconv,
+        check_spconv_after_wheels,
         wheels_dir_exists_and_not_empty,
         build_config,
         PYTHON_PATH,
@@ -142,8 +143,12 @@ try:
     # Step 1: Try wheels first
     wheels_success = try_wheels_first_approach()
     
-    # Step 2: Install missing packages (like spconv)
-    spconv_success = install_spconv()
+    # Step 2: Check if spconv works after wheels, install if needed
+    if wheels_success and check_spconv_after_wheels():
+        spconv_success = True
+    else:
+        # Install spconv using CUDA mapping
+        spconv_success = install_spconv()
     
     # Step 3: If wheels failed, try building
     if not wheels_success:
@@ -152,6 +157,11 @@ try:
             install_local_wheels(builds_dir)
             wheels_success = True
             cstr("Successfully built and installed wheels").msg.print()
+            # Check spconv again after building
+            if not check_spconv_after_wheels():
+                spconv_success = install_spconv()
+            else:
+                spconv_success = True
         else:
             cstr("Building wheels also failed").error.print()
     
