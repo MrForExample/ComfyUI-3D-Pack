@@ -252,7 +252,7 @@ def install_platform_packages():
 
 def install_spconv():
     """Simple spconv installation with correct CUDA version"""
-    # Check if spconv is already installed
+    # Check if spconv is already installed and working
     try:
         import spconv.core_cc
         print("spconv is already installed and working")
@@ -265,8 +265,17 @@ def install_spconv():
         print("No spconv_cuda_mapping in config, skipping spconv installation")
         return True
     
-    # Convert CUDA_VERSION (e.g. cu128 -> 12.8) for lookup
-    cuda_version_for_lookup = CUDA_VERSION[2:3] + '.' + CUDA_VERSION[3:]
+    # Fix CUDA version parsing: cu128 -> 12.8, cu121 -> 12.1, cu118 -> 11.8
+    if len(CUDA_VERSION) >= 5:  # e.g., cu128, cu121
+        major = CUDA_VERSION[2:-1]  # cu128 -> 12, cu121 -> 12, cu118 -> 11  
+        minor = CUDA_VERSION[-1]    # cu128 -> 8, cu121 -> 1, cu118 -> 8
+        cuda_version_for_lookup = f"{major}.{minor}"
+    else:
+        print(f"Invalid CUDA_VERSION format: {CUDA_VERSION}")
+        return False
+    
+    print(f"Detected CUDA version: {cuda_version_for_lookup}")
+    
     cuda_suffix = build_config.spconv_cuda_mapping.get(cuda_version_for_lookup)
     
     if not cuda_suffix:
@@ -292,6 +301,16 @@ def install_spconv():
         return True
     except ImportError as e:
         print(f"spconv installed but verification failed: {e}")
+        return False
+
+def check_spconv_after_wheels():
+    """Check if spconv works after wheels installation"""
+    try:
+        import spconv.core_cc
+        print("spconv is working after wheels installation")
+        return True
+    except ImportError:
+        print("spconv not working, will install from mapping")
         return False
 
 def wheels_dir_exists_and_not_empty(builds_dir):
