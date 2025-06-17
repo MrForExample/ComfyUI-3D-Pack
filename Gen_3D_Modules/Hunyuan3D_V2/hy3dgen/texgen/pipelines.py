@@ -52,7 +52,7 @@ class Hunyuan3DTexGenConfig:
 
 class Hunyuan3DPaintPipeline:
     @classmethod
-    def from_pretrained(cls, model_path, subfolder='hunyuan3d-paint-v2-0-turbo'):
+    def from_pretrained(cls, model_path, subfolder='hunyuan3d-paint-v2-0-turbo', **kwargs):
         delight_model_path   = os.path.join(model_path, 'hunyuan3d-delight-v2-0')
         multiview_model_path = os.path.join(model_path, subfolder)
 
