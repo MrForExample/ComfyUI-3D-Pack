@@ -52,10 +52,10 @@ Your ComfyUI Root Directory\python_embeded\python.exe install.py
     - 3D mesh + reference image → 3D mesh with RGB texture
   - Model weights: https://huggingface.co/tencent/Hunyuan3D-2.1
   - Workflows: [Full](./_Example_Workflows/Hunyuan3D_2_1/Hunyuan2.1-Full.json), [Shapegen](./_Example_Workflows/Hunyuan3D_2_1/Hunyuan2.1-Shapegen.json), [Texgen](./_Example_Workflows/Hunyuan3D_2_1/Hunyuan2.1-Texgen.json)
-  
-  <video controls autoplay loop src="https://github.com/user-attachments/assets/13f8ff7d-477f-4641-8ac1-df240069fadb"></video>
+
+  <video controls autoplay loop src="https://github.com/user-attachments/assets/514bbece-ca19-43cf-83ca-2ccc6c60039e"></video>
   <video controls autoplay loop src="https://github.com/user-attachments/assets/65f329e7-610f-4520-b0c6-6da62f8209d1"></video>
-  <video controls autoplay loop src="https://github.com/user-attachments/assets/72f5bb53-66b6-4a6c-b1c9-2b97a895a953"></video>
+  <video controls autoplay loop src="https://github.com/user-attachments/assets/b67a91f4-3d7f-4a2d-9202-c284b013e9fb"></video>
 
 - **MV-Adapter**: [huanngzh/MV-Adapter](https://github.com/huanngzh/MV-Adapter)
   - Two generation methods:
@@ -68,7 +68,7 @@ Your ComfyUI Root Directory\python_embeded\python.exe install.py
    <video controls autoplay loop src="https://github.com/user-attachments/assets/47b77c9e-a121-45c4-a6d0-f307bda1579c"></video>
    <video controls autoplay loop src="https://github.com/user-attachments/assets/35c6cee5-d408-4559-88aa-753741eacb95"></video>
    <video controls autoplay loop src="https://github.com/user-attachments/assets/dcf33c27-0ff7-4379-91b5-a0efe229d63c"></video>
-   
+
 - **Stable3DGen**: [Stable-X/Stable3DGen](https://github.com/Stable-X/Stable3DGen)
   - Two models pipeline:
     - Stable3DGen: Single image to 3D Mesh
