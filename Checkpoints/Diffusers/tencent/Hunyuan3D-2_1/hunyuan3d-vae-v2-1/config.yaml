@@ -1,0 +1,19 @@
+target: hy3dshape.models.ShapeVAE
+params:
+  num_latents: 4096
+  embed_dim: 64
+  num_freqs: 8
+  include_pi: false
+  heads: 16
+  width: 1024
+  num_encoder_layers: 8
+  num_decoder_layers: 16
+  qkv_bias: false
+  qk_norm: true
+  scale_factor: 1.0039506158752403
+  geo_decoder_mlp_expand_ratio: 4
+  geo_decoder_downsample_ratio: 1
+  geo_decoder_ln_post: true
+  point_feats: 4
+  pc_size: 81920
+  pc_sharpedge_size: 0

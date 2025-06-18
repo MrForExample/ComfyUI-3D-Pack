@@ -46,6 +46,17 @@ Your ComfyUI Root Directory\python_embeded\python.exe install.py
 - For use cases please check out [Example Workflows](./_Example_Workflows/). [**Last update: 5/June/2025**]
   - **Note:** you need to put [Example Inputs Files & Folders](_Example_Workflows/_Example_Inputs_Files/) under ComfyUI Root Directory\ComfyUI\input folder before you can run the example workflow
 
+- **Hunyuan3D_2.1**: [Tencent-Hunyuan/Hunyuan3D-2.1](https://github.com/Tencent-Hunyuan/Hunyuan3D-2.1)  
+  - Updated two-stage pipeline:
+    - Single image → 3D mesh (shape generation)
+    - 3D mesh + reference image → 3D mesh with RGB texture
+  - Model weights: https://huggingface.co/tencent/Hunyuan3D-2.1
+  - Workflows: [Full](./_Example_Workflows/Hunyuan3D_2_1/Hunyuan2.1-Full.json), [Shapegen](./_Example_Workflows/Hunyuan3D_2_1/Hunyuan2.1-Shapegen.json), [Texgen](./_Example_Workflows/Hunyuan3D_2_1/Hunyuan2.1-Texgen.json)
+  
+  <video controls autoplay loop src="https://github.com/user-attachments/assets/13f8ff7d-477f-4641-8ac1-df240069fadb"></video>
+  <video controls autoplay loop src="https://github.com/user-attachments/assets/65f329e7-610f-4520-b0c6-6da62f8209d1"></video>
+  <video controls autoplay loop src="https://github.com/user-attachments/assets/72f5bb53-66b6-4a6c-b1c9-2b97a895a953"></video>
+
 - **MV-Adapter**: [huanngzh/MV-Adapter](https://github.com/huanngzh/MV-Adapter)
   - Two generation methods:
     - IG2MV: Single image + 3D mesh to multi-view images
