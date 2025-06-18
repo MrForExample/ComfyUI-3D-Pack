@@ -112,7 +112,19 @@ from MV_Adapter.mvadapter_node_utils import (
         prepare_texture_pipeline as mvadapter_prepare_texture_pipeline,
         download_texture_checkpoints,
     )
-from MV_Adapter.mvadapter.utils import make_image_grid
+from mmgp import offload, profile_type
+from Gen_3D_Modules.Hunyuan3D_2_1 import (
+    FaceReducer_2_1, 
+    Hunyuan3DDiTFlowMatchingPipeline_2_1,
+    export_to_trimesh_2_1,
+    BackgroundRemover_2_1,
+    Hunyuan3DPaintPipeline_2_1,
+    Hunyuan3DPaintConfig_2_1,
+    create_glb_with_pbr_materials_2_1,
+)
+from Gen_3D_Modules.Hunyuan3D_2_1.hy3dpaint.utils.torchvision_fix import apply_fix
+apply_fix()
+
 
 os.environ['SPCONV_ALGO'] = 'native'
 
@@ -1701,7 +1713,7 @@ class MVDream_Model:
         return {
             "required": {
                 "mvdream_pipe": ("DIFFUSERS_PIPE",),
-                "reference_image": ("IMAGE",), 
+                "reference_image": ("IMAGE", ), 
                 "reference_mask": ("MASK",),
                 "prompt": ("STRING", {
                     "default": "",
@@ -5178,4 +5190,385 @@ class MVAdapter_Texture_Projection:
             if os.path.exists(temp_grid_path):
                 os.remove(temp_grid_path)
             raise e
+
+class Load_Hunyuan3D_21_ShapeGen_Pipeline:
+    """Load Hunyuan3D-2.1 Shape Generation Pipeline"""
+    
+    CATEGORY = "Comfy3D/Algorithm/Hunyuan3D-2.1"
+    RETURN_TYPES = ("DIFFUSERS_PIPE",)
+    RETURN_NAMES = ("shapegen_pipe",)
+    FUNCTION = "load"
+
+    _REPO_ID_BASE = "tencent"
+    _REPO_NAME = "Hunyuan3D-2.1"
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "subfolder": (["hunyuan3d-dit-v2-1"], {"default": "hunyuan3d-dit-v2-1"}),
+            }
+        }
+
+    @staticmethod
+    def _ensure_weights(subfolder: str):
+        repo_id = f"{Load_Hunyuan3D_21_ShapeGen_Pipeline._REPO_ID_BASE}/{Load_Hunyuan3D_21_ShapeGen_Pipeline._REPO_NAME}"
+        safe_repo_name = Load_Hunyuan3D_21_ShapeGen_Pipeline._REPO_NAME.replace(".", "_")
+        base_dir = os.path.join(CKPT_DIFFUSERS_PATH, f"{Load_Hunyuan3D_21_ShapeGen_Pipeline._REPO_ID_BASE}/{safe_repo_name}")
+        
+        required_files = [
+            "hunyuan3d-dit-v2-1/model.fp16.ckpt",
+            "hunyuan3d-vae-v2-1/model.fp16.ckpt"
+        ]
+        
+        files_to_download = []
+        
+        for file_path in required_files:
+            full_file_path = os.path.join(base_dir, file_path)
+            if not os.path.exists(full_file_path):
+                files_to_download.append(file_path)
+        
+        if files_to_download:
+            for file_path in files_to_download:
+                try:
+                    from huggingface_hub import hf_hub_download
+                    downloaded_path = hf_hub_download(
+                        repo_id=repo_id,
+                        filename=file_path,
+                        local_dir=base_dir,
+                        repo_type="model",
+                        resume_download=True
+                    )
+                except Exception as e:
+                    print(f"Loading error {file_path}: {e}")
+            print(f"Loading Hunyuan3D-2.1 ShapeGen completed")
+        else:
+            print(f"Hunyuan3D-2.1 ShapeGen weights already loaded")
+        
+        return base_dir
+
+    def load(self, subfolder):
+        base_dir = self._ensure_weights(subfolder)
+        
+        pipeline = Hunyuan3DDiTFlowMatchingPipeline_2_1.from_pretrained(
+            base_dir,
+            subfolder=subfolder,
+            use_safetensors=False,
+            device="cuda",
+        )
+        
+        return (pipeline,)
+
+class Load_Hunyuan3D_21_TexGen_Pipeline:
+    """Load Hunyuan3D-2.1 Texture Generation Pipeline"""
+    
+    CATEGORY = "Comfy3D/Algorithm/Hunyuan3D-2.1"
+    RETURN_TYPES = ("DIFFUSERS_PIPE",)
+    RETURN_NAMES = ("texgen_pipe",)
+    FUNCTION = "load"
+
+    _REPO_ID_BASE = "tencent"
+    _REPO_NAME = "Hunyuan3D-2.1"
+
+    # Pipeline cache: { (max_view, res, mmgp) : pipeline }
+    _cache = {}
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "max_num_view": ("INT", {"default": 8, "min": 4, "max": 12}),
+                "resolution": ("INT", {"default": 768, "min": 512, "max": 1024, "step": 256}),
+                "enable_mmgp": ("BOOLEAN", {"default": True}),
+            }
+        }
+
+    @staticmethod 
+    def _ensure_weights():
+        repo_id = f"{Load_Hunyuan3D_21_TexGen_Pipeline._REPO_ID_BASE}/{Load_Hunyuan3D_21_TexGen_Pipeline._REPO_NAME}"
+        safe_repo_name = Load_Hunyuan3D_21_TexGen_Pipeline._REPO_NAME.replace(".", "_")
+        base_dir = os.path.join(CKPT_DIFFUSERS_PATH, f"{Load_Hunyuan3D_21_TexGen_Pipeline._REPO_ID_BASE}/{safe_repo_name}")
+        
+        target_folder = "hunyuan3d-paintpbr-v2-1"
+        required_files = [
+            f"{target_folder}/image_encoder/model.safetensors",
+            f"{target_folder}/text_encoder/pytorch_model.bin",
+            f"{target_folder}/unet/diffusion_pytorch_model.bin",
+            f"{target_folder}/vae/diffusion_pytorch_model.bin"
+        ]
+        
+        files_missing = []
+        
+        for file_path in required_files:
+            full_file_path = os.path.join(base_dir, file_path)
+            if not os.path.exists(full_file_path):
+                files_missing.append(file_path)
+        
+        if files_missing:
+            print(f"Loading Hunyuan3D-2.1 TexGen folder: {target_folder}")
+            print(f"Missing files: {len(files_missing)}")
+            snapshot_download(
+                repo_id=repo_id,
+                repo_type="model", 
+                local_dir=base_dir,
+                resume_download=True,
+                ignore_patterns=HF_DOWNLOAD_IGNORE,
+                allow_patterns=[f"{target_folder}/**"]
+            )
+            print(f"Hunyuan3D-2.1 TexGen {target_folder} downloaded successfully")
+        else:
+            print(f"Hunyuan3D-2.1 TexGen weights already loaded")
+
+        return base_dir
+
+    @staticmethod
+    def _ensure_realesrgan():
+        upscale_models_dir = os.path.join(ROOT_PATH, "..", "..", "models", "upscale_models")
+        realesrgan_path = os.path.join(upscale_models_dir, "RealESRGAN_x4plus.pth")
+        
+        if not os.path.exists(realesrgan_path):
+            print(f"RealESRGAN model not found, downloading from GitHub...")
+            os.makedirs(upscale_models_dir, exist_ok=True)
+            
+            import urllib.request
+            realesrgan_url = "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth"
+            
+            try:
+                print(f"Downloading RealESRGAN_x4plus.pth to {realesrgan_path}...")
+                urllib.request.urlretrieve(realesrgan_url, realesrgan_path)
+                print(f"RealESRGAN_x4plus.pth downloaded successfully")
+            except Exception as e:
+                print(f"Failed to download RealESRGAN_x4plus.pth: {e}")
+                raise
+        else:
+            print(f"Found existing RealESRGAN_x4plus.pth at {realesrgan_path}")
+        
+        return realesrgan_path
+
+    def load(self, max_num_view, resolution, enable_mmgp):
+        cache_key = (max_num_view, resolution, enable_mmgp)
+
+        # Check cache first
+        if cache_key in self._cache:
+            print(f"[TexGen-Loader] Using cached pipeline {cache_key}")
+            return (self._cache[cache_key],)
+
+        base_dir = self._ensure_weights()
+        realesrgan_path = self._ensure_realesrgan()
+        
+        # Configure pipeline
+        conf = Hunyuan3DPaintConfig_2_1(max_num_view=max_num_view, resolution=resolution)
+        conf.realesrgan_ckpt_path = realesrgan_path
+        conf.multiview_cfg_path = os.path.join(ROOT_PATH, "Gen_3D_Modules/Hunyuan3D_2_1/hy3dpaint/cfgs/hunyuan-paint-pbr.yaml")
+        conf.custom_pipeline = os.path.join(ROOT_PATH, "Gen_3D_Modules/Hunyuan3D_2_1/hy3dpaint/hunyuanpaintpbr")
+
+        pipeline = Hunyuan3DPaintPipeline_2_1(conf)
+        
+        if enable_mmgp:
+            try:
+                core_pipe = pipeline.models["multiview_model"].pipeline
+                offload.profile(core_pipe, profile_type.LowRAM_LowVRAM)
+                print("mmgp optimization enabled for texture pipeline")
+            except Exception as e:
+                print(f"[mmgp] Failed to apply optimization for texture: {e}")
+        else:
+            print("mmgp optimization disabled for texture pipeline")
+        
+        # Save to cache and return
+        self._cache[cache_key] = pipeline
+        print(f"[TexGen-Loader] Cached new pipeline {cache_key}")
+        return (pipeline,)
+
+class Hunyuan3D_21_ShapeGen:
+    """Hunyuan3D-2.1 Shape Generation with automatic pipeline cleanup"""
+    
+    CATEGORY = "Comfy3D/Algorithm/Hunyuan3D-2.1"
+    RETURN_TYPES = ("MESH", "IMAGE")
+    RETURN_NAMES = ("mesh", "processed_image")
+    FUNCTION = "generate"
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "shapegen_pipe": ("DIFFUSERS_PIPE",),
+                "image": ("IMAGE",),
+                "seed": ("INT", {"default": 1234, "min": 0, "max": 0xffffffffffffffff}),
+                "steps": ("INT", {"default": 30, "min": 1, "max": 100}),
+                "guidance_scale": ("FLOAT", {"default": 7.5, "min": 0.0, "step": 0.1}),
+                "octree_resolution": ("INT", {"default": 256, "min": 64, "max": 512}),
+                "remove_background": ("BOOLEAN", {"default": True}),
+                "auto_cleanup": ("BOOLEAN", {"default": True}),
+            }
+        }
+
+    @torch.no_grad()
+    def generate(self, shapegen_pipe, image, seed, steps, guidance_scale, octree_resolution, remove_background, auto_cleanup):
+        pil_image = torch_imgs_to_pils(image)[0].convert("RGBA")
+        
+        if remove_background or pil_image.mode == "RGB":
+            rmbg_worker = BackgroundRemover_2_1()
+            pil_image = rmbg_worker(pil_image.convert('RGB'))
+            del rmbg_worker
+
+        generator = torch.Generator(device=shapegen_pipe.device)
+        generator = generator.manual_seed(int(seed))
+        
+        outputs = shapegen_pipe(
+            image=pil_image,
+            num_inference_steps=steps,
+            guidance_scale=guidance_scale,
+            generator=generator,
+            octree_resolution=octree_resolution,
+            num_chunks=200000,
+            output_type='mesh'
+        )
+        
+        mesh = export_to_trimesh_2_1(outputs)[0]
+        
+        face_reduce_worker = FaceReducer_2_1()
+        mesh = face_reduce_worker(mesh)
+        del face_reduce_worker
+        
+        # Auto cleanup pipeline if enabled
+        if auto_cleanup:
+            try:
+                shapegen_pipe.to('cpu')
+                if hasattr(shapegen_pipe, 'unet'):
+                    del shapegen_pipe.unet
+                if hasattr(shapegen_pipe, 'vae'):
+                    del shapegen_pipe.vae
+                if hasattr(shapegen_pipe, 'scheduler'):
+                    del shapegen_pipe.scheduler
+                del outputs
+                torch.cuda.empty_cache()
+                gc.collect()
+                print("Shape pipeline cleaned up")
+            except Exception as e:
+                print(f"Error during pipeline cleanup: {e}")
+            
+        mesh_out = Mesh.load_trimesh(given_mesh=mesh)
+        mesh_out.auto_normal()
+        
+        processed_image_tensor = pils_to_torch_imgs([pil_image])
+        
+        return (mesh_out, processed_image_tensor)
+
+class Hunyuan3D_21_TexGen:
+    """Hunyuan3D-2.1 Texture Generation"""
+    
+    CATEGORY = "Comfy3D/Algorithm/Hunyuan3D-2.1"
+    RETURN_TYPES = ("MESH",)
+    RETURN_NAMES = ("textured_mesh",)
+    FUNCTION = "generate"
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "texgen_pipe": ("DIFFUSERS_PIPE",),
+                "mesh_path": ("STRING", {"default": ""}),
+                "image": ("IMAGE",),
+                "create_pbr": ("BOOLEAN", {"default": True}),
+                "use_remesh": ("BOOLEAN", {"default": False}),
+            }
+        }
+
+    @torch.no_grad()
+    def generate(self, texgen_pipe, mesh_path, image, create_pbr, use_remesh):
+        if not mesh_path or not os.path.exists(mesh_path):
+            raise Exception(f"Mesh file not found: {mesh_path}")
+
+        pil_image = torch_imgs_to_pils(image)[0]
+        
+        # Save files to output/Hun2-1 directory
+        output_dir = "output/Hun2-1"
+        os.makedirs(output_dir, exist_ok=True)
+        
+        image_path = os.path.join(output_dir, "hunyuan_input.png")
+        output_path = os.path.join(output_dir, "hunyuan_output.obj")
+        
+        try:
+            pil_image.save(image_path)
+            
+            result_path = texgen_pipe(
+                mesh_path=mesh_path,
+                image_path=image_path,
+                output_mesh_path=output_path,
+                save_glb=True,  # Always create GLB
+                use_remesh=use_remesh
+            )
+            
+            mesh_out = None
+            
+            if create_pbr:
+                glb_path = result_path.replace(".obj", ".glb")
+                
+                if not os.path.exists(glb_path):
+                    base_path = os.path.splitext(result_path)[0]
+                    textures_dict = {
+                        'albedo': f"{base_path}.jpg",
+                    }
+                    
+                    metallic_path = f"{base_path}_metallic.jpg"
+                    roughness_path = f"{base_path}_roughness.jpg"
+                    normal_path = f"{base_path}_normal.jpg"
+                    
+                    if os.path.exists(metallic_path):
+                        textures_dict['metallic'] = metallic_path
+                    if os.path.exists(roughness_path):
+                        textures_dict['roughness'] = roughness_path
+                    if os.path.exists(normal_path):
+                        textures_dict['normal'] = normal_path
+                    
+                    try:
+                        create_glb_with_pbr_materials_2_1(result_path, textures_dict, glb_path)
+                        print(f"Created GLB with full PBR materials: {glb_path}")
+                    except Exception as e:
+                        print(f"Warning: Failed to create GLB with PBR materials: {e}")
+                        # Fallback to basic conversion
+                        from .Gen_3D_Modules.Hunyuan3D_2_1.hy3dpaint.DifferentiableRenderer.mesh_utils import convert_obj_to_glb
+                        convert_obj_to_glb(result_path, glb_path)
+                        print(f"Created GLB with basic conversion: {glb_path}")
+                
+                if os.path.exists(glb_path):
+                    try:
+                        glb_scene = trimesh.load(glb_path)
+                        
+                        if hasattr(glb_scene, 'geometry') and glb_scene.geometry:
+                            mesh_name = list(glb_scene.geometry.keys())[0]
+                            glb_mesh = glb_scene.geometry[mesh_name]
+                        else:
+                            glb_mesh = glb_scene
+                        
+                        mesh_out = Mesh.load_trimesh(given_mesh=glb_mesh)
+                        mesh_out.auto_normal()
+                        print(f"Loaded GLB mesh with PBR materials from: {glb_path}")
+                    except Exception as e:
+                        print(f"Warning: Failed to load GLB mesh: {e}")
+                        print(f"GLB path was: {glb_path}")
+            
+            # If PBR failed or not requested, load regular textured mesh
+            if mesh_out is None:
+                textured_mesh = trimesh.load(result_path)
+                mesh_out = Mesh.load_trimesh(given_mesh=textured_mesh)
+                mesh_out.auto_normal()
+                if create_pbr:
+                    print("Warning: PBR creation failed, loaded regular textured mesh")
+                else:
+                    print("Loaded regular textured mesh")
+            
+            return (mesh_out,)
+            
+        finally:
+            # Clean up files
+            torch.cuda.empty_cache()
+            gc.collect()
+            
+            for file_path in [image_path, output_path]:
+                try:
+                    if os.path.exists(file_path):
+                        os.remove(file_path)
+                except:
+                    pass
 

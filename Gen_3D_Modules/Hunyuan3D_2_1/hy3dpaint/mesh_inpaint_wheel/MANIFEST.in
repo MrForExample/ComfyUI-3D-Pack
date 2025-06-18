@@ -1,0 +1,6 @@
+include README.md
+include pyproject.toml
+recursive-include mesh_inpaint_processor *.pyd
+recursive-include mesh_inpaint_processor *.so
+recursive-include mesh_inpaint_processor *.py
+recursive-include mesh_inpaint_processor *.txt 
