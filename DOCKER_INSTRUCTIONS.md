@@ -26,7 +26,7 @@ wget -c https://huggingface.co/spaces/Wuvin/Unique3D/resolve/main/ckpt/controlne
 wget -c https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.ckpt -P models/
 ```
 
-You can check more details at the Unique3D section of the [README.md](../README.md) file.
+You can check more details at the Unique3D section of the [README.md](./README.md) file.
 
 ### Build Docker Image
 
