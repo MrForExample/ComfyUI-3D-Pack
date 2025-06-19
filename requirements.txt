@@ -41,6 +41,7 @@ onnxruntime
 imageio
 imageio-ffmpeg
 matplotlib
+realesrgan
 
 # for process, import & export mesh 
 trimesh
