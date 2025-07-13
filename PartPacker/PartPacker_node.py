@@ -23,6 +23,8 @@ from .node_utils import tensor2cv,gc_clear,add_mask,tensor2pil_upscale
 from comfy_extras.nodes_hunyuan3d import MESH
 
 
+
+
 import folder_paths
 
 
@@ -62,6 +64,7 @@ class PartPacker_Loader:
     FUNCTION = "loader_main"
     CATEGORY = "PartPacker"
 
+
     def loader_main(self, checkpoint,vae,dino,cpu_offload,):
         if checkpoint == "none":
             raise ValueError("No checkpoint selected")
@@ -69,10 +72,26 @@ class PartPacker_Loader:
         flow_ckpt_path=folder_paths.get_full_path("PartPacker", checkpoint)
         vae_ckpt_path=folder_paths.get_full_path("vae", vae)
 
+
+    def loader_main(self, checkpoint,vae,dino,cpu_offload,**kwargs):
+        from comfy.utils import ProgressBar
+        import time
+        node_id = kwargs.get("node_id", None)
+        pbar = ProgressBar(5, node_id=node_id)
+        if checkpoint == "none":
+            raise ValueError("No checkpoint selected")
+
+        pbar.update_absolute(1)  # Step 1: validate paths
+        flow_ckpt_path=folder_paths.get_full_path("PartPacker", checkpoint)
+        vae_ckpt_path=folder_paths.get_full_path("vae", vae)
+
         # load model
         print("***********Load model ***********")
         TRIMESH_GLB_EXPORT = np.array([[0, 1, 0], [0, 0, 1], [1, 0, 0]]).astype(np.float32)
         bg_remover = rembg.new_session()
+
+        pbar.update_absolute(2)  # Step 2: process DINO
+
         if not dino:
             raise ValueError("No dino model path fill")
         else:
@@ -98,13 +117,22 @@ class PartPacker_Loader:
 
         # instantiate model
         # model = Model(model_config,device,dino,cpu_offload=cpu_offload).eval().cuda().bfloat16()
+
+        pbar.update_absolute(3)  # Step 3: model setup
+
         model = Model(model_config, device, dino, cpu_offload=cpu_offload).eval()
         if not cpu_offload:
             model = model.cuda().bfloat16()
 
+
+        pbar.update_absolute(4)  # Step 4: load checkpoint
+
         # load weight
         ckpt_dict = torch.load(flow_ckpt_path, weights_only=True)
         model.load_state_dict(ckpt_dict, strict=True)
+
+
+        pbar.update_absolute(5)  # Step 4: load checkpoint
 
         print("***********Load model done ***********")
         gc_clear()
@@ -125,7 +153,11 @@ class PartPacker_Sampler:
                 "target_num_faces" : ("INT", {"default": 100000, "min": 1000, "max": MAX_SEED, "step": 1}),
                 "grid_res": ("INT", {"default": 384, "min": 128, "max": 2048, "step": 16}),
                 "seed": ("INT", {"default": 0, "min": 0, "max": MAX_SEED}),
+
                 "steps": ("INT", {"default": 50, "min": 3, "max": 1024, "step": 1}),
+
+                "steps": ("INT", {"default": 20, "min": 5, "max": 100, "step": 1}),
+
                 "cfg_scale": ("FLOAT", {"default": 7.0, "min": 1, "max": 20, "step": 0.1}),
                 "simplify_mesh":  ("BOOLEAN", {"default": False},),},
             "optional":{ "mask": ("MASK",),   # B H W 默认的mask是遮罩区黑色，而非传统的白色
@@ -138,16 +170,38 @@ class PartPacker_Sampler:
     CATEGORY = "PartPacker"
 
     def sampler_main(self, model,image,target_num_faces,grid_res,seed,steps,cfg_scale,simplify_mesh,**kwargs):
+
+        node_id = kwargs.get("node_id", None)
+
         if isinstance(kwargs.get("mask"),torch.Tensor):
             mask=add_mask(kwargs.get("mask"),image)
             mask=tensor2cv(mask)
         else:
             mask=None
         input_image=tensor2cv(image,RGB2BGR=False)
+
         trimesh,model_path=process_3d(model.get("pipe"),model.get("bg_remover"),input_image,model.get("TRIMESH_GLB_EXPORT"), mask,folder_paths.get_output_directory(),num_steps=steps, cfg_scale=cfg_scale, grid_res=grid_res, seed=seed, simplify_mesh=simplify_mesh, target_num_faces=target_num_faces)
         gc_clear()
        
         return (trimesh,MESH(torch.tensor(trimesh.vertices, dtype=torch.float32).unsqueeze(0),torch.tensor(trimesh.faces, dtype=torch.long).unsqueeze(0)),model_path,)
+
+        trimesh,model_path=process_3d(model.get("pipe"),model.get("bg_remover"),
+                                      input_image,model.get("TRIMESH_GLB_EXPORT"),
+                                      mask,folder_paths.get_output_directory(),
+                                      num_steps=steps, cfg_scale=cfg_scale,
+                                      grid_res=grid_res, seed=seed,
+                                      simplify_mesh=simplify_mesh,
+                                      target_num_faces=target_num_faces,
+                                      node_id=kwargs.get("node_id") )
+        gc_clear()
+       
+        return (trimesh,
+                MESH(torch.tensor(trimesh.vertices,
+                dtype=torch.float32).unsqueeze(0),
+                torch.tensor(trimesh.faces,
+                dtype=torch.long).unsqueeze(0)),
+                model_path,)
+
 
 
 # WEB_DIRECTORY = "./web"

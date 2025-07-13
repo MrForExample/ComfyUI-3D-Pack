@@ -56,7 +56,9 @@ if isinstance(hf_token, str) and len(hf_token) > 0:
 NODE_CLASS_MAPPINGS = {}
 NODE_DISPLAY_NAME_MAPPINGS = {}
 
+
 # nodes_filename = "nodes"
+nodes_filename = "nodes"
 #nodes_filename = "PartPacker.nodes_partpacker_only"
 #module = importlib.import_module(f".{nodes_filename}", package=__name__)
 module = importlib.import_module("PartPacker.PartPacker_node")
