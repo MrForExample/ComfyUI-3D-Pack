@@ -3,6 +3,12 @@ import sys
 import folder_paths as comfy_paths
 from pyhocon import ConfigFactory
 import logging
+import sys
+import os
+
+this_dir = os.path.dirname(os.path.abspath(__file__))
+if this_dir not in sys.path:
+    sys.path.insert(0, this_dir)
 
 # ROOT_PATH = os.path.join(comfy_paths.get_folder_paths("custom_nodes")[0], "ComfyUI-3D-Pack")
 ROOT_PATH = os.path.dirname(os.path.realpath(__file__))
@@ -50,8 +56,10 @@ if isinstance(hf_token, str) and len(hf_token) > 0:
 NODE_CLASS_MAPPINGS = {}
 NODE_DISPLAY_NAME_MAPPINGS = {}
 
-nodes_filename = "nodes"
-module = importlib.import_module(f".{nodes_filename}", package=__name__)
+# nodes_filename = "nodes"
+#nodes_filename = "PartPacker.nodes_partpacker_only"
+#module = importlib.import_module(f".{nodes_filename}", package=__name__)
+module = importlib.import_module("PartPacker.PartPacker_node")
 for name, cls in inspect.getmembers(module, inspect.isclass):
     if cls.__module__ == module.__name__:
         name = name.replace("_", " ")

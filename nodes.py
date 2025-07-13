@@ -50,17 +50,17 @@ from .mesh_processer.mesh_utils import (
     decimate_mesh,
 )
 
-from FlexiCubes.flexicubes_trainer import FlexiCubesTrainer
+#from FlexiCubes.flexicubes_trainer import FlexiCubesTrainer
 from DiffRastMesh.diff_mesh import DiffMesh, DiffMeshCameraController
 from DiffRastMesh.diff_mesh import DiffRastRenderer
 from GaussianSplatting.main_3DGS import GaussianSplatting3D, GaussianSplattingCameraController, GSParams
 from GaussianSplatting.main_3DGS_renderer import GaussianSplattingRenderer
 from NeRF.Instant_NGP import InstantNGP
 
-from TriplaneGaussian.triplane_gaussian_transformers import TGS
-from TriplaneGaussian.utils.config import ExperimentConfig as ExperimentConfigTGS, load_config as load_config_tgs
-from TriplaneGaussian.data import CustomImageOrbitDataset
-from TriplaneGaussian.utils.misc import todevice, get_device
+# from TriplaneGaussian.triplane_gaussian_transformers import TGS
+#from TriplaneGaussian.utils.config import ExperimentConfig as ExperimentConfigTGS, load_config as load_config_tgs
+#from TriplaneGaussian.data import CustomImageOrbitDataset
+#from TriplaneGaussian.utils.misc import todevice, get_device
 from LGM.core.options import config_defaults
 from LGM.mvdream.pipeline_mvdream import MVDreamPipeline
 from LGM.large_multiview_gaussian_model import LargeMultiviewGaussianModel
@@ -80,11 +80,11 @@ from Era3D.mvdiffusion.data.single_image_dataset import SingleImageDataset as Er
 from Era3D.utils.misc import load_config as load_config_era3d
 from Unique3D.custum_3d_diffusion.custum_pipeline.unifield_pipeline_img2mvimg import StableDiffusionImage2MVCustomPipeline
 from Unique3D.custum_3d_diffusion.custum_pipeline.unifield_pipeline_img2img import StableDiffusionImageCustomPipeline
-from Unique3D.scripts.mesh_init import fast_geo
-from Unique3D.scripts.utils import from_py3d_mesh, to_py3d_mesh, to_pyml_mesh, simple_clean_mesh
-from Unique3D.scripts.project_mesh import multiview_color_projection, multiview_color_projection_texture, get_cameras_list, get_orbit_cameras_list
-from Unique3D.mesh_reconstruction.recon import reconstruct_stage1
-from Unique3D.mesh_reconstruction.refine import run_mesh_refine
+#from Unique3D.scripts.mesh_init import fast_geo
+# from Unique3D.scripts.utils import from_py3d_mesh, to_py3d_mesh, to_pyml_mesh, simple_clean_mesh
+# from Unique3D.scripts.project_mesh import multiview_color_projection, multiview_color_projection_texture, get_cameras_list, get_orbit_cameras_list
+# from Unique3D.mesh_reconstruction.recon import reconstruct_stage1
+# from Unique3D.mesh_reconstruction.refine import run_mesh_refine
 from CharacterGen.character_inference import Inference2D_API, Inference3D_API
 from CharacterGen.Stage_3D.lrm.utils.config import load_config as load_config_cg3d
 import craftsman
@@ -114,6 +114,7 @@ from MV_Adapter.mvadapter_node_utils import (
     )
 from MV_Adapter.mvadapter.utils import make_image_grid
 
+
 os.environ['SPCONV_ALGO'] = 'native'
 
 from .shared_utils.image_utils import (
@@ -126,6 +127,7 @@ from .shared_utils.camera_utils import (
 )
 from .shared_utils.log_utils import cstr
 from .shared_utils.common_utils import parse_save_filename, get_list_filenames, resume_or_download_model_from_hf
+from Gen_3D_Modules.PartPacker import PartPacker_node
 
 DIFFUSERS_PIPE_DICT = OrderedDict([
     ("MVDreamPipeline", MVDreamPipeline),
@@ -5179,3 +5181,9 @@ class MVAdapter_Texture_Projection:
                 os.remove(temp_grid_path)
             raise e
 
+from Gen_3D_Modules.PartPacker.PartPacker_node import PartPacker_Loader, PartPacker_Sampler
+
+NODE_CLASS_MAPPINGS.update({
+    "PartPacker_Loader": PartPacker_Loader,
+    "PartPacker_Sampler": PartPacker_Sampler,
+})
