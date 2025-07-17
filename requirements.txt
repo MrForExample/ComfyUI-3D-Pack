@@ -56,7 +56,6 @@ libigl
 pyvista
 pymeshfix
 igraph
-git+https://github.com/SarahWeiii/diso.git#egg=diso
 open3d
 
 # configs & extra
