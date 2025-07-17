@@ -14,12 +14,25 @@
 
 from PIL import Image
 from rembg import remove, new_session
+import numpy as np
 
 
 class BackgroundRemover():
-    def __init__(self):
-        self.session = new_session()
+    def __init__(self, model_name='u2net'):
+        self.session = new_session(model_name)
 
     def __call__(self, image: Image.Image):
-        output = remove(image, session=self.session, bgcolor=[255, 255, 255, 0])
+        if image.mode in ('RGBA', 'LA') or image.mode != 'RGB':
+            background = Image.new('RGB', image.size, (255, 255, 255))
+            if image.mode in ('RGBA', 'LA'):
+                background.paste(image, mask=image.split()[-1])
+            else:
+                background.paste(image)
+            image = background
+        
+        output = remove(image, session=self.session)
+        
+        if output.mode != 'RGBA':
+            output = output.convert('RGBA')
+            
         return output

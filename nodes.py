@@ -4484,12 +4484,20 @@ class Multi_Background_Remover:
 
         images = []
         for key, tensor_img in mv_inputs.items():
-            pil_img = torch_imgs_to_pils(tensor_img)[0].convert("RGBA")
-            if pil_img.mode == "RGB":
+            pil_img = torch_imgs_to_pils(tensor_img)[0]
+            
+            if pil_img.mode != "RGBA":
                 pil_img = rmbg(pil_img.convert("RGB"))
+            else:
+                alpha = pil_img.getchannel('A')
+                if alpha.getextrema()[0] == 255:
+                    rgb_img = Image.new('RGB', pil_img.size, (255, 255, 255))
+                    rgb_img.paste(pil_img, mask=pil_img.split()[-1] if len(pil_img.split()) == 4 else None)
+                    pil_img = rmbg(rgb_img)
+                    
             images.append(pil_img)
 
-        return (images,)        
+        return (images,) 
 
 class Hunyuan3D_V2_ShapeGen_MV:
     """
