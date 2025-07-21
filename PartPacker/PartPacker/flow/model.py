@@ -11,10 +11,7 @@ license agreement from NVIDIA CORPORATION is strictly prohibited.
 """
 
 import importlib
-<<<<<<< HEAD
 
-=======
->>>>>>> 20c359f (WIP: temporary updates before switching branch)
 import numpy as np
 import torch
 import torch.nn as nn
@@ -28,15 +25,14 @@ from .flow_matching import FlowMatchingScheduler
 from .modules.dit import DiT
 from ..vae.model import Model as VAE
 from ..vae.utils import sync_timer
-<<<<<<< HEAD
+
 
 # import sys, os
 # sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
-=======
+
 from comfy.utils import ProgressBar
 
 
->>>>>>> 20c359f (WIP: temporary updates before switching branch)
 class Model(nn.Module):
     def __init__(self, config: ModelConfig,device,dino_path,cpu_offload=False) -> None:
         super().__init__()
@@ -58,9 +54,9 @@ class Model(nn.Module):
         # hack to match our implementation
         self.dino.layernorm = torch.nn.Identity()
 
-<<<<<<< HEAD
+
         self.dino.eval().to(dtype=self.precision)
-=======
+
         # self.dino.eval().to(dtype=self.precision)
         self.dino.eval().to(dtype=self.precision)
         if self.cpu_offload:
@@ -68,7 +64,7 @@ class Model(nn.Module):
         else:
             self.dino.to(device)  # Only use GPU if enough VRAM
 
->>>>>>> 20c359f (WIP: temporary updates before switching branch)
+
         self.dino.requires_grad_(False)
 
         cond_dim = 1024 if self.config.dino_model == "dinov2_vitl14_reg" else 1536
@@ -82,11 +78,10 @@ class Model(nn.Module):
 
         # vae encoder
         vae_config = importlib.import_module(config.vae_conf).make_config()
-<<<<<<< HEAD
 
 
-=======
->>>>>>> 20c359f (WIP: temporary updates before switching branch)
+
+
         self.vae = VAE(vae_config).eval().to(dtype=self.precision)
         self.vae.requires_grad_(False)
 
@@ -124,11 +119,11 @@ class Model(nn.Module):
             part_embed_mode=config.part_embed_mode,
         )
         if cpu_offload:
-<<<<<<< HEAD
+
             print("🔁 Using CPU offload mode to save VRAM.")
-=======
+
             print("Using CPU offload mode to save VRAM.")
->>>>>>> 20c359f (WIP: temporary updates before switching branch)
+
             self.vae.to("cpu")
             self.dit.to("cpu")
         else:
@@ -206,13 +201,13 @@ class Model(nn.Module):
 
     def get_cond(self, cond_image, num_part=None):
         # image condition
-<<<<<<< HEAD
+
         cond_image = cond_image.to(dtype=self.precision)
-=======
+
         #device = next(self.dino.parameters()).device
         #cond_image = cond_image.to(device=device, dtype=self.precision)
         cond_image = cond_image.to(device=self.dino.device, dtype=self.precision)
->>>>>>> 20c359f (WIP: temporary updates before switching branch)
+
         with torch.no_grad():
             cond = self.dino(cond_image).last_hidden_state
         cond = F.layer_norm(cond.float(), cond.shape[-1:]).to(dtype=self.precision)  # [B, L, C]
@@ -314,128 +309,6 @@ class Model(nn.Module):
 
     @torch.inference_mode()
     @sync_timer("flow forward")
-<<<<<<< HEAD
-    def forward(
-=======
-    def forward_old(
->>>>>>> 20c359f (WIP: temporary updates before switching branch)
-        self,
-        data: dict[str, torch.Tensor],
-        num_steps: int = 30,
-        cfg_scale: float = 7.0,
-        verbose: bool = True,
-        generator: torch.Generator | None = None,
-<<<<<<< HEAD
-    ) -> dict[str, torch.Tensor]:
-        # the inference sampling
-        cond_images = self.preprocess_cond_image(data["cond_images"])  # [B, 3, 518, 518]
-        B = cond_images.shape[0]
-        assert B == 1, "Only support batch size 1 for now."
-=======
-        node_id :str | None = None) -> dict[str, torch.Tensor]:
-        # the inference sampling
-        cond_images = self.preprocess_cond_image(data["cond_images"])  # [B, 3, 518, 518]
-        if self.cpu_offload:
-            try:
-                self.dino.to(device=self.device, dtype=self.precision, non_blocking=True)
-            except RuntimeError as e:
-                print(f"Failed to move DINO to GPU: {e}")
-                self.device = "cpu"
-                self.dino.to("cpu")
-                torch.cuda.empty_cache()
-        #cond_images = self.preprocess_cond_image(data["cond_images"]).to(device=self.dino.device, dtype=self.precision)
-        cond_images = cond_images.to(device=self.device, dtype=self.precision)
-
-        B = cond_images.shape[0]
-        assert B == 1, "Only support batch size 1 for now."
-        # num_part condition
-        cond_num_part = data.get("num_part") if self.config.use_num_parts_cond else None
-        cond = self.get_cond(cond_images, cond_num_part)
->>>>>>> 20c359f (WIP: temporary updates before switching branch)
-
-        # num_part condition
-        if self.config.use_num_parts_cond and "num_part" in data:
-            cond_num_part = data["num_part"]  # [B,], int
-        else:
-            cond_num_part = None
-
-        if self.cpu_offload:
-            self.dino.to(device=self.device)
-
-
-        # if self.cpu_offload:
-        #     self.dino.to(device=self.device)
-
-        if self.cpu_offload:
-            try:
-                self.dino.to(device=self.device, dtype=self.precision, non_blocking=True)
-            except RuntimeError as e:
-                print(f"Failed to move DINO to GPU: {e}")
-                self.dino.to("cpu")
-                torch.cuda.empty_cache()
-                self.device = "cpu"
-        # Force image tensor to follow dino's device
-        cond_images = cond_images.to(self.device, dtype=self.precision)
-        cond = self.get_cond(cond_images, cond_num_part)
-        if self.cpu_offload:
-            self.dino.to(device="cpu")
-            torch.cuda.empty_cache()
-
-        if self.config.use_parts:
-            x = torch.randn(
-                B,
-                self.config.latent_size * 2,
-                self.config.latent_dim,
-                device=cond.device,
-                dtype=torch.float32,
-                generator=generator,
-            )
-        else:
-            x = torch.randn(
-                B,
-                self.config.latent_size,
-                self.config.latent_dim,
-                device=cond.device,
-                dtype=torch.float32,
-                generator=generator,
-            )
-
-        cond_input = torch.cat([cond, torch.zeros_like(cond)], dim=0)
-
-        # flow-matching
-        sigmas = np.linspace(1, 0, num_steps + 1)
-        sigmas = self.scheduler.shift * sigmas / (1 + (self.scheduler.shift - 1) * sigmas)
-        sigmas_pair = list((sigmas[i], sigmas[i + 1]) for i in range(num_steps))
-
-
-        for sigma, sigma_prev in tqdm.tqdm(sigmas_pair, desc="Flow Sampling", disable=not verbose):
-
-        # Add ProgressBar that connects to ComfyUI UI
-        pbar = ProgressBar(total=len(sigmas_pair), node_id=node_id)
-        #for sigma, sigma_prev in tqdm.tqdm(sigmas_pair, desc="Flow Sampling", disable=not verbose):
-        for i, (sigma, sigma_prev) in enumerate(sigmas_pair):
-            pbar.update_absolute(i + 1)
-            # classifier-free guidance
-            timesteps = torch.tensor([1000 * sigma] * B * 2, device=x.device, dtype=x.dtype)
-            x_input = torch.cat([x, x], dim=0)
-
-            # predict v
-            x_input = x_input.to(dtype=self.precision)
-            pred = self.dit(x_input, cond_input, timesteps).float()
-            cond_v, uncond_v = pred.chunk(2, dim=0)
-            pred_v = uncond_v + (cond_v - uncond_v) * cfg_scale
-
-            # scheduler step
-            x = x - (sigma - sigma_prev) * pred_v
-
-        output = {}
-        output["latent"] = x
-
-        # leave mesh extraction to vae
-        return output
-
-    @torch.inference_mode()
-    @sync_timer("flow forward")
     def forward(
             self,
             data: dict[str, torch.Tensor],
@@ -484,7 +357,6 @@ class Model(nn.Module):
 
         #  Progress bar
         pbar = ProgressBar(total=len(sigmas_pair), node_id=node_id)
-
         for i, (sigma, sigma_prev) in enumerate(sigmas_pair):
             pbar.update_absolute(i + 1)
             timesteps = torch.tensor([1000 * sigma] * B * 2, device=x.device, dtype=x.dtype)
