@@ -26,10 +26,6 @@ from .modules.dit import DiT
 from ..vae.model import Model as VAE
 from ..vae.utils import sync_timer
 
-
-# import sys, os
-# sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
-
 from comfy.utils import ProgressBar
 
 
@@ -40,11 +36,6 @@ class Model(nn.Module):
         self.precision = torch.bfloat16
         self.cpu_offload = cpu_offload
 
-        # image condition model (dinov2)
-        # if self.config.dino_model == "dinov2_vitg14":
-        #     #self.dino = Dinov2Model.from_pretrained("facebook/dinov2-giant")
-        # elif self.config.dino_model == "dinov2_vitl14_reg":
-        #     #self.dino = Dinov2Model.from_pretrained("facebook/dinov2-with-registers-large")
         self.device = device
         if dino_path:
             self.dino = Dinov2Model.from_pretrained(dino_path)
