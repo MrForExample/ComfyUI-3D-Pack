@@ -13,7 +13,10 @@ libs_dir_name: "_Libs"
 # Folder used to store built wheels
 wheels_dir_name: "_Build_Wheels"
 
-build_base_packages: ["torch", "torchvision", "xformers"]
+build_base_packages: ["torch", "torchvision", "torchaudio", "xformers"]
+
+# Packages requiring special install flags (like --no-build-isolation)
+isolated_packages: ["diso"]
 
 # Platform-specific packages
 platform_packages:
@@ -40,6 +43,10 @@ remote_packages:
     version: "0.22.0"
     url: "https://download.pytorch.org/whl/${cuda_version}"
 
+  torchaudio:
+    version: "2.7.0"
+    url: "https://download.pytorch.org/whl/${cuda_version}"
+
   xformers:
     version: "0.0.30"
     url: "https://download.pytorch.org/whl/${cuda_version}"
@@ -47,3 +54,7 @@ remote_packages:
   torch-scatter:
    url_option: "--find-links"
    url: "https://data.pyg.org/whl/torch-${remote_packages.torch.version}+${cuda_version}.html"
+  
+  diso:
+    url: "git+https://github.com/SarahWeiii/diso.git#egg=diso"
+    install_flags: ["--no-build-isolation"]
