@@ -1,0 +1,24 @@
+{
+  "_class_name": "PartCrafterPipeline",
+  "_diffusers_version": "0.34.0",
+  "feature_extractor_dinov2": [
+    "transformers",
+    "BitImageProcessor"
+  ],
+  "image_encoder_dinov2": [
+    "transformers",
+    "Dinov2Model"
+  ],
+  "scheduler": [
+    "partcrafter_src.schedulers.scheduling_rectified_flow",
+    "RectifiedFlowScheduler"
+  ],
+  "transformer": [
+    "partcrafter_src.models.transformers.partcrafter_transformer",
+    "PartCrafterDiTModel"
+  ],
+  "vae": [
+    "partcrafter_src.models.autoencoders.autoencoder_kl_triposg",
+    "TripoSGVAEModel"
+  ]
+}
