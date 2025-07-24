@@ -345,59 +345,61 @@ def bake_texture(
         texture = cv2.inpaint(texture, mask, 3, cv2.INPAINT_TELEA)
 
     elif mode == 'opt':
-        rastctx = utils3d.torch.RastContext(backend='cuda')
-        observations = [observations.flip(0) for observations in observations]
-        masks = [m.flip(0) for m in masks]
-        _uv = []
-        _uv_dr = []
-        for i, (observation, view, projection) in enumerate(tqdm(zip(observations, views, projections), total=steps, disable=not verbose, desc='Texture baking (opt): UV')):
-            with torch.no_grad():
-                rast = utils3d.torch.rasterize_triangle_faces(
-                    rastctx, vertices[None], faces, observation.shape[1], observation.shape[0], uv=uvs[None], view=view, projection=projection
-                )
-                _uv.append(rast['uv'].detach())
-                _uv_dr.append(rast['uv_dr'].detach())
+        with torch.inference_mode(False):
+            rastctx = utils3d.torch.RastContext(backend='cuda')
+            observations = [observations.flip(0) for observations in observations]
+            masks = [m.flip(0) for m in masks]
+            _uv = []
+            _uv_dr = []
+            for observation, view, projection in tqdm(zip(observations, views, projections), total=len(views),
+                                                      disable=not verbose, desc='Texture baking (opt): UV'):
+                with torch.no_grad():
+                    rast = utils3d.torch.rasterize_triangle_faces(
+                        rastctx, vertices[None], faces, observation.shape[1], observation.shape[0], uv=uvs[None],
+                        view=view, projection=projection
+                    )
+                    _uv.append(rast['uv'].detach())
+                    _uv_dr.append(rast['uv_dr'].detach())
+            
+            texture = torch.nn.Parameter(torch.zeros((1, texture_size, texture_size, 3), dtype=torch.float32).cuda())
+            optimizer = torch.optim.Adam([texture], betas=(0.5, 0.9), lr=1e-2)
 
-                comfy_pbar.update_absolute(i + 1)
-
-        texture = torch.nn.Parameter(torch.zeros((1, texture_size, texture_size, 3), dtype=torch.float32).cuda())
-        optimizer = torch.optim.Adam([texture], betas=(0.5, 0.9), lr=1e-2)
-
-        def exp_anealing(optimizer, step, total_steps, start_lr, end_lr):
-            return start_lr * (end_lr / start_lr) ** (step / total_steps)
-
-        def cosine_anealing(optimizer, step, total_steps, start_lr, end_lr):
-            return end_lr + 0.5 * (start_lr - end_lr) * (1 + np.cos(np.pi * step / total_steps))
-        
-        def tv_loss(texture):
-            return torch.nn.functional.l1_loss(texture[:, :-1, :, :], texture[:, 1:, :, :]) + \
-                   torch.nn.functional.l1_loss(texture[:, :, :-1, :], texture[:, :, 1:, :])
-    
-        total_steps = 2500
-        comfy_pbar = comfy.utils.ProgressBar(total_steps)
-        with tqdm(total=total_steps, disable=not verbose, desc='Texture baking (opt): optimizing') as pbar:
-            for step in range(total_steps):
-                optimizer.zero_grad()
-                selected = np.random.randint(0, len(views))
-                uv, uv_dr, observation, mask = _uv[selected], _uv_dr[selected], observations[selected], masks[selected]
-                render = dr.texture(texture, uv, uv_dr)[0]
-                loss = torch.nn.functional.l1_loss(render[mask], observation[mask])
-                if lambda_tv > 0:
-                    loss += lambda_tv * tv_loss(texture)
-                loss.backward()
-                optimizer.step()
-                # annealing
-                optimizer.param_groups[0]['lr'] = cosine_anealing(optimizer, step, total_steps, 1e-2, 1e-5)
-                pbar.set_postfix({'loss': loss.item()})
-                pbar.update()
-
-                comfy_pbar.update_absolute(step + 1)
-
-        texture = np.clip(texture[0].flip(0).detach().cpu().numpy() * 255, 0, 255).astype(np.uint8)
-        mask = 1 - utils3d.torch.rasterize_triangle_faces(
-            rastctx, (uvs * 2 - 1)[None], faces, texture_size, texture_size
-        )['mask'][0].detach().cpu().numpy().astype(np.uint8)
-        texture = cv2.inpaint(texture, mask, 3, cv2.INPAINT_TELEA)
+            def exp_anealing(optimizer, step, total_steps, start_lr, end_lr):
+                return start_lr * (end_lr / start_lr) ** (step / total_steps)
+            
+            def cosine_anealing(optimizer, step, total_steps, start_lr, end_lr):
+                return end_lr + 0.5 * (start_lr - end_lr) * (1 + np.cos(np.pi * step / total_steps))
+            
+            def tv_loss(texture):
+                return torch.nn.functional.l1_loss(texture[:, :-1, :, :], texture[:, 1:, :, :]) + \
+                    torch.nn.functional.l1_loss(texture[:, :, :-1, :], texture[:, :, 1:, :])
+            
+            total_steps = 2500
+            with tqdm(total=total_steps, disable=not verbose, desc='Texture baking (opt): optimizing') as pbar:
+                for step in range(total_steps):
+                    optimizer.zero_grad()
+                    selected = np.random.randint(0, len(views))
+                    uv, uv_dr, observation, mask = _uv[selected], _uv_dr[selected], observations[selected], masks[
+                        selected]
+                    render = dr.texture(texture, uv, uv_dr)[0]
+                    loss = torch.nn.functional.l1_loss(render[mask], observation[mask])
+                    if lambda_tv > 0:
+                        loss += lambda_tv * tv_loss(texture)
+                    # if loss.shape == torch.Size([]):
+                    #     loss.requires_grad = True  # try fix element 0 of tensors does not require grad and does not have a grad_fn
+                    loss.backward()
+                    optimizer.step()
+                    # annealing
+                    optimizer.param_groups[0]['lr'] = cosine_anealing(optimizer, step, total_steps, 1e-2, 1e-5)
+                    pbar.set_postfix({'loss': loss.item()})
+                    pbar.update()
+            texture = np.clip(texture[0].flip(0).detach().cpu().numpy() * 255, 0, 255).astype(np.uint8)
+            
+            mask = 1 - utils3d.torch.rasterize_triangle_faces(
+                rastctx, (uvs * 2 - 1)[None], faces, texture_size, texture_size
+            )['mask'][0].detach().cpu().numpy().astype(np.uint8)
+            
+            texture = cv2.inpaint(texture, mask, 3, cv2.INPAINT_TELEA)
     else:
         raise ValueError(f'Unknown mode: {mode}')
 
