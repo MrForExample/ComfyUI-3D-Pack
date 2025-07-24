@@ -124,6 +124,10 @@ from Gen_3D_Modules.Hunyuan3D_2_1 import (
 )
 from Gen_3D_Modules.Hunyuan3D_2_1.hy3dpaint.utils.torchvision_fix import apply_fix
 apply_fix()
+from Gen_3D_Modules.PartCrafter.partcrafter_src.pipelines.pipeline_partcrafter import PartCrafterPipeline
+from Gen_3D_Modules.PartCrafter.partcrafter_src.utils.data_utils import get_colored_mesh_composition
+from Gen_3D_Modules.PartCrafter.partcrafter_src.utils.image_utils import prepare_image
+import zipfile
 
 
 os.environ['SPCONV_ALGO'] = 'native'
@@ -5580,3 +5584,214 @@ class Hunyuan3D_21_TexGen:
                 except:
                     pass
 
+
+
+
+class Load_PartCrafter_Pipeline:
+    """Load PartCrafter Pipeline"""
+    
+    CATEGORY = "Comfy3D/Algorithm/PartCrafter"
+    RETURN_TYPES = ("DIFFUSERS_PIPE",)
+    RETURN_NAMES = ("partcrafter_pipe",)
+    FUNCTION = "load"
+
+    _REPO_ID = "wgsxm/PartCrafter"
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {},
+        }
+
+    @staticmethod
+    def _ensure_weights():
+        safe_repo_name = Load_PartCrafter_Pipeline._REPO_ID.replace("/", "_")
+        base_dir = os.path.join(CKPT_DIFFUSERS_PATH, Load_PartCrafter_Pipeline._REPO_ID)
+        
+        required_files = [
+            "diffusion_pytorch_model.safetensors", 
+            "diffusion_pytorch_model.bin",
+        ]
+        
+        files_missing = []
+        
+        for file_path in required_files:
+            full_file_path = os.path.join(base_dir, file_path)
+            if not os.path.exists(full_file_path):
+                files_missing.append(file_path)
+        
+        if files_missing or not os.path.exists(base_dir):
+            print(f"Loading PartCrafter from {Load_PartCrafter_Pipeline._REPO_ID}...")
+            print(f"Missing files: {len(files_missing)}")
+            snapshot_download(
+                repo_id=Load_PartCrafter_Pipeline._REPO_ID,
+                repo_type="model", 
+                local_dir=base_dir,
+                resume_download=True,
+                ignore_patterns=HF_DOWNLOAD_IGNORE,
+            )
+            print(f"PartCrafter loaded successfully")
+        else:
+            print(f"PartCrafter weights already loaded")
+
+        return base_dir
+
+    def load(self):
+        base_dir = self._ensure_weights()
+        
+        pipeline = PartCrafterPipeline.from_pretrained(base_dir).to(DEVICE, WEIGHT_DTYPE)
+        
+        print(f"PartCrafter pipeline loaded")
+        return (pipeline,)
+
+class PartCrafter_Generate:
+    """PartCrafter Generation"""
+    
+    CATEGORY = "Comfy3D/Algorithm/PartCrafter"
+    RETURN_TYPES = ("STRING", "MESH", "IMAGE")
+    RETURN_NAMES = ("parts_zip_path", "merged_mesh", "processed_image")
+    FUNCTION = "generate"
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "partcrafter_pipe": ("DIFFUSERS_PIPE",),
+                "image": ("IMAGE",),
+                "num_parts": ("INT", {"default": 4, "min": 1, "max": 16}),
+                "seed": ("INT", {"default": 1234, "min": 0, "max": 0xffffffffffffffff}),
+                "num_tokens": ("INT", {"default": 1024, "min": 256, "max": 2048}),
+                "num_inference_steps": ("INT", {"default": 50, "min": 1, "max": 100}),
+                "guidance_scale": ("FLOAT", {"default": 7.0, "min": 0.0, "step": 0.1}),
+                "max_num_expanded_coords": ("INT", {"default": 1000000000, "min": 1000, "max": 10000000000}),
+                "use_flash_decoder": ("BOOLEAN", {"default": False}),
+                "remove_background": ("BOOLEAN", {"default": True}),
+                "sampling_version": ("INT", {"default": 1, "min": 1, "max": 2}),
+            }
+        }
+
+    @torch.no_grad()
+    def generate(self, partcrafter_pipe, image, num_parts, seed, num_tokens, num_inference_steps, 
+                 guidance_scale, max_num_expanded_coords, use_flash_decoder, remove_background, sampling_version):
+        
+        # Convert image
+        pil_image = torch_imgs_to_pils(image)[0]
+        
+        # Remove background if needed
+        if remove_background:
+            rmbg_worker = BackgroundRemover_2_1()
+            if pil_image.mode == "RGBA":
+                pil_image = pil_image.convert('RGB')
+            pil_image = rmbg_worker(pil_image)
+            del rmbg_worker
+        
+        # Set sampling version
+        if hasattr(partcrafter_pipe.vae, 'set_sampling_version'):
+            partcrafter_pipe.vae.set_sampling_version(sampling_version)
+        
+        # Generation
+        generator = torch.Generator(device=partcrafter_pipe.device)
+        generator = generator.manual_seed(int(seed))
+        
+        outputs = partcrafter_pipe(
+            image=[pil_image] * num_parts,
+            attention_kwargs={"num_parts": num_parts},
+            num_tokens=num_tokens,
+            generator=generator,
+            num_inference_steps=num_inference_steps,
+            guidance_scale=guidance_scale,
+            max_num_expanded_coords=max_num_expanded_coords,
+            use_flash_decoder=use_flash_decoder,
+        ).meshes
+        
+        # Process results
+        for i in range(len(outputs)):
+            if outputs[i] is None:
+                # If mesh is None (decoding error), use dummy mesh
+                outputs[i] = trimesh.Trimesh(vertices=[[0, 0, 0]], faces=[[0, 0, 0]])
+        
+        # Create merged mesh
+        merged_mesh_trimesh = get_colored_mesh_composition(outputs)
+        
+        # Debug logging
+        print(f"Merged mesh type: {type(merged_mesh_trimesh)}")
+        print(f"Merged mesh attributes: {dir(merged_mesh_trimesh)}")
+        if hasattr(merged_mesh_trimesh, 'geometry'):
+            print(f"Scene geometry keys: {list(merged_mesh_trimesh.geometry.keys())}")
+        
+        # Create ZIP with individual parts
+        parts_output_dir = "output/partcrafter_parts"
+        os.makedirs(parts_output_dir, exist_ok=True)
+        
+        zip_path = os.path.join(parts_output_dir, f"parts_seed_{seed}.zip")
+        
+        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            for i, part in enumerate(outputs):
+                print(f"Part {i} type: {type(part)}")
+                if part is not None:
+                    # Save part as GLB file
+                    part_path = os.path.join(parts_output_dir, f"part_{i:02d}.glb")
+                    part.export(part_path)
+                    
+                    # Add to ZIP
+                    zipf.write(part_path, f"part_{i:02d}.glb")
+                    
+                    # Clean up temporary file
+                    try:
+                        os.remove(part_path)
+                    except:
+                        pass
+        
+        print(f"Created parts ZIP: {zip_path}")
+        
+        # Handle Scene vs Mesh for merged result
+        if isinstance(merged_mesh_trimesh, trimesh.Scene):
+            print("Merged result is Scene, combining all geometries")
+            if merged_mesh_trimesh.geometry:
+                # Combine all geometries into one mesh
+                all_meshes = []
+                for geom_name in merged_mesh_trimesh.geometry:
+                    geom = merged_mesh_trimesh.geometry[geom_name]
+                    print(f"Geometry {geom_name}: {type(geom)}, vertices: {len(geom.vertices)}, faces: {len(geom.faces)}")
+                    all_meshes.append(geom)
+                
+                # Combine all meshes into one
+                if len(all_meshes) > 1:
+                    combined_mesh = trimesh.util.concatenate(all_meshes)
+                    print(f"Combined mesh: vertices: {len(combined_mesh.vertices)}, faces: {len(combined_mesh.faces)}")
+                else:
+                    combined_mesh = all_meshes[0]
+                
+                merged_mesh = Mesh.load_trimesh(given_mesh=combined_mesh)
+            else:
+                print("Scene has no geometry, creating dummy mesh")
+                # Create a dummy mesh if scene is empty
+                dummy_trimesh = trimesh.Trimesh(vertices=[[0, 0, 0]], faces=[[0, 0, 0]])
+                merged_mesh = Mesh.load_trimesh(given_mesh=dummy_trimesh)
+        else:
+            print("Merged result is Mesh, loading directly")
+            merged_mesh = Mesh.load_trimesh(given_mesh=merged_mesh_trimesh)
+        
+        merged_mesh.auto_normal()
+        
+        # Save debug merged result
+        try:
+            debug_dir = "output/partcrafter_debug"
+            os.makedirs(debug_dir, exist_ok=True)
+            
+            # Save merged result for debugging
+            if isinstance(merged_mesh_trimesh, trimesh.Scene):
+                merged_mesh_trimesh.export(os.path.join(debug_dir, f"merged_scene_seed_{seed}.glb"))
+            else:
+                merged_mesh_trimesh.export(os.path.join(debug_dir, f"merged_mesh_seed_{seed}.obj"))
+            
+            print(f"Debug merged file saved to {debug_dir}")
+        except Exception as e:
+            print(f"Failed to save debug files: {e}")
+        
+        # Processed image
+        processed_image_tensor = pils_to_torch_imgs([pil_image])
+        
+        print(f"Generated {len(outputs)} parts")
+        
+        return (zip_path, merged_mesh, processed_image_tensor)

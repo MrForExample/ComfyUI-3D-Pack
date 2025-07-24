@@ -1,0 +1,27 @@
+{
+  "_class_name": "PartCrafterDiTModel",
+  "_diffusers_version": "0.34.0",
+  "cross_attention_dim": 1024,
+  "enable_global_cross_attn": true,
+  "enable_local_cross_attn": true,
+  "enable_part_embedding": true,
+  "global_attn_block_id_range": null,
+  "global_attn_block_ids": [
+    0,
+    2,
+    4,
+    6,
+    8,
+    10,
+    12,
+    14,
+    16,
+    18,
+    20
+  ],
+  "in_channels": 64,
+  "max_num_parts": 32,
+  "num_attention_heads": 16,
+  "num_layers": 21,
+  "width": 2048
+}

@@ -1,0 +1,337 @@
+{
+  "id": "8fb4df3a-d3bc-4b42-95f2-434fb48a8992",
+  "revision": 0,
+  "last_node_id": 9,
+  "last_link_id": 7,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "[Comfy3D] Load PartCrafter Pipeline",
+      "pos": [
+        2233.307861328125,
+        1132.6119384765625
+      ],
+      "size": [
+        197.09921264648438,
+        26
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "partcrafter_pipe",
+          "type": "DIFFUSERS_PIPE",
+          "links": [
+            1
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Load PartCrafter Pipeline"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 8,
+      "type": "[Comfy3D] Preview 3DMesh",
+      "pos": [
+        3333.187744140625,
+        1183.9188232421875
+      ],
+      "size": [
+        600,
+        500
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh_file_path",
+          "type": "STRING",
+          "widget": {
+            "name": "mesh_file_path"
+          },
+          "link": 6
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Preview 3DMesh"
+      },
+      "widgets_values": [
+        "",
+        null
+      ]
+    },
+    {
+      "id": 3,
+      "type": "LoadImage",
+      "pos": [
+        2161.17333984375,
+        1232.0296630859375
+      ],
+      "size": [
+        353.18182373046875,
+        489.7575378417969
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "slot_index": 0,
+          "links": [
+            2
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "slot_index": 1,
+          "links": []
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "robot.png",
+        "image"
+      ]
+    },
+    {
+      "id": 2,
+      "type": "[Comfy3D] PartCrafter Generate",
+      "pos": [
+        2550.86669921875,
+        1193.7396240234375
+      ],
+      "size": [
+        318.76953125,
+        314
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "partcrafter_pipe",
+          "type": "DIFFUSERS_PIPE",
+          "link": 1
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 2
+        }
+      ],
+      "outputs": [
+        {
+          "name": "parts_zip_path",
+          "type": "STRING",
+          "links": [
+            7
+          ]
+        },
+        {
+          "name": "merged_mesh",
+          "type": "MESH",
+          "links": [
+            5
+          ]
+        },
+        {
+          "name": "processed_image",
+          "type": "IMAGE",
+          "links": [
+            3
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] PartCrafter Generate"
+      },
+      "widgets_values": [
+        4,
+        228764490511818,
+        "randomize",
+        1024,
+        50,
+        7,
+        1000000000,
+        false,
+        false,
+        2
+      ]
+    },
+    {
+      "id": 9,
+      "type": "PreviewAny",
+      "pos": [
+        2912.02490234375,
+        1048.1806640625
+      ],
+      "size": [
+        350.2099609375,
+        88
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "source",
+          "type": "*",
+          "link": 7
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "PreviewAny"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 7,
+      "type": "[Comfy3D] Save 3D Mesh",
+      "pos": [
+        2933.991943359375,
+        1229.566162109375
+      ],
+      "size": [
+        315,
+        58
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 5
+        }
+      ],
+      "outputs": [
+        {
+          "name": "save_path",
+          "type": "STRING",
+          "slot_index": 0,
+          "links": [
+            6
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Save 3D Mesh"
+      },
+      "widgets_values": [
+        "PartCrafter_Test/mesh.glb"
+      ]
+    },
+    {
+      "id": 5,
+      "type": "PreviewImage",
+      "pos": [
+        2928.69384765625,
+        1368.6041259765625
+      ],
+      "size": [
+        321.450439453125,
+        394.6763916015625
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 3
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      },
+      "widgets_values": []
+    }
+  ],
+  "links": [
+    [
+      1,
+      1,
+      0,
+      2,
+      0,
+      "DIFFUSERS_PIPE"
+    ],
+    [
+      2,
+      3,
+      0,
+      2,
+      1,
+      "IMAGE"
+    ],
+    [
+      3,
+      2,
+      2,
+      5,
+      0,
+      "IMAGE"
+    ],
+    [
+      5,
+      2,
+      1,
+      7,
+      0,
+      "MESH"
+    ],
+    [
+      6,
+      7,
+      0,
+      8,
+      0,
+      "STRING"
+    ],
+    [
+      7,
+      2,
+      0,
+      9,
+      0,
+      "*"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.9070294784580498,
+      "offset": [
+        -2140.713805878563,
+        -975.661308705606
+      ]
+    },
+    "node_versions": {
+      "ComfyUI-3D-Pack": "aedee80e370321bd78221b086445fe8a5f2f8906",
+      "comfy-core": "0.3.44"
+    },
+    "frontendVersion": "1.23.4",
+    "VHS_latentpreview": false,
+    "VHS_latentpreviewrate": 0,
+    "VHS_MetadataImage": true,
+    "VHS_KeepIntermediate": true
+  },
+  "version": 0.4
+}
