@@ -126,7 +126,7 @@ from Gen_3D_Modules.Hunyuan3D_2_1.hy3dpaint.utils.torchvision_fix import apply_f
 apply_fix()
 from Gen_3D_Modules.PartCrafter.partcrafter_src.pipelines.pipeline_partcrafter import PartCrafterPipeline
 from Gen_3D_Modules.PartCrafter.partcrafter_src.utils.data_utils import get_colored_mesh_composition
-from Gen_3D_Modules.PartCrafter.partcrafter_src.utils.image_utils import prepare_image
+from Gen_3D_Modules.PartCrafter.partcrafter_src.utils.render_utils import explode_mesh
 import zipfile
 
 
@@ -262,11 +262,14 @@ class Preview_3DMesh:
         mesh_folder_path, filename = os.path.split(mesh_file_path)
         
         if not os.path.isabs(mesh_file_path):
-            mesh_file_path = os.path.join(comfy_paths.output_directory, mesh_folder_path)
+            mesh_file_path = os.path.join(comfy_paths.output_directory, mesh_folder_path, filename)
         
         if not filename.lower().endswith(SUPPORTED_3D_EXTENSIONS):
             cstr(f"[{self.__class__.__name__}] File name {filename} does not end with supported 3D file extensions: {SUPPORTED_3D_EXTENSIONS}").error.print()
             mesh_file_path = ""
+        
+        print(f"[Preview_3DMesh] Final mesh path: {mesh_file_path}")
+        print(f"[Preview_3DMesh] File exists: {os.path.exists(mesh_file_path) if mesh_file_path else False}")
         
         previews = [
             {
@@ -5584,8 +5587,7 @@ class Hunyuan3D_21_TexGen:
                 except:
                     pass
 
-
-
+# --------------------- PARTCRAFTER ---------------------
 
 class Load_PartCrafter_Pipeline:
     """Load PartCrafter Pipeline"""
@@ -5644,12 +5646,13 @@ class Load_PartCrafter_Pipeline:
         print(f"PartCrafter pipeline loaded")
         return (pipeline,)
 
+
 class PartCrafter_Generate:
-    """PartCrafter Generation"""
+    """PartCrafter Generation - Creates multi-part 3D scenes with colored components"""
     
     CATEGORY = "Comfy3D/Algorithm/PartCrafter"
-    RETURN_TYPES = ("STRING", "MESH", "IMAGE")
-    RETURN_NAMES = ("parts_zip_path", "merged_mesh", "processed_image")
+    RETURN_TYPES = ("STRING", "STRING", "IMAGE")
+    RETURN_NAMES = ("parts_zip_path", "glb_mesh_path", "processed_image")
     FUNCTION = "generate"
 
     @classmethod
@@ -5704,37 +5707,38 @@ class PartCrafter_Generate:
             use_flash_decoder=use_flash_decoder,
         ).meshes
         
-        # Process results
-        for i in range(len(outputs)):
-            if outputs[i] is None:
-                # If mesh is None (decoding error), use dummy mesh
-                outputs[i] = trimesh.Trimesh(vertices=[[0, 0, 0]], faces=[[0, 0, 0]])
+        # Ensure no None outputs 
+        for i, mesh in enumerate(outputs):
+            if mesh is None:
+                outputs[i] = trimesh.Trimesh(vertices=[[0,0,0]], faces=[[0,0,0]])
+                print(f"Replaced None mesh at index {i} with dummy mesh")
         
-        # Create merged mesh
         merged_mesh_trimesh = get_colored_mesh_composition(outputs)
+        split_mesh = explode_mesh(merged_mesh_trimesh)
         
         # Debug logging
-        print(f"Merged mesh type: {type(merged_mesh_trimesh)}")
-        print(f"Merged mesh attributes: {dir(merged_mesh_trimesh)}")
+        print(f"PartCrafter result type: {type(merged_mesh_trimesh)}")
         if hasattr(merged_mesh_trimesh, 'geometry'):
-            print(f"Scene geometry keys: {list(merged_mesh_trimesh.geometry.keys())}")
+            print(f"Scene contains {len(merged_mesh_trimesh.geometry)} parts: {list(merged_mesh_trimesh.geometry.keys())}")
         
         # Create ZIP with individual parts
         parts_output_dir = "output/partcrafter_parts"
         os.makedirs(parts_output_dir, exist_ok=True)
         
-        zip_path = os.path.join(parts_output_dir, f"parts_seed_{seed}.zip")
+        zip_path = os.path.join(parts_output_dir, f"parts.zip")
+        parts = []
         
         with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-            for i, part in enumerate(outputs):
-                print(f"Part {i} type: {type(part)}")
-                if part is not None:
+            for idx, mesh in enumerate(outputs):
+                print(f"Part {idx} type: {type(mesh)}")
+                if mesh is not None:
                     # Save part as GLB file
-                    part_path = os.path.join(parts_output_dir, f"part_{i:02d}.glb")
-                    part.export(part_path)
+                    part_path = os.path.join(parts_output_dir, f"part_{idx:02d}.glb")
+                    mesh.export(part_path)
+                    parts.append(part_path)
                     
                     # Add to ZIP
-                    zipf.write(part_path, f"part_{i:02d}.glb")
+                    zipf.write(part_path, f"part_{idx:02d}.glb")
                     
                     # Clean up temporary file
                     try:
@@ -5742,56 +5746,48 @@ class PartCrafter_Generate:
                     except:
                         pass
         
-        print(f"Created parts ZIP: {zip_path}")
+        print(f"Created parts ZIP: {zip_path} with {len(parts)} parts")
         
-        # Handle Scene vs Mesh for merged result
+        # Save merged mesh 
+        scene_output_dir = "output/partcrafter_scenes"
+        os.makedirs(scene_output_dir, exist_ok=True)
+        scene_file_path = os.path.join(scene_output_dir, f"scene.glb")
+        
+        # For Preview_3DMesh, return relative path from ComfyUI output directory
+        relative_scene_path = "partcrafter_scenes/scene.glb"
+        
+        # Export the merged mesh (same as app.py: merged.export(merged_path))
+        merged_mesh_trimesh.export(scene_file_path)
+        print(f"Saved merged colored mesh to: {scene_file_path}")
+        
+        # Debug: check what was saved
         if isinstance(merged_mesh_trimesh, trimesh.Scene):
-            print("Merged result is Scene, combining all geometries")
-            if merged_mesh_trimesh.geometry:
-                # Combine all geometries into one mesh
-                all_meshes = []
-                for geom_name in merged_mesh_trimesh.geometry:
-                    geom = merged_mesh_trimesh.geometry[geom_name]
-                    print(f"Geometry {geom_name}: {type(geom)}, vertices: {len(geom.vertices)}, faces: {len(geom.faces)}")
-                    all_meshes.append(geom)
-                
-                # Combine all meshes into one
-                if len(all_meshes) > 1:
-                    combined_mesh = trimesh.util.concatenate(all_meshes)
-                    print(f"Combined mesh: vertices: {len(combined_mesh.vertices)}, faces: {len(combined_mesh.faces)}")
-                else:
-                    combined_mesh = all_meshes[0]
-                
-                merged_mesh = Mesh.load_trimesh(given_mesh=combined_mesh)
-            else:
-                print("Scene has no geometry, creating dummy mesh")
-                # Create a dummy mesh if scene is empty
-                dummy_trimesh = trimesh.Trimesh(vertices=[[0, 0, 0]], faces=[[0, 0, 0]])
-                merged_mesh = Mesh.load_trimesh(given_mesh=dummy_trimesh)
+            print(f"Exported Scene with {len(merged_mesh_trimesh.geometry)} parts")
+            for geom_name in merged_mesh_trimesh.geometry:
+                geom = merged_mesh_trimesh.geometry[geom_name]
+                print(f"  Part {geom_name}: vertices: {len(geom.vertices)}, faces: {len(geom.faces)}")
+                if hasattr(geom.visual, 'vertex_colors') and geom.visual.vertex_colors is not None:
+                    print(f"    Has vertex colors: {geom.visual.vertex_colors.shape}")
         else:
-            print("Merged result is Mesh, loading directly")
-            merged_mesh = Mesh.load_trimesh(given_mesh=merged_mesh_trimesh)
+            print(f"Exported single mesh: vertices: {len(merged_mesh_trimesh.vertices)}, faces: {len(merged_mesh_trimesh.faces)}")
         
-        merged_mesh.auto_normal()
-        
-        # Save debug merged result
+        # Debug info about the scene
         try:
-            debug_dir = "output/partcrafter_debug"
-            os.makedirs(debug_dir, exist_ok=True)
-            
-            # Save merged result for debugging
-            if isinstance(merged_mesh_trimesh, trimesh.Scene):
-                merged_mesh_trimesh.export(os.path.join(debug_dir, f"merged_scene_seed_{seed}.glb"))
+            print(f"Scene file saved successfully: {scene_file_path}")
+            if os.path.exists(scene_file_path):
+                file_size = os.path.getsize(scene_file_path) / (1024 * 1024)  # MB
+                print(f"Scene file size: {file_size:.2f} MB")
+                print(f"Relative path for Preview_3DMesh: {relative_scene_path}")
             else:
-                merged_mesh_trimesh.export(os.path.join(debug_dir, f"merged_mesh_seed_{seed}.obj"))
-            
-            print(f"Debug merged file saved to {debug_dir}")
+                print(f"Warning: Scene file was not created properly")
         except Exception as e:
-            print(f"Failed to save debug files: {e}")
+            print(f"Error checking scene file: {e}")
         
         # Processed image
         processed_image_tensor = pils_to_torch_imgs([pil_image])
         
-        print(f"Generated {len(outputs)} parts")
+        print(f"PartCrafter: Generated {len(outputs)} parts with explode_mesh processing")
+        print(f"GLB mesh path for Preview_3DMesh: {relative_scene_path}")
         
-        return (zip_path, merged_mesh, processed_image_tensor)
+        return (zip_path, relative_scene_path, processed_image_tensor)
+

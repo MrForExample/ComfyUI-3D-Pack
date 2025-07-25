@@ -337,7 +337,7 @@ class PartCrafterPipeline(DiffusionPipeline, TransformerDiffusionMixin):
                         max_num_expanded_coords=max_num_expanded_coords,
                         # verbose=True
                     )
-                    mesh = trimesh.Trimesh(mesh_v_f[0].astype(np.float32), mesh_v_f[1])
+                    mesh = trimesh.Trimesh(mesh_v_f[0].astype(np.float32), mesh_v_f[1], process=True)
                 except:
                     mesh_v_f = None
                     mesh = None
