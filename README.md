@@ -45,6 +45,18 @@ Your ComfyUI Root Directory\python_embeded\python.exe install.py
 ## Features:
 - For use cases please check out [Example Workflows](./_Example_Workflows/). [**Last update: 5/June/2025**]
   - **Note:** you need to put [Example Inputs Files & Folders](_Example_Workflows/_Example_Inputs_Files/) under ComfyUI Root Directory\ComfyUI\input folder before you can run the example workflow
+    
+- **PartCrafter**: [wgsxm/PartCrafter](https://github.com/wgsxm/PartCrafter)  
+  - Pipeline:
+    - Single image → 3D mesh with **part segmentation**
+    - Optional background removal (`rembg`)
+    - Output includes:
+      - Merged full mesh
+      - ZIP archive with individual part meshes 
+  - Model weights: [HuggingFace - PartCrafter](https://huggingface.co/wgsxm/PartCrafter)    
+  - [Workflow](./_Example_Workflows/PartCrafter.json)
+      
+  <video controls autoplay loop src="https://github.com/user-attachments/assets/b80bcc97-7381-4cf7-9ec6-ee48c8d58217"></video>
 
 - **Hunyuan3D_2.1**: [Tencent-Hunyuan/Hunyuan3D-2.1](https://github.com/Tencent-Hunyuan/Hunyuan3D-2.1)  
   - Updated two-stage pipeline:
