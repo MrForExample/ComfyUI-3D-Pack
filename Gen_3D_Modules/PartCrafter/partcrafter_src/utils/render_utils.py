@@ -10,9 +10,60 @@ from diffusers.utils import export_to_video
 from diffusers.utils.loading_utils import load_video
 import torch
 from torchvision.utils import make_grid
+import math
 
 os.environ['PYOPENGL_PLATFORM'] = 'egl'
 
+def explode_mesh(mesh, explosion_scale=0.4):
+    # ensure we have a Scene
+    if isinstance(mesh, trimesh.Trimesh):
+        scene = trimesh.Scene(mesh)
+    elif isinstance(mesh, trimesh.Scene):
+        scene = mesh
+    else:
+        raise ValueError(f"Expected Trimesh or Scene, got {type(mesh)}")
+
+    if len(scene.geometry) <= 1:
+        print("Nothing to explode")
+        return scene
+
+    # 1) collect (name, geom, world_center)
+    parts = []
+    for name, geom in scene.geometry.items():
+        # ← get(name) returns (4×4 world‐space matrix, parent_frame)
+        world_tf, _ = scene.graph.get(name)
+        pts = trimesh.transformations.transform_points(geom.vertices, world_tf)
+        center = pts.mean(axis=0)
+        parts.append((name, geom, center))
+
+    # compute global center
+    all_centers = np.stack([c for _,_,c in parts], axis=0)
+    global_center = all_centers.mean(axis=0)
+
+    exploded = trimesh.Scene()
+    for name, geom, center in parts:
+        dir_vec = center - global_center
+        norm = np.linalg.norm(dir_vec)
+        if norm < 1e-6:
+            dir_vec = np.random.randn(3)
+            dir_vec /= np.linalg.norm(dir_vec)
+        else:
+            dir_vec /= norm
+
+        offset = dir_vec * explosion_scale
+
+        # fetch the same 4×4, then bump just the translation
+        world_tf, _ = scene.graph.get(name)
+        world_tf = world_tf.copy()
+        world_tf[:3, 3] += offset
+
+        exploded.add_geometry(geom, transform=world_tf, geom_name=name)
+        print(f"[explode] {name} moved by {np.linalg.norm(offset):.4f}")
+
+    return exploded
+
+
+    
 def render(
     scene: pyrender.Scene,
     renderer: pyrender.Renderer,
@@ -123,13 +174,22 @@ def render_views_around_mesh(
         Tuple[List[Image.Image], List[Image.Image]], 
         Tuple[List[np.ndarray], List[np.ndarray]]
     ]:
+
+    meshes = []
+    scenes = []
     
     if not isinstance(mesh, (trimesh.Trimesh, trimesh.Scene)):
         raise ValueError("mesh must be a trimesh.Trimesh or trimesh.Scene object")
     if isinstance(mesh, trimesh.Trimesh):
-        mesh = trimesh.Scene(mesh)
-
-    scene = pyrender.Scene.from_trimesh_scene(mesh)
+        for i in range(num_views):
+            scenes.append(pyrender.Scene.from_trimesh_scene(trimesh.Scene(mesh)))
+    else:
+        for i in range(num_views):
+            value = math.sin(math.pi * (i - 1) / num_views)
+            scenes.append(pyrender.Scene.from_trimesh_scene(explode_mesh(mesh, 0.2 * value), 
+                                                            ambient_light=[0.02, 0.02, 0.02],
+                                                            bg_color=[0.0, 0.0, 0.0, 1.0]))
+            
     light = pyrender.DirectionalLight(
         color=np.ones(3), 
         intensity=light_intensity
@@ -149,9 +209,9 @@ def render_views_around_mesh(
     )
 
     images, depths = [], []
-    for pose in camera_poses:
+    for i, pose in enumerate(camera_poses):
         image, depth = render(
-            scene, renderer, camera, pose, light, 
+            scenes[i], renderer, camera, pose, light, 
             normalize_depth=normalize_depth,
             flags=flags,
             return_type=return_type
