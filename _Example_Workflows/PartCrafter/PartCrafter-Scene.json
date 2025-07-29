@@ -5,45 +5,6 @@
   "last_link_id": 4,
   "nodes": [
     {
-      "id": 3,
-      "type": "LoadImage",
-      "pos": [
-        2522.745361328125,
-        1527.1820068359375
-      ],
-      "size": [
-        353.18182373046875,
-        489.7575378417969
-      ],
-      "flags": {},
-      "order": 0,
-      "mode": 0,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "IMAGE",
-          "type": "IMAGE",
-          "slot_index": 0,
-          "links": [
-            2
-          ]
-        },
-        {
-          "name": "MASK",
-          "type": "MASK",
-          "slot_index": 1,
-          "links": []
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "LoadImage"
-      },
-      "widgets_values": [
-        "np6_0192a842-531c-419a-923e-28db4add8656_DiningRoom-31158.png",
-        "image"
-      ]
-    },
-    {
       "id": 2,
       "type": "[Comfy3D] PartCrafter Generate",
       "pos": [
@@ -118,7 +79,7 @@
         26
       ],
       "flags": {},
-      "order": 1,
+      "order": 0,
       "mode": 0,
       "inputs": [],
       "outputs": [
@@ -194,6 +155,45 @@
         "Node name for S&R": "PreviewAny"
       },
       "widgets_values": []
+    },
+    {
+      "id": 3,
+      "type": "LoadImage",
+      "pos": [
+        2522.745361328125,
+        1527.1820068359375
+      ],
+      "size": [
+        353.18182373046875,
+        489.7575378417969
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "slot_index": 0,
+          "links": [
+            2
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "slot_index": 1,
+          "links": []
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "dining_scene.png",
+        "image"
+      ]
     }
   ],
   "links": [
@@ -234,15 +234,15 @@
   "config": {},
   "extra": {
     "ds": {
-      "scale": 0.9335788191034556,
+      "scale": 0.9802577600586283,
       "offset": [
-        -2387.977199348463,
-        -1294.3625334261847
+        -2455.460106090683,
+        -1318.8136943587429
       ]
     },
     "node_versions": {
-      "comfy-core": "0.3.44",
-      "ComfyUI-3D-Pack": "ffa5ff828e6bbe2940905b8b12cc394282a638c1"
+      "ComfyUI-3D-Pack": "ffa5ff828e6bbe2940905b8b12cc394282a638c1",
+      "comfy-core": "0.3.44"
     },
     "frontendVersion": "1.23.4",
     "VHS_latentpreview": false,
