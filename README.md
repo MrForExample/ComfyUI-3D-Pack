@@ -47,16 +47,26 @@ Your ComfyUI Root Directory\python_embeded\python.exe install.py
   - **Note:** you need to put [Example Inputs Files & Folders](_Example_Workflows/_Example_Inputs_Files/) under ComfyUI Root Directory\ComfyUI\input folder before you can run the example workflow
     
 - **PartCrafter**: [wgsxm/PartCrafter](https://github.com/wgsxm/PartCrafter)  
-  - Pipeline:
-    - Single image → 3D mesh with **part segmentation**
-    - Optional background removal (`rembg`)
-    - Output includes:
-      - Merged full mesh
-      - ZIP archive with individual part meshes 
-  - Model weights: [HuggingFace - PartCrafter](https://huggingface.co/wgsxm/PartCrafter)    
-  - [Workflow](./_Example_Workflows/PartCrafter.json)
+  - Two-model pipeline:
+    - **Single object** mode:
+      - Single image → 3D mesh with **part segmentation**   
+      - Output:
+        - Merged full mesh
+        - ZIP archive with individual part meshes
+    - **Scene** mode:
+      - Scene image → multiple 3D part meshes  
+      - Output:
+        - Merged full scene mesh
+        - ZIP archive with individual object meshes
+  - Model weights:
+    - [PartCrafter (object mode)](https://huggingface.co/wgsxm/PartCrafter)  
+    - [PartCrafter-Scene (scene mode)](https://huggingface.co/wgsxm/PartCrafter-Scene)
+  - Workflows:
+    - [Single Object](./_Example_Workflows/PartCrafter/PartCrafter.json)  
+    - [Scene](./_Example_Workflows/PartCrafter/PartCrafter-Scene.json)
       
   <video controls autoplay loop src="https://github.com/user-attachments/assets/b80bcc97-7381-4cf7-9ec6-ee48c8d58217"></video>
+  <video controls autoplay loop src="https://github.com/user-attachments/assets/d82f4b32-4916-4286-8478-a86dd5da37a6"></video>
 
 - **Hunyuan3D_2.1**: [Tencent-Hunyuan/Hunyuan3D-2.1](https://github.com/Tencent-Hunyuan/Hunyuan3D-2.1)  
   - Updated two-stage pipeline:

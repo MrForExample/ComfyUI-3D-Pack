@@ -1,0 +1,15 @@
+{
+  "_class_name": "TripoSGVAEModel",
+  "_diffusers_version": "0.34.0",
+  "_name_or_path": "pretrained_weights/TripoSG",
+  "embed_frequency": 8,
+  "embed_include_pi": false,
+  "embedding_type": "frequency",
+  "in_channels": 3,
+  "latent_channels": 64,
+  "num_attention_heads": 8,
+  "num_layers_decoder": 16,
+  "num_layers_encoder": 8,
+  "width_decoder": 1024,
+  "width_encoder": 512
+}
