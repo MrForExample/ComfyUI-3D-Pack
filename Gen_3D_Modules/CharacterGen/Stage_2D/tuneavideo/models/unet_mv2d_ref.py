@@ -1310,7 +1310,7 @@ class UNetMV2DRefModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin):
             return_unused_kwargs=True,
             return_commit_hash=True,
             force_download=force_download,
-            resume_download=resume_download,
+            # resume_download=resume_download,
             proxies=proxies,
             local_files_only=local_files_only,
             use_auth_token=use_auth_token,
@@ -1365,7 +1365,7 @@ class UNetMV2DRefModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin):
                         weights_name=_add_variant(SAFETENSORS_WEIGHTS_NAME, variant),
                         cache_dir=cache_dir,
                         force_download=force_download,
-                        resume_download=resume_download,
+                        # resume_download=resume_download,
                         proxies=proxies,
                         local_files_only=local_files_only,
                         use_auth_token=use_auth_token,
@@ -1384,7 +1384,7 @@ class UNetMV2DRefModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin):
                     weights_name=_add_variant(WEIGHTS_NAME, variant),
                     cache_dir=cache_dir,
                     force_download=force_download,
-                    resume_download=resume_download,
+                    # resume_download=resume_download,
                     proxies=proxies,
                     local_files_only=local_files_only,
                     use_auth_token=use_auth_token,
@@ -1408,8 +1408,9 @@ class UNetMV2DRefModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin):
                         default_attn_proc, enabled=name.endswith("attn1.processor"), name=name
                     )
                 model.set_attn_processor(unet_lora_attn_procs)
-            state_dict = load_state_dict(model_file, variant=variant)
-            model._convert_deprecated_attention_blocks(state_dict)
+            # state_dict = load_state_dict(model_file, variant=variant)
+            state_dict = load_state_dict(model_file)
+            # model._convert_deprecated_attention_blocks(state_dict)
 
             conv_in_weight = state_dict['conv_in.weight']
             conv_out_weight = state_dict['conv_out.weight']
