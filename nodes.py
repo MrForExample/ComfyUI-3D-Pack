@@ -5889,7 +5889,7 @@ class PartCrafter_Generate:
             rmbg_worker = BackgroundRemover_2_1()
             if pil_image.mode == "RGBA":
                 pil_image = pil_image.convert('RGB')
-            pil_image = rmbg_worker(pil_image)
+            pil_image = rmbg_worker(pil_image, background_color=(255, 255, 255))
             del rmbg_worker
         
         # Set sampling version
