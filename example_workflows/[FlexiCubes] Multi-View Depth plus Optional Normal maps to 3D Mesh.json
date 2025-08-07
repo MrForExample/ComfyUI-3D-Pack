@@ -358,7 +358,7 @@
         "Node name for S&R": "LoadImagesFromDir //Inspire"
       },
       "widgets_values": [
-        "C:\\Users\\reall\\Softwares\\ComfyUI_windows_portable\\ComfyUI\\custom_nodes\\ComfyUI-3D-Pack\\_Example_Workflows\\_Example_Inputs_Files\\dragon_all_renders\\Normal",
+        ".\\example_workflows\\_Example_Inputs_Files\\dragon_all_renders\\Normal",
         0,
         0
       ]
@@ -406,7 +406,7 @@
         "Node name for S&R": "LoadImagesFromDir //Inspire"
       },
       "widgets_values": [
-        "C:\\Users\\reall\\Softwares\\ComfyUI_windows_portable\\ComfyUI\\custom_nodes\\ComfyUI-3D-Pack\\_Example_Workflows\\_Example_Inputs_Files\\dragon_all_renders\\Depth",
+        ".\\example_workflows\\_Example_Inputs_Files\\dragon_all_renders\\Depth",
         0,
         0
       ]
@@ -520,7 +520,7 @@
         "Node name for S&R": "LoadImagesFromDir //Inspire"
       },
       "widgets_values": [
-        "C:\\Users\\reall\\Softwares\\ComfyUI_windows_portable\\ComfyUI\\custom_nodes\\ComfyUI-3D-Pack\\_Example_Workflows\\_Example_Inputs_Files\\dragon_all_renders\\Mask",
+        ".\\example_workflows\\_Example_Inputs_Files\\dragon_all_renders\\Mask",
         0,
         0
       ]

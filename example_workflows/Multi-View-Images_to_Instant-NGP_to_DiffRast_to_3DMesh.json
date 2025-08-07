@@ -405,7 +405,7 @@
         "Node name for S&R": "[Comfy3D] Load 3DGS"
       },
       "widgets_values": [
-        "C:\\Users\\reall\\Softwares\\ComfyUI_windows_portable\\ComfyUI\\custom_nodes\\ComfyUI-3D-Pack\\_Example_Workflows\\_Example_Inputs_Files\\Meshes\\CatCoffee.ply"
+        ".\\example_workflows\\_Example_Inputs_Files\\Meshes\\CatCoffee.ply"
       ]
     },
     {

@@ -231,7 +231,7 @@
         "Node name for S&R": "PrimitiveString"
       },
       "widgets_values": [
-        "custom_nodes/ComfyUI-3D-Pack/_Example_Workflows/_Example_Inputs_Files/meshes/squirrel_girl1_shape.glb"
+        "custom_nodes/ComfyUI-3D-Pack/example_workflows/_Example_Inputs_Files/meshes/squirrel_girl1_shape.glb"
       ]
     }
   ],

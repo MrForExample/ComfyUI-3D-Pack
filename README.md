@@ -43,8 +43,8 @@ Your ComfyUI Root Directory\python_embeded\python.exe install.py
 
 
 ## Features:
-- For use cases please check out [Example Workflows](./_Example_Workflows/). [**Last update: 5/June/2025**]
-  - **Note:** you need to put [Example Inputs Files & Folders](_Example_Workflows/_Example_Inputs_Files/) under ComfyUI Root Directory\ComfyUI\input folder before you can run the example workflow
+- For use cases please check out [Example Workflows](./example_workflows/). [**Last update: 5/June/2025**]
+  - **Note:** you need to put [Example Inputs Files & Folders](example_workflows/_Example_Inputs_Files/) under ComfyUI Root Directory\ComfyUI\input folder before you can run the example workflow
     
 - **PartCrafter**: [wgsxm/PartCrafter](https://github.com/wgsxm/PartCrafter)  
   - Two-model pipeline:
@@ -62,8 +62,8 @@ Your ComfyUI Root Directory\python_embeded\python.exe install.py
     - [PartCrafter (object mode)](https://huggingface.co/wgsxm/PartCrafter)  
     - [PartCrafter-Scene (scene mode)](https://huggingface.co/wgsxm/PartCrafter-Scene)
   - Workflows:
-    - [Single Object](./_Example_Workflows/PartCrafter/PartCrafter.json)  
-    - [Scene](./_Example_Workflows/PartCrafter/PartCrafter-Scene.json)
+    - [Single Object](./example_workflows/PartCrafter/PartCrafter.json)  
+    - [Scene](./example_workflows/PartCrafter/PartCrafter-Scene.json)
       
   <video controls autoplay loop src="https://github.com/user-attachments/assets/b80bcc97-7381-4cf7-9ec6-ee48c8d58217"></video>
   <video controls autoplay loop src="https://github.com/user-attachments/assets/d82f4b32-4916-4286-8478-a86dd5da37a6"></video>
@@ -73,7 +73,7 @@ Your ComfyUI Root Directory\python_embeded\python.exe install.py
     - Single image → 3D mesh (shape generation)
     - 3D mesh + reference image → 3D mesh with RGB texture
   - Model weights: https://huggingface.co/tencent/Hunyuan3D-2.1
-  - Workflows: [Full](./_Example_Workflows/Hunyuan3D_2_1/Hunyuan2.1-Full.json), [Shapegen](./_Example_Workflows/Hunyuan3D_2_1/Hunyuan2.1-Shapegen.json), [Texgen](./_Example_Workflows/Hunyuan3D_2_1/Hunyuan2.1-Texgen.json)
+  - Workflows: [Full](./example_workflows/Hunyuan3D_2_1/Hunyuan2.1-Full.json), [Shapegen](./example_workflows/Hunyuan3D_2_1/Hunyuan2.1-Shapegen.json), [Texgen](./example_workflows/Hunyuan3D_2_1/Hunyuan2.1-Texgen.json)
 
   <video controls autoplay loop src="https://github.com/user-attachments/assets/514bbece-ca19-43cf-83ca-2ccc6c60039e"></video>
   <video controls autoplay loop src="https://github.com/user-attachments/assets/65f329e7-610f-4520-b0c6-6da62f8209d1"></video>
@@ -85,7 +85,7 @@ Your ComfyUI Root Directory\python_embeded\python.exe install.py
     - TG2MV: Text prompt + 3D mesh to multi-view images
     - Texturing: Grid image + 3D mesh to textured mesh
   - Model weights: https://huggingface.co/huanngzh/mv-adapter
-  - Workflows: [IG2MV](./_Example_Workflows/MV-Adapter/MV-Adapter-ig2mv.json), [T2MV](./_Example_Workflows/MV-Adapter/MV-Adapter-tg2mv.json), [Texturing](./_Example_Workflows/MV-Adapter/MV-Adapter-Texturing.json)
+  - Workflows: [IG2MV](./example_workflows/MV-Adapter/MV-Adapter-ig2mv.json), [T2MV](./example_workflows/MV-Adapter/MV-Adapter-tg2mv.json), [Texturing](./example_workflows/MV-Adapter/MV-Adapter-Texturing.json)
     
    <video controls autoplay loop src="https://github.com/user-attachments/assets/47b77c9e-a121-45c4-a6d0-f307bda1579c"></video>
    <video controls autoplay loop src="https://github.com/user-attachments/assets/35c6cee5-d408-4559-88aa-753741eacb95"></video>
@@ -98,7 +98,7 @@ Your ComfyUI Root Directory\python_embeded\python.exe install.py
   - Model weights: 
     - Stable3DGen: https://huggingface.co/Stable-X/trellis-normal-v0-1
     - StableNormal: https://huggingface.co/Stable-X/yoso-normal-v1-8-1
-  - [Workflow](./_Example_Workflows/Stable3DGen.json)
+  - [Workflow](./example_workflows/Stable3DGen.json)
     
   <video controls autoplay loop src="https://github.com/user-attachments/assets/2a38fa0a-4028-4fe5-a67a-bbc7c305da75"></video>
  
@@ -106,7 +106,7 @@ Your ComfyUI Root Directory\python_embeded\python.exe install.py
   - Single image to 3D Mesh
   - Multi-views to 3D Mesh with RGB texture
   - Model weights: https://huggingface.co/tencent/Hunyuan3D-2, https://huggingface.co/tencent/Hunyuan3D-2mini
-  - [Workflows](./_Example_Workflows/Hunyuan3D_V2)
+  - [Workflows](./example_workflows/Hunyuan3D_V2)
     
   <video controls autoplay loop src="https://github.com/user-attachments/assets/ae0f68d8-edd3-4bdd-9a9a-1f5ccc07a3d0"></video>
 
@@ -127,7 +127,7 @@ Your ComfyUI Root Directory\python_embeded\python.exe install.py
     1. Single image to 3D Mesh shape only
     2. 3D Mesh shape + Single reference image to 3D Mesh with RGB texture
   - Model weights: https://huggingface.co/tencent/Hunyuan3D-2/tree/main
-  - [Workflows](https://github.com/DenisKochetov/ComfyUI-3D-Pack/tree/dev/_Example_Workflows/Hunyuan3D_V2)
+  - [Workflows](https://github.com/DenisKochetov/ComfyUI-3D-Pack/tree/dev/example_workflows/Hunyuan3D_V2)
 
   <video controls autoplay loop src="https://github.com/user-attachments/assets/da6a8f8b-8dab-4460-90a6-44769ec9bb09"></video>
 
@@ -148,7 +148,7 @@ Your ComfyUI Root Directory\python_embeded\python.exe install.py
 
 - **CharacterGen**: [zjp-shadow/CharacterGen](https://github.com/zjp-shadow/CharacterGen)
   - Single front view of a character with arbitrary pose
-  - Can [combine with Unique3D workflow](./_Example_Workflows/CharacterGen/CharacterGen_to_Unique3D.json) for better result
+  - Can [combine with Unique3D workflow](./example_workflows/CharacterGen/CharacterGen_to_Unique3D.json) for better result
   - Model weights: https://huggingface.co/zjpshadow/CharacterGen/tree/main
  
   <video controls autoplay loop src="https://github.com/user-attachments/assets/4f0ae0c0-2d29-49f0-a6f2-a636dd4b4dcc"></video>
@@ -159,7 +159,7 @@ Your ComfyUI Root Directory\python_embeded\python.exe install.py
     2. Consistent Multi-view images Upscale to 512X512, super resolution to 2048X2048
     3. Multi-view images to Normal maps with resolution: 512X512, super resolution to 2048X2048
     4. Multi-view images & Normal maps to 3D mesh with texture
-  - To use the [All stage Unique3D workflow](./_Example_Workflows/Unique3D/Unique3D_All_Stages.json), Download Models:
+  - To use the [All stage Unique3D workflow](./example_workflows/Unique3D/Unique3D_All_Stages.json), Download Models:
     - [sdv1.5-pruned-emaonly](https://huggingface.co/runwayml/stable-diffusion-v1-5/blob/main/v1-5-pruned-emaonly.ckpt) and put it into `Your ComfyUI root directory/ComfyUI/models/checkpoints`
     - [fine-tuned controlnet-tile](https://huggingface.co/spaces/Wuvin/Unique3D/tree/main/ckpt/controlnet-tile) and put it into `Your ComfyUI root directory/ComfyUI/models/controlnet`
     - [ip-adapter_sd15](https://huggingface.co/h94/IP-Adapter/blob/main/models/ip-adapter_sd15.safetensors) and put it into `Your ComfyUI root directory/ComfyUI/models/ipadapter`
@@ -209,7 +209,7 @@ Your ComfyUI Root Directory\python_embeded\python.exe install.py
   - Generate spatial consistent 6 views images & normal maps from a single image
   - Model weights: https://huggingface.co/flamehaze1115/wonder3d-v1.0/tree/main
   
-  ![Wonder3D_FatCat_MVs](_Example_Workflows/_Example_Outputs/Wonder3D_FatCat_MVs.jpg)
+  ![Wonder3D_FatCat_MVs](example_workflows/_Example_Outputs/Wonder3D_FatCat_MVs.jpg)
 
 - **Large Multiview Gaussian Model**: [3DTopia/LGM](https://github.com/3DTopia/LGM)
   - Enable single image to 3D Gaussian in less than 30 seconds on a RTX3080 GPU, later you can also convert 3D Gaussian to mesh
@@ -234,9 +234,9 @@ Your ComfyUI Root Directory\python_embeded\python.exe install.py
   - You can use it to generate the orbit camera poses and directly input to other 3D process node (e.g. GaussianSplatting and BakeTextureToMesh)
   - Example usage:
 
-    <img src="_Example_Workflows/_Example_Outputs/Cammy_Cam_Rotate_Clockwise_Camposes.png" width="256"/> <img src="_Example_Workflows/_Example_Outputs/Cammy_Cam_Rotate_Counter_Clockwise_Camposes.png" width="256"/>
+    <img src="example_workflows/_Example_Outputs/Cammy_Cam_Rotate_Clockwise_Camposes.png" width="256"/> <img src="example_workflows/_Example_Outputs/Cammy_Cam_Rotate_Counter_Clockwise_Camposes.png" width="256"/>
     <br>
-    <img src="_Example_Workflows/_Example_Outputs/Cammy_Cam_Rotate_Clockwise.gif" width="256"/> <img src="_Example_Workflows/_Example_Outputs/Cammy_Cam_Rotate_Counter_Clockwise.gif" width="256"/> 
+    <img src="example_workflows/_Example_Outputs/Cammy_Cam_Rotate_Clockwise.gif" width="256"/> <img src="example_workflows/_Example_Outputs/Cammy_Cam_Rotate_Counter_Clockwise.gif" width="256"/> 
   - Coordinate system:
     - Azimuth: In top view, from angle 0 rotate 360 degree with step -90 you get (0, -90, -180/180, 90, 0), in this case camera rotates clock-wise, vice versa.
     - Elevation: 0 when camera points horizontally forward, pointing down to the ground is negitive angle, vice versa.
