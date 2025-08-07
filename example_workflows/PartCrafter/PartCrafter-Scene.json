@@ -1,0 +1,254 @@
+{
+  "id": "d67bc5f6-ca03-46ff-8337-c73a9f42c713",
+  "revision": 0,
+  "last_node_id": 5,
+  "last_link_id": 4,
+  "nodes": [
+    {
+      "id": 2,
+      "type": "[Comfy3D] PartCrafter Generate",
+      "pos": [
+        2948.591796875,
+        1531.039794921875
+      ],
+      "size": [
+        318.76953125,
+        314
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "partcrafter_pipe",
+          "type": "DIFFUSERS_PIPE",
+          "link": 1
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 2
+        }
+      ],
+      "outputs": [
+        {
+          "name": "parts_zip_path",
+          "type": "STRING",
+          "links": [
+            3
+          ]
+        },
+        {
+          "name": "glb_mesh_path",
+          "type": "STRING",
+          "links": [
+            4
+          ]
+        },
+        {
+          "name": "processed_image",
+          "type": "IMAGE",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] PartCrafter Generate"
+      },
+      "widgets_values": [
+        6,
+        482458609224077,
+        "randomize",
+        1024,
+        50,
+        7,
+        1000000000,
+        false,
+        true,
+        1
+      ]
+    },
+    {
+      "id": 1,
+      "type": "[Comfy3D] Load PartCrafter Scene Pipeline",
+      "pos": [
+        2626.746826171875,
+        1449.319091796875
+      ],
+      "size": [
+        240.68515014648438,
+        26
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "partcrafter_scene_pipe",
+          "type": "DIFFUSERS_PIPE",
+          "links": [
+            1
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Load PartCrafter Scene Pipeline"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 5,
+      "type": "[Comfy3D] Preview 3DMesh",
+      "pos": [
+        3361.958984375,
+        1528.9996337890625
+      ],
+      "size": [
+        600,
+        500
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh_file_path",
+          "type": "STRING",
+          "widget": {
+            "name": "mesh_file_path"
+          },
+          "link": 4
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Preview 3DMesh"
+      },
+      "widgets_values": [
+        "",
+        null
+      ]
+    },
+    {
+      "id": 4,
+      "type": "PreviewAny",
+      "pos": [
+        3363.604736328125,
+        1391.216552734375
+      ],
+      "size": [
+        342.048828125,
+        88
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "source",
+          "type": "*",
+          "link": 3
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "PreviewAny"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 3,
+      "type": "LoadImage",
+      "pos": [
+        2522.745361328125,
+        1527.1820068359375
+      ],
+      "size": [
+        353.18182373046875,
+        489.7575378417969
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "slot_index": 0,
+          "links": [
+            2
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "slot_index": 1,
+          "links": []
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "dining_scene.png",
+        "image"
+      ]
+    }
+  ],
+  "links": [
+    [
+      1,
+      1,
+      0,
+      2,
+      0,
+      "DIFFUSERS_PIPE"
+    ],
+    [
+      2,
+      3,
+      0,
+      2,
+      1,
+      "IMAGE"
+    ],
+    [
+      3,
+      2,
+      0,
+      4,
+      0,
+      "*"
+    ],
+    [
+      4,
+      2,
+      1,
+      5,
+      0,
+      "STRING"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.9802577600586283,
+      "offset": [
+        -2455.460106090683,
+        -1318.8136943587429
+      ]
+    },
+    "node_versions": {
+      "ComfyUI-3D-Pack": "ffa5ff828e6bbe2940905b8b12cc394282a638c1",
+      "comfy-core": "0.3.44"
+    },
+    "frontendVersion": "1.23.4",
+    "VHS_latentpreview": false,
+    "VHS_latentpreviewrate": 0,
+    "VHS_MetadataImage": true,
+    "VHS_KeepIntermediate": true
+  },
+  "version": 0.4
+}

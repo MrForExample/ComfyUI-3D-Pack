@@ -22,8 +22,7 @@ try:
         git_folder_parallel,
         install_remote_packages,
         install_platform_packages,
-        install_spconv,
-        check_spconv_after_wheels,
+        install_isolated_packages,
         wheels_dir_exists_and_not_empty,
         build_config,
         PYTHON_PATH,
@@ -112,6 +111,10 @@ try:
     install_remote_packages(build_config.build_base_packages)
     install_platform_packages()
     
+    # Install packages requiring special flags (like --no-build-isolation)
+    if hasattr(build_config, 'isolated_packages'):
+        install_isolated_packages(build_config.isolated_packages)
+    
     # Check and install build tools if needed
     cstr("Checking build tools...").msg.print()
     build_tools = ["ninja", "cmake", "setuptools", "wheel"]
@@ -130,7 +133,6 @@ try:
                 raise RuntimeError(f"Failed to install {tool}")
     
     # Main installation logic
-    spconv_success = False
     wheels_success = False
     
     # Get the target remote pre-built wheels directory name and path
@@ -143,40 +145,15 @@ try:
     # Step 1: Try wheels first
     wheels_success = try_wheels_first_approach()
     
-    # Step 2: Check if spconv works after wheels, install if needed
-    if wheels_success and check_spconv_after_wheels():
-        spconv_success = True
-    else:
-        # Install spconv using CUDA mapping
-        spconv_success = install_spconv()
-    
-    # Step 3: If wheels failed, try building
+    # Step 2: If wheels failed, try building
     if not wheels_success:
         cstr("Wheels installation failed, trying to build from source...").warning.print()
         if try_auto_build_all(builds_dir):
             install_local_wheels(builds_dir)
             wheels_success = True
             cstr("Successfully built and installed wheels").msg.print()
-            # Check spconv again after building
-            if not check_spconv_after_wheels():
-                spconv_success = install_spconv()
-            else:
-                spconv_success = True
         else:
             cstr("Building wheels also failed").error.print()
-    
-    # Final verification
-    if not install_spconv():
-        raise RuntimeError("spconv failed final verification. Please check the installation.")
-    
-    if spconv_success:
-        cstr("Successfully installed spconv").msg.print()
-        if wheels_success:
-            cstr("Successfully installed all available wheels").msg.print()
-        else:
-            cstr("Note: Some wheels could not be installed, but this is not critical").warning.print()
-    else:
-        raise RuntimeError("Failed to install spconv")
     
     # Download python cpp source files for current python environment
     remote_pycpp_dir_name = f"_Python_Source_cpp/{PYTHON_VERSION}"

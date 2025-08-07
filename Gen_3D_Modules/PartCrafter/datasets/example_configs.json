@@ -1,0 +1,38 @@
+[
+    {
+        "dataset": "objaverse",
+        "file": "0007a7c8fcb44074b20fa4e14b8730a6.glb",
+        "folder": "000",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "/datasets/objaverse/000/0007a7c8fcb44074b20fa4e14b8730a6.glb",
+        "surface_path": "/datasets/objaverse_point/000/0007a7c8fcb44074b20fa4e14b8730a6.npy",
+        "image_path": "/datasets/objaverse_rendering_rmbg/000/0007a7c8fcb44074b20fa4e14b8730a6.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "dataset": "objaverse",
+        "file": "e05d63a78f2c44c5a64fbc419998e603.glb",
+        "folder": "001",
+        "num_parts": 7,
+        "valid": true,
+        "mesh_path": "/datasets/objaverse/001/e05d63a78f2c44c5a64fbc419998e603.glb",
+        "surface_path": "/datasets/objaverse_point/001/e05d63a78f2c44c5a64fbc419998e603.npy",
+        "image_path": "/datasets/objaverse_rendering_rmbg/001/e05d63a78f2c44c5a64fbc419998e603.png",
+        "iou_mean": 0.0005096137625985897,
+        "iou_max": 0.0022603978300180833
+    },
+    {
+        "dataset": "objaverse",
+        "file": "e0a9d033f27043339eb724ec5b7f5fdc.glb",
+        "folder": "002",
+        "num_parts": 3,
+        "valid": true,
+        "mesh_path": "/datasets/objaverse/002/e0a9d033f27043339eb724ec5b7f5fdc.glb",
+        "surface_path": "/datasets/objaverse_point/002/e0a9d033f27043339eb724ec5b7f5fdc.npy",
+        "image_path": "/datasets/objaverse_rendering_rmbg/002/e0a9d033f27043339eb724ec5b7f5fdc.png",
+        "iou_mean": 0.0683491062039958,
+        "iou_max": 0.20504731861198738
+    }
+]

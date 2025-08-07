@@ -1,0 +1,82 @@
+model:
+  target: hy3dshape.models.denoisers.hunyuandit.HunYuanDiTPlain
+  params:
+    input_size: &num_latents 4096
+    in_channels: 64
+    hidden_size: 2048
+    context_dim: 1024
+    depth: 21
+    num_heads: 16
+    qk_norm: true
+    text_len: 1370
+    with_decoupled_ca: false
+    use_attention_pooling: false
+    qk_norm_type: 'rms'
+    qkv_bias: false
+    use_pos_emb: false
+    num_moe_layers: 6
+    num_experts: 8
+    moe_top_k: 2
+
+vae:
+  target: hy3dshape.models.autoencoders.ShapeVAE
+  params:
+    num_latents: *num_latents
+    embed_dim: 64
+    num_freqs: 8
+    include_pi: false
+    heads: 16
+    width: 1024
+    num_encoder_layers: 8
+    num_decoder_layers: 16
+    qkv_bias: false
+    qk_norm: true
+    scale_factor: 1.0039506158752403
+    geo_decoder_mlp_expand_ratio: 4
+    geo_decoder_downsample_ratio: 1
+    geo_decoder_ln_post: true
+    point_feats: 4
+    pc_size: 81920
+    pc_sharpedge_size: 0
+
+conditioner:
+  target: hy3dshape.models.conditioner.SingleImageEncoder
+  params:
+    main_image_encoder:
+        type: DinoImageEncoder # dino large
+        kwargs:
+            config:
+              attention_probs_dropout_prob: 0.0
+              drop_path_rate: 0.0
+              hidden_act: gelu
+              hidden_dropout_prob: 0.0
+              hidden_size: 1024
+              image_size: 518
+              initializer_range: 0.02
+              layer_norm_eps: 1.e-6
+              layerscale_value: 1.0
+              mlp_ratio: 4
+              model_type: dinov2
+              num_attention_heads: 16
+              num_channels: 3
+              num_hidden_layers: 24
+              patch_size: 14
+              qkv_bias: true
+              torch_dtype: float32
+              use_swiglu_ffn: false
+            image_size: 518
+            use_cls_token: true
+
+scheduler:
+  target: hy3dshape.schedulers.FlowMatchEulerDiscreteScheduler
+  params:
+    num_train_timesteps: 1000
+
+image_processor:
+  target: hy3dshape.preprocessors.ImageProcessorV2
+  params:
+    size: 512
+    border_ratio: 0.15
+
+pipeline:
+  target: hy3dshape.pipelines.Hunyuan3DDiTFlowMatchingPipeline

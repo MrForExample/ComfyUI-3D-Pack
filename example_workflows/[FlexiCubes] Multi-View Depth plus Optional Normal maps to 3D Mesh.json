@@ -1,0 +1,623 @@
+{
+  "last_node_id": 56,
+  "last_link_id": 104,
+  "nodes": [
+    {
+      "id": 9,
+      "type": "MaskToImage",
+      "pos": [
+        835,
+        -309
+      ],
+      "size": {
+        "0": 210,
+        "1": 26
+      },
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mask",
+          "type": "MASK",
+          "link": 97
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            4
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MaskToImage"
+      }
+    },
+    {
+      "id": 10,
+      "type": "PreviewImage",
+      "pos": [
+        1114,
+        -310
+      ],
+      "size": {
+        "0": 210,
+        "1": 246
+      },
+      "flags": {
+        "collapsed": true
+      },
+      "order": 10,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 4
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 19,
+      "type": "PreviewImage",
+      "pos": [
+        448,
+        -310
+      ],
+      "size": {
+        "0": 210,
+        "1": 246
+      },
+      "flags": {
+        "collapsed": true
+      },
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 89
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 54,
+      "type": "ImageToMask",
+      "pos": [
+        397,
+        249
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 95
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            96,
+            97
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ImageToMask"
+      },
+      "widgets_values": [
+        "red"
+      ]
+    },
+    {
+      "id": 27,
+      "type": "[Comfy3D] Stack Orbit Camera Poses",
+      "pos": [
+        897,
+        333
+      ],
+      "size": {
+        "0": 315,
+        "1": 586
+      },
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "orbit_camposes",
+          "type": "ORBIT_CAMPOSES",
+          "links": [
+            87
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "orbit_radius_list",
+          "type": "FLOAT",
+          "links": null,
+          "shape": 6
+        },
+        {
+          "name": "elevation_list",
+          "type": "FLOAT",
+          "links": null,
+          "shape": 6
+        },
+        {
+          "name": "azimuth_list",
+          "type": "FLOAT",
+          "links": null,
+          "shape": 6
+        },
+        {
+          "name": "orbit_center_X_list",
+          "type": "FLOAT",
+          "links": null,
+          "shape": 6
+        },
+        {
+          "name": "orbit_center_Y_list",
+          "type": "FLOAT",
+          "links": null,
+          "shape": 6
+        },
+        {
+          "name": "orbit_center_Z_list",
+          "type": "FLOAT",
+          "links": null,
+          "shape": 6
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Stack Orbit Camera Poses"
+      },
+      "widgets_values": [
+        3,
+        3,
+        0.1,
+        -45,
+        45,
+        45,
+        0,
+        -0.1,
+        5,
+        0,
+        0,
+        0.1,
+        0,
+        0,
+        0.1,
+        0,
+        0,
+        0.1
+      ]
+    },
+    {
+      "id": 55,
+      "type": "[Comfy3D] Preview 3DMesh",
+      "pos": [
+        2221,
+        53
+      ],
+      "size": [
+        600,
+        500
+      ],
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh_file_path",
+          "type": "STRING",
+          "link": 100,
+          "widget": {
+            "name": "mesh_file_path"
+          }
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Preview 3DMesh"
+      },
+      "widgets_values": [
+        "",
+        null
+      ]
+    },
+    {
+      "id": 56,
+      "type": "[Comfy3D] Save 3D Mesh",
+      "pos": [
+        1847,
+        54
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 99
+        }
+      ],
+      "outputs": [
+        {
+          "name": "save_path",
+          "type": "STRING",
+          "links": [
+            100
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Save 3D Mesh"
+      },
+      "widgets_values": [
+        "FlexiCubes_Output\\Dragon_Test.obj"
+      ]
+    },
+    {
+      "id": 52,
+      "type": "PreviewImage",
+      "pos": [
+        515,
+        549
+      ],
+      "size": {
+        "0": 210,
+        "1": 246
+      },
+      "flags": {
+        "collapsed": true
+      },
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 92
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 51,
+      "type": "LoadImagesFromDir //Inspire",
+      "pos": [
+        13,
+        441
+      ],
+      "size": {
+        "0": 315,
+        "1": 146
+      },
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            92,
+            104
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [],
+          "shape": 3,
+          "slot_index": 1
+        },
+        {
+          "name": "INT",
+          "type": "INT",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImagesFromDir //Inspire"
+      },
+      "widgets_values": [
+        ".\\example_workflows\\_Example_Inputs_Files\\dragon_all_renders\\Normal",
+        0,
+        0
+      ]
+    },
+    {
+      "id": 50,
+      "type": "LoadImagesFromDir //Inspire",
+      "pos": [
+        10,
+        55
+      ],
+      "size": {
+        "0": 315,
+        "1": 146
+      },
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            89,
+            103
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [],
+          "shape": 3,
+          "slot_index": 1
+        },
+        {
+          "name": "INT",
+          "type": "INT",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImagesFromDir //Inspire"
+      },
+      "widgets_values": [
+        ".\\example_workflows\\_Example_Inputs_Files\\dragon_all_renders\\Depth",
+        0,
+        0
+      ]
+    },
+    {
+      "id": 49,
+      "type": "[Comfy3D] FlexiCubes MVS",
+      "pos": [
+        1354,
+        54
+      ],
+      "size": {
+        "0": 418.1999816894531,
+        "1": 430
+      },
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "reference_depth_maps",
+          "type": "IMAGE",
+          "link": 103
+        },
+        {
+          "name": "reference_masks",
+          "type": "MASK",
+          "link": 96
+        },
+        {
+          "name": "reference_orbit_camera_poses",
+          "type": "ORBIT_CAMPOSES",
+          "link": 87
+        },
+        {
+          "name": "reference_normal_maps",
+          "type": "IMAGE",
+          "link": 104
+        }
+      ],
+      "outputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "links": [
+            99
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] FlexiCubes MVS"
+      },
+      "widgets_values": [
+        45,
+        1000,
+        4,
+        0.01,
+        128,
+        0.5,
+        5.5,
+        1,
+        100,
+        1,
+        0.2,
+        0.5,
+        0.1,
+        false
+      ]
+    },
+    {
+      "id": 53,
+      "type": "LoadImagesFromDir //Inspire",
+      "pos": [
+        10,
+        249
+      ],
+      "size": {
+        "0": 315,
+        "1": 146
+      },
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            95
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [],
+          "shape": 3,
+          "slot_index": 1
+        },
+        {
+          "name": "INT",
+          "type": "INT",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImagesFromDir //Inspire"
+      },
+      "widgets_values": [
+        ".\\example_workflows\\_Example_Inputs_Files\\dragon_all_renders\\Mask",
+        0,
+        0
+      ]
+    }
+  ],
+  "links": [
+    [
+      4,
+      9,
+      0,
+      10,
+      0,
+      "IMAGE"
+    ],
+    [
+      87,
+      27,
+      0,
+      49,
+      2,
+      "ORBIT_CAMPOSES"
+    ],
+    [
+      89,
+      50,
+      0,
+      19,
+      0,
+      "IMAGE"
+    ],
+    [
+      92,
+      51,
+      0,
+      52,
+      0,
+      "IMAGE"
+    ],
+    [
+      95,
+      53,
+      0,
+      54,
+      0,
+      "IMAGE"
+    ],
+    [
+      96,
+      54,
+      0,
+      49,
+      1,
+      "MASK"
+    ],
+    [
+      97,
+      54,
+      0,
+      9,
+      0,
+      "MASK"
+    ],
+    [
+      99,
+      49,
+      0,
+      56,
+      0,
+      "MESH"
+    ],
+    [
+      100,
+      56,
+      0,
+      55,
+      0,
+      "STRING"
+    ],
+    [
+      103,
+      50,
+      0,
+      49,
+      0,
+      "IMAGE"
+    ],
+    [
+      104,
+      51,
+      0,
+      49,
+      3,
+      "IMAGE"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {},
+  "version": 0.4
+}

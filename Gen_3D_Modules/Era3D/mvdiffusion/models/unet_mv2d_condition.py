@@ -1417,7 +1417,7 @@ class UNetMV2DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixi
             return_unused_kwargs=True,
             return_commit_hash=True,
             force_download=force_download,
-            resume_download=resume_download,
+            # resume_download=resume_download,
             proxies=proxies,
             local_files_only=local_files_only,
             use_auth_token=use_auth_token,
@@ -1476,7 +1476,7 @@ class UNetMV2DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixi
                         weights_name=_add_variant(SAFETENSORS_WEIGHTS_NAME, variant),
                         cache_dir=cache_dir,
                         force_download=force_download,
-                        resume_download=resume_download,
+                        # resume_download=resume_download,
                         proxies=proxies,
                         local_files_only=local_files_only,
                         use_auth_token=use_auth_token,
@@ -1495,7 +1495,7 @@ class UNetMV2DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixi
                     weights_name=_add_variant(WEIGHTS_NAME, variant),
                     cache_dir=cache_dir,
                     force_download=force_download,
-                    resume_download=resume_download,
+                    # resume_download=resume_download,
                     proxies=proxies,
                     local_files_only=local_files_only,
                     use_auth_token=use_auth_token,
@@ -1507,7 +1507,8 @@ class UNetMV2DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixi
 
             model = cls.from_config(config, **unused_kwargs)
             import copy
-            state_dict_pretrain = load_state_dict(model_file, variant=variant)
+            # state_dict_pretrain = load_state_dict(model_file, variant=variant)
+            state_dict = load_state_dict(model_file)
             state_dict = copy.deepcopy(state_dict_pretrain)
             
             if init_mvattn_with_selfattn:

@@ -41,6 +41,7 @@ onnxruntime
 imageio
 imageio-ffmpeg
 matplotlib
+realesrgan
 
 # for process, import & export mesh 
 trimesh
@@ -55,7 +56,6 @@ libigl
 pyvista
 pymeshfix
 igraph
-git+https://github.com/SarahWeiii/diso.git#egg=diso
 open3d
 
 # configs & extra
