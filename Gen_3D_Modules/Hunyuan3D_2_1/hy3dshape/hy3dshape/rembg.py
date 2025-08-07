@@ -15,13 +15,14 @@
 from PIL import Image
 from rembg import remove, new_session
 import numpy as np
+from typing import Optional, Tuple
 
 
 class BackgroundRemover():
     def __init__(self, model_name='u2net'):
         self.session = new_session(model_name)
 
-    def __call__(self, image: Image.Image):
+    def __call__(self, image: Image.Image, background_color: Optional[Tuple[int, int, int]] = None):
         if image.mode in ('RGBA', 'LA') or image.mode != 'RGB':
             background = Image.new('RGB', image.size, (255, 255, 255))
             if image.mode in ('RGBA', 'LA'):
@@ -34,5 +35,11 @@ class BackgroundRemover():
         
         if output.mode != 'RGBA':
             output = output.convert('RGBA')
-            
+
+        if background_color is not None:
+            # Add background color to the output image
+            filled = Image.new("RGB", output.size, background_color)
+            filled.paste(output, mask=output.split()[-1])
+            return filled
+
         return output
