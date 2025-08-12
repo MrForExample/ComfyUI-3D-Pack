@@ -1,0 +1,77 @@
+model:
+  pretrained_model_name_or_path: 'pretrained_weights/TripoSG'
+  vae:
+    num_tokens: 512
+  transformer:
+    enable_local_cross_attn: true
+    global_attn_block_ids: [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+    global_attn_block_id_range: null # The average should be 10 for unet-skipping
+
+
+dataset:
+  config: 
+    - 'datasets/object_part_configs.json' # Modify this path if you use your own dataset
+  training_ratio: 0.9
+  min_num_parts: 1
+  max_num_parts: 16
+  max_iou_mean: 0.5
+  max_iou_max: 0.5
+  shuffle_parts: true
+  object_ratio: 0.3
+  rotating_ratio: 0.2
+  ratating_degree: 10
+
+optimizer:
+  name: "adamw"
+  lr: 5e-5
+  betas:
+    - 0.9
+    - 0.999
+  weight_decay: 0.01
+  eps: 1.e-8
+
+lr_scheduler:
+  name: "constant_warmup"
+  num_warmup_steps: 1000
+
+train:
+  batch_size_per_gpu: 32
+  epochs: 10
+  grad_checkpoint: true
+  weighting_scheme: "logit_normal"
+  logit_mean: 0.0
+  logit_std: 1.0
+  mode_scale: 1.29
+  cfg_dropout_prob: 0.1
+  training_objective: "-v"
+  log_freq: 1
+  early_eval_freq: 500
+  early_eval: 1000
+  eval_freq: 1000
+  save_freq: 2000
+  eval_freq_epoch: 5
+  save_freq_epoch: 10
+  ema_kwargs:
+    decay: 0.9999
+    use_ema_warmup: true
+    inv_gamma: 1.
+    power: 0.75
+
+val:
+  batch_size_per_gpu: 1
+  nrow: 4
+  min_num_parts: 2
+  max_num_parts: 8
+  num_inference_steps: 50
+  max_num_expanded_coords: 1e8
+  use_flash_decoder: false
+  rendering:
+    radius: 4.0
+    num_views: 36
+    fps: 18
+  metric:
+    cd_num_samples: 204800
+    cd_metric: "l2"
+    f1_score_threshold: 0.1
+    default_cd: 1e6
+    default_f1: 0.0

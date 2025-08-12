@@ -16,10 +16,11 @@ opencv-python
 pillow
 nerfacc>=0.5.3
 slangtorch
-cumm==0.7.11 # for spconv
+cumm==0.7.11 
+spconv-cu126
 
 git+https://github.com/EasternJournalist/utils3d.git#egg=utils3d
-git+https://github.com/ashawkey/kiuikit.git#egg=kiuikit
+git+https://github.com/ashawkey/kiuikit.git#egg=kiui
 
 # for use ML models
 diffusers>=0.26.1
@@ -40,6 +41,7 @@ onnxruntime
 imageio
 imageio-ffmpeg
 matplotlib
+realesrgan
 
 # for process, import & export mesh 
 trimesh
@@ -54,7 +56,6 @@ libigl
 pyvista
 pymeshfix
 igraph
-diso
 open3d
 
 # configs & extra

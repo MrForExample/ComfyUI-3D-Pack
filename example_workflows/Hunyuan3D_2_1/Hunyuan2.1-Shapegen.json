@@ -1,0 +1,260 @@
+{
+  "id": "86f7233a-1685-49a0-8657-e362a5970673",
+  "revision": 0,
+  "last_node_id": 5,
+  "last_link_id": 4,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "[Comfy3D] Load Hunyuan3D 21 ShapeGen Pipeline",
+      "pos": [
+        2719.98583984375,
+        -735.9058837890625
+      ],
+      "size": [
+        292.8706970214844,
+        59.62068557739258
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "shapegen_pipe",
+          "type": "DIFFUSERS_PIPE",
+          "links": [
+            1
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Load Hunyuan3D 21 ShapeGen Pipeline"
+      },
+      "widgets_values": [
+        "hunyuan3d-dit-v2-1"
+      ]
+    },
+    {
+      "id": 2,
+      "type": "LoadImage",
+      "pos": [
+        2725.035400390625,
+        -618.4249267578125
+      ],
+      "size": [
+        290.28680419921875,
+        326
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            2
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage",
+        "cnr_id": "comfy-core",
+        "ver": "0.3.40"
+      },
+      "widgets_values": [
+        "squirrel_girl_1.png",
+        "image"
+      ]
+    },
+    {
+      "id": 3,
+      "type": "[Comfy3D] Hunyuan3D 21 ShapeGen",
+      "pos": [
+        3072.45703125,
+        -655.1600952148438
+      ],
+      "size": [
+        289.5007629394531,
+        222
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "shapegen_pipe",
+          "type": "DIFFUSERS_PIPE",
+          "link": 1
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 2
+        }
+      ],
+      "outputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "links": [
+            3
+          ]
+        },
+        {
+          "name": "processed_image",
+          "type": "IMAGE",
+          "links": []
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Hunyuan3D 21 ShapeGen"
+      },
+      "widgets_values": [
+        106066345462396,
+        "randomize",
+        30,
+        7.5,
+        256,
+        true,
+        true
+      ]
+    },
+    {
+      "id": 4,
+      "type": "[Comfy3D] Save 3D Mesh",
+      "pos": [
+        3408.119873046875,
+        -767.1898803710938
+      ],
+      "size": [
+        270,
+        58
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 3
+        }
+      ],
+      "outputs": [
+        {
+          "name": "save_path",
+          "type": "STRING",
+          "links": [
+            4
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Save 3D Mesh",
+        "aux_id": "DenisKochetov/ComfyUI-3D-Pack",
+        "ver": "0ed1e30f4ac7d95b671db7e2b148a25bc3e614e8"
+      },
+      "widgets_values": [
+        "Hun2-1/mesh.glb"
+      ]
+    },
+    {
+      "id": 5,
+      "type": "[Comfy3D] Preview 3DMesh",
+      "pos": [
+        3407.17138671875,
+        -648.1026000976562
+      ],
+      "size": [
+        600,
+        500
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh_file_path",
+          "type": "STRING",
+          "widget": {
+            "name": "mesh_file_path"
+          },
+          "link": 4
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Preview 3DMesh",
+        "aux_id": "DenisKochetov/ComfyUI-3D-Pack",
+        "ver": "0ed1e30f4ac7d95b671db7e2b148a25bc3e614e8"
+      },
+      "widgets_values": [
+        "",
+        null
+      ]
+    }
+  ],
+  "links": [
+    [
+      1,
+      1,
+      0,
+      3,
+      0,
+      "DIFFUSERS_PIPE"
+    ],
+    [
+      2,
+      2,
+      0,
+      3,
+      1,
+      "IMAGE"
+    ],
+    [
+      3,
+      3,
+      0,
+      4,
+      0,
+      "MESH"
+    ],
+    [
+      4,
+      4,
+      0,
+      5,
+      0,
+      "STRING"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.8227024747918819,
+      "offset": [
+        -2322.919722569224,
+        941.8179795624894
+      ]
+    },
+    "node_versions": {
+      "ComfyUI-3D-Pack": "9cb998eadd75e8d856fcd595264b35e0b73b9166",
+      "comfy-core": "0.3.35"
+    },
+    "frontendVersion": "1.20.4",
+    "VHS_latentpreview": false,
+    "VHS_latentpreviewrate": 0,
+    "VHS_MetadataImage": true,
+    "VHS_KeepIntermediate": true
+  },
+  "version": 0.4
+}

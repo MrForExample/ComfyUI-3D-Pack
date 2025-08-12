@@ -1,0 +1,2002 @@
+[
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "scissors.glb",
+        "num_parts": 2,
+        "valid": true,
+        "mesh_path": "assets/objects/scissors.glb",
+        "surface_path": "preprocessed_data/scissors/points.npy",
+        "image_path": "preprocessed_data/scissors/rendering_rmbg.png",
+        "iou_mean": 0.021141649048625793,
+        "iou_max": 0.021141649048625793
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    },
+    {
+        "file": "sword.glb",
+        "num_parts": 1,
+        "valid": true,
+        "mesh_path": "assets/objects/sword.glb",
+        "surface_path": "preprocessed_data/sword/points.npy",
+        "image_path": "preprocessed_data/sword/rendering_rmbg.png",
+        "iou_mean": 0.0,
+        "iou_max": 0.0
+    }
+]

@@ -250,68 +250,31 @@ def install_platform_packages():
             print(f"Installing platform package {package}...")
             subprocess.run([PYTHON_PATH, "-s", "-m", "pip", "install", package])
 
-def install_spconv():
-    """Simple spconv installation with correct CUDA version"""
-    # Check if spconv is already installed and working
-    try:
-        import spconv.core_cc
-        print("spconv is already installed and working")
-        return True
-    except ImportError:
-        pass
-    
-    # Get CUDA version mapping
-    if not hasattr(build_config, 'spconv_cuda_mapping'):
-        print("No spconv_cuda_mapping in config, skipping spconv installation")
-        return True
-    
-    # Fix CUDA version parsing: cu128 -> 12.8, cu121 -> 12.1, cu118 -> 11.8
-    if len(CUDA_VERSION) >= 5:  # e.g., cu128, cu121
-        major = CUDA_VERSION[2:-1]  # cu128 -> 12, cu121 -> 12, cu118 -> 11  
-        minor = CUDA_VERSION[-1]    # cu128 -> 8, cu121 -> 1, cu118 -> 8
-        cuda_version_for_lookup = f"{major}.{minor}"
-    else:
-        print(f"Invalid CUDA_VERSION format: {CUDA_VERSION}")
-        return False
-    
-    print(f"Detected CUDA version: {cuda_version_for_lookup}")
-    
-    cuda_suffix = build_config.spconv_cuda_mapping.get(cuda_version_for_lookup)
-    
-    if not cuda_suffix:
-        print(f"No spconv mapping for CUDA {cuda_version_for_lookup}, skipping")
-        return True
-    
-    spconv_package = f"spconv-{cuda_suffix}"
-    print(f"Installing {spconv_package}...")
-    
-    result = subprocess.run(
-        [PYTHON_PATH, "-m", "pip", "install", spconv_package],
-        text=True, capture_output=True
-    )
-    
-    if result.returncode != 0:
-        print(f"Failed to install {spconv_package}: {result.stderr}")
-        return False
-    
-    # Verify installation
-    try:
-        import spconv.core_cc
-        print(f"Successfully installed and verified {spconv_package}")
-        return True
-    except ImportError as e:
-        print(f"spconv installed but verification failed: {e}")
-        return False
-
-def check_spconv_after_wheels():
-    """Check if spconv works after wheels installation"""
-    try:
-        import spconv.core_cc
-        print("spconv is working after wheels installation")
-        return True
-    except ImportError:
-        print("spconv not working, will install from mapping")
-        return False
+def install_isolated_packages(package_names):
+    """Install packages with special flags like --no-build-isolation"""
+    for package_name in package_names:
+        if package_name in build_config.remote_packages:
+            package_attr = build_config.remote_packages[package_name]
+            
+            # Check if package is already installed
+            if is_package_installed(package_name):
+                print(f"Package {package_name} is already installed, skipping...")
+                continue
+            
+            print(f"Installing isolated package {package_name}...")
+            
+            if hasattr(package_attr, "url"):
+                # Build command with install flags
+                cmd = [PYTHON_PATH, "-s", "-m", "pip", "install"]
+                if hasattr(package_attr, "install_flags"):
+                    cmd.extend(package_attr.install_flags)
+                cmd.append(package_attr.url)
+                
+                subprocess.run(cmd)
+            else:
+                print(f"No URL found for isolated package {package_name}")
+        else:
+            print(f"Isolated package {package_name} not found in config")
 
 def wheels_dir_exists_and_not_empty(builds_dir):
     if not os.path.exists(builds_dir):

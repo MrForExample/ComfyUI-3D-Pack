@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=45", "wheel", "setuptools-scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mesh_inpaint_processor"
+version = "1.0.0"
+description = "Fast C++ mesh inpainting processor with Python fallback"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "TENCENT HUNYUAN NON-COMMERCIAL LICENSE"}
+authors = [
+    {name = "Hunyuan3D Team"},
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11", 
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+]
+dependencies = [
+    "numpy>=1.19.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/Tencent/Hunyuan3D"
+
+[tool.setuptools.packages.find]
+where = ["."]
+
+[tool.setuptools.package-data]
+mesh_inpaint_processor = ["*.pyd", "*.so", "*.py"] 

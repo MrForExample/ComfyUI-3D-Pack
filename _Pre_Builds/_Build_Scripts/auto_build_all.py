@@ -52,11 +52,6 @@ def setup_build_env():
     
     install_remote_packages(build_config.build_base_packages)
     install_platform_packages()
-    
-    # Install spconv with correct CUDA version
-    from build_utils import install_spconv
-    if not install_spconv():
-        raise RuntimeError("Failed to install spconv")
 
 def clone_or_update_read_dependency(dependency_url, dependency_dir):
     if os.path.exists(dependency_dir):

@@ -1,0 +1,301 @@
+{
+  "id": "2eccf120-f170-4687-8d4b-bfecee3fa503",
+  "revision": 0,
+  "last_node_id": 7,
+  "last_link_id": 5,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "LoadImage",
+      "pos": [
+        3656.859375,
+        -624.116455078125
+      ],
+      "size": [
+        274.080078125,
+        314
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            4
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage",
+        "cnr_id": "comfy-core",
+        "ver": "0.3.40"
+      },
+      "widgets_values": [
+        "squirrel_girl_1.png",
+        "image"
+      ]
+    },
+    {
+      "id": 3,
+      "type": "[Comfy3D] Load Hunyuan3D 21 TexGen Pipeline",
+      "pos": [
+        3655.260986328125,
+        -820.0381469726562
+      ],
+      "size": [
+        334.1744079589844,
+        106
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "texgen_pipe",
+          "type": "DIFFUSERS_PIPE",
+          "links": [
+            1
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Load Hunyuan3D 21 TexGen Pipeline"
+      },
+      "widgets_values": [
+        8,
+        768,
+        true
+      ]
+    },
+    {
+      "id": 2,
+      "type": "[Comfy3D] Hunyuan3D 21 TexGen",
+      "pos": [
+        4051.9033203125,
+        -663.3505859375
+      ],
+      "size": [
+        270,
+        126
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "texgen_pipe",
+          "type": "DIFFUSERS_PIPE",
+          "link": 1
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 4
+        },
+        {
+          "name": "mesh_path",
+          "type": "STRING",
+          "widget": {
+            "name": "mesh_path"
+          },
+          "link": 5
+        }
+      ],
+      "outputs": [
+        {
+          "name": "textured_mesh",
+          "type": "MESH",
+          "links": [
+            2
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Hunyuan3D 21 TexGen"
+      },
+      "widgets_values": [
+        "",
+        true,
+        false
+      ]
+    },
+    {
+      "id": 4,
+      "type": "[Comfy3D] Save 3D Mesh",
+      "pos": [
+        4374.466796875,
+        -683.471435546875
+      ],
+      "size": [
+        270,
+        58
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 2
+        }
+      ],
+      "outputs": [
+        {
+          "name": "save_path",
+          "type": "STRING",
+          "links": [
+            3
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Save 3D Mesh",
+        "aux_id": "DenisKochetov/ComfyUI-3D-Pack",
+        "ver": "0ed1e30f4ac7d95b671db7e2b148a25bc3e614e8"
+      },
+      "widgets_values": [
+        "Hun2-1/tex_mesh.glb"
+      ]
+    },
+    {
+      "id": 5,
+      "type": "[Comfy3D] Preview 3DMesh",
+      "pos": [
+        4375.0810546875,
+        -574.8761596679688
+      ],
+      "size": [
+        600,
+        500
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh_file_path",
+          "type": "STRING",
+          "widget": {
+            "name": "mesh_file_path"
+          },
+          "link": 3
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "[Comfy3D] Preview 3DMesh",
+        "aux_id": "DenisKochetov/ComfyUI-3D-Pack",
+        "ver": "0ed1e30f4ac7d95b671db7e2b148a25bc3e614e8"
+      },
+      "widgets_values": [
+        "",
+        null
+      ]
+    },
+    {
+      "id": 7,
+      "type": "PrimitiveString",
+      "pos": [
+        4050.791015625,
+        -462.462890625
+      ],
+      "size": [
+        277.699951171875,
+        60.799957275390625
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            5
+          ]
+        }
+      ],
+      "title": "Mesh path",
+      "properties": {
+        "Node name for S&R": "PrimitiveString"
+      },
+      "widgets_values": [
+        "custom_nodes/ComfyUI-3D-Pack/example_workflows/_Example_Inputs_Files/meshes/squirrel_girl1_shape.glb"
+      ]
+    }
+  ],
+  "links": [
+    [
+      1,
+      3,
+      0,
+      2,
+      0,
+      "DIFFUSERS_PIPE"
+    ],
+    [
+      2,
+      2,
+      0,
+      4,
+      0,
+      "MESH"
+    ],
+    [
+      3,
+      4,
+      0,
+      5,
+      0,
+      "STRING"
+    ],
+    [
+      4,
+      1,
+      0,
+      2,
+      1,
+      "IMAGE"
+    ],
+    [
+      5,
+      7,
+      0,
+      2,
+      2,
+      "STRING"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 1.1025,
+      "offset": [
+        -3523.44344094477,
+        903.3562803980268
+      ]
+    },
+    "frontendVersion": "1.20.4",
+    "node_versions": {
+      "comfy-core": "0.3.35",
+      "ComfyUI-3D-Pack": "a4f7d924e2721b27e69b959ce477a8515747192e"
+    },
+    "VHS_latentpreview": false,
+    "VHS_latentpreviewrate": 0,
+    "VHS_MetadataImage": true,
+    "VHS_KeepIntermediate": true
+  },
+  "version": 0.4
+}
