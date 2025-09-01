@@ -13,7 +13,7 @@ from ..utils.ops import scale_tensor
 from .networks import MLP
 from einops import rearrange, reduce
 
-from mesh_processer.mesh_utils import construct_list_of_gs_attributes, write_gs_ply
+from mesh_processor.mesh_utils import construct_list_of_gs_attributes, write_gs_ply
 
 inverse_sigmoid = lambda x: np.log(x / (1 - x))
 

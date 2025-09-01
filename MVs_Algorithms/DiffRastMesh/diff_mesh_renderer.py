@@ -9,7 +9,7 @@ import nvdiffrast.torch as dr
 
 from kiui.op import inverse_sigmoid
 
-from mesh_processer.mesh import safe_normalize
+from mesh_processor.mesh import safe_normalize
 
 def scale_img_nhwc(x, size, mag='bilinear', min='bilinear'):
     assert (x.shape[1] >= size[0] and x.shape[2] >= size[1]) or (x.shape[1] < size[0] and x.shape[2] < size[1]), "Trying to magnify image in one dimension and minify in the other"

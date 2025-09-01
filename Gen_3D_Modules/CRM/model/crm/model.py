@@ -14,7 +14,7 @@ from CRM.util.renderer import Renderer
 from CRM.model.archs.mlp_head import SdfMlp, RgbMlp
 import xatlas
 
-from mesh_processer.mesh import Mesh
+from mesh_processor.mesh import Mesh
 
 
 class Dummy:

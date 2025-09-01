@@ -15,8 +15,8 @@ from kiui.op import inverse_sigmoid
 from kiui.cam import orbit_camera, get_perspective
 from kiui.nn import MLP, trunc_exp
 
-from mesh_processer.mesh import Mesh
-from mesh_processer.mesh_utils import marching_cubes_density_to_mesh, color_func_to_albedo
+from mesh_processor.mesh import Mesh
+from mesh_processor.mesh_utils import marching_cubes_density_to_mesh, color_func_to_albedo
 from LGM.core.options import Options
 from LGM.core.gs import GaussianRenderer
 from LGM.core.utils import get_rays

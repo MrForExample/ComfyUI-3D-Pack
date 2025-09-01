@@ -540,7 +540,7 @@ def prepare_tg2mv_pipeline(
     if hasattr(pipe, 'enable_model_cpu_offload'):
         if not use_mmgp:  
             pipe.enable_model_cpu_offload()
-            print("[INFO] Включен CPU offload для экономии VRAM")
+            print("[INFO] CPU offload for memory optimization")
 
     if use_mmgp and MMGP_AVAILABLE:
         torch.cuda.empty_cache()

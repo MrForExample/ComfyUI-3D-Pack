@@ -1,7 +1,6 @@
 from setuptools import setup, find_packages
 import platform
 
-# Определяем платформу для правильного именования wheel
 if platform.system() == "Windows":
     plat_name = "win_amd64"
 elif platform.system() == "Darwin":
@@ -13,14 +12,14 @@ setup(
     name="mesh_inpaint_processor",
     version="1.0.0",
     description="Fast C++ mesh inpainting processor with Python fallback",
-    long_description="Компилированный модуль для быстрой обработки инпейнтинга мешей",
+    long_description="Compiled module for fast mesh inpainting processing",
     author="Hunyuan3D Team",
     packages=find_packages(),
     package_data={
         'mesh_inpaint_processor': [
-            '*.pyd',  # Включаем .pyd файлы
-            '*.so',   # На случай Linux версии
-            '*.py'    # Python fallback файлы
+            '*.pyd',  
+            '*.so',   # For Linux version
+            '*.py'    # Python fallback files
         ]
     },
     include_package_data=True,
@@ -41,7 +40,6 @@ setup(
         "Operating System :: POSIX :: Linux",
         "Operating System :: MacOS",
     ],
-    # Указываем что это binary distribution
     zip_safe=False,
-    has_ext_modules=lambda: True,  # Указывает что есть нативные модули
+    has_ext_modules=lambda: True,  
 ) 
