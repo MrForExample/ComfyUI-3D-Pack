@@ -1,7 +1,8 @@
 import os
 import cv2
-from typing import NamedTuple
+from typing import NamedTuple, Optional
 import torch
+from torch import Tensor
 import trimesh
 import numpy as np
 
@@ -10,6 +11,11 @@ from kiui.typing import *
 
 from shared_utils.sh_utils import SH2RGB
 from shared_utils.image_utils import prepare_torch_img
+
+# new loader
+from .io_gltf import load_gltf_or_glb, get_binary_data
+from .mesh_ops import get_all_meshes_triangles
+from .accessors import access_data
 
 
 class Mesh:
@@ -65,7 +71,7 @@ class Mesh:
         self.ori_scale = 1
 
     @classmethod
-    def load(cls, path, resize=True, renormal=True, retex=False, clean=False, bound=0.5, front_dir='+z', **kwargs):
+    def load(cls, path, resize=True, renormal=True, retex=False, clean=False, bound=0.5, front_dir='+z', use_new_gltf_loader=False, **kwargs):
         """load mesh from path.
 
         Args:
@@ -76,6 +82,7 @@ class Mesh:
             clean (bool, optional): perform mesh cleaning at load (e.g., merge close vertices). Defaults to False.
             bound (float, optional): bound to resize. Defaults to 0.9.
             front_dir (str, optional): front-view direction of the mesh, should be [+-][xyz][ 123]. Defaults to '+z'.
+            use_new_gltf_loader (bool, optional): use new mesh_processor-based GLTF loader instead of trimesh. Defaults to False.
             device (torch.device, optional): torch device. Defaults to None.
         
         Note:
@@ -88,6 +95,9 @@ class Mesh:
         # obj supports face uv
         if path.endswith(".obj"):
             mesh = cls.load_obj(path, **kwargs)
+        # Select loader for GLB/GLTF
+        elif use_new_gltf_loader and (path.endswith(".glb") or path.endswith(".gltf")):
+            mesh = cls.load_gltf(path, **kwargs)
         # trimesh only supports vertex uv, but can load more formats
         else:
             mesh = cls.load_trimesh(path, **kwargs)
@@ -438,13 +448,211 @@ class Mesh:
         )
 
         return mesh
+
+    @classmethod 
+    def from_trimesh(cls, trimesh_obj, device=None, use_new_converter=False):
+        """Create Mesh object from trimesh object.
+            
+        Args:
+            trimesh_obj: trimesh.Trimesh or trimesh.Scene
+            device: torch device
+            use_new_converter: use new converter (experimental)
+            
+        Returns:
+            Mesh: Mesh object
+        """
+        if use_new_converter:
+            # New way - try to extract data directly without full dependency on trimesh
+            return cls._from_trimesh_new(trimesh_obj, device)
+        else:
+            # Old way - use load_trimesh
+            return cls.load_trimesh(given_mesh=trimesh_obj, device=device)
     
+
+    @classmethod
+    def load_gltf(cls, path=None, device=None):
+        """Load mesh with using mesh_processor (new implementation).
+
+        Alternative to load_trimesh() for GLB/GLTF files without dependency on trimesh.
+
+        Args:   
+            path (str): path to GLB/GLTF file.
+            device (torch.device, optional): torch device. Defaults to None.
+
+        Returns:
+            Mesh: loaded Mesh object.
+        """
+        mesh = cls()
+
+        # device
+        if device is None:
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+        mesh.device = device
+
+        if path is None:
+            print(f"[load_gltf] path is required")
+            return None
+
+        try:
+            # Load GLTF document
+            doc = load_gltf_or_glb(path)
+            print(f"[load_gltf] loaded GLTF document with {len(doc.meshes())} meshes")
+
+            # Extract geometry of all meshes
+            vertices, faces, mesh_groups = get_all_meshes_triangles(doc, transform_to_global=True)
+            
+            if len(vertices) == 0 or len(faces) == 0:
+                print(f"[load_gltf] no valid geometry found")
+                return None
+
+            print(f"[load_gltf] extracted {len(vertices)} vertices, {len(faces)} faces")
+
+            # Convert to torch tensors
+            mesh.v = torch.tensor(vertices, dtype=torch.float32, device=device)
+            mesh.f = torch.tensor(faces, dtype=torch.int32, device=device)
+
+            # Try to extract UV coordinates and normals from the first mesh
+            texcoords = None
+            normals = None
+            vertex_colors = None
+            
+            if doc.meshes():
+                first_mesh = doc.meshes()[0]
+                for primitive in first_mesh.get("primitives", []):
+                    attributes = primitive.get("attributes", {})
+                    
+                    # UV coordinates
+                    if "TEXCOORD_0" in attributes and texcoords is None:
+                        try:
+                            texcoord_accessor_idx = int(attributes["TEXCOORD_0"])
+                            texcoords = access_data(doc, texcoord_accessor_idx).astype(np.float32)
+                            # Flip V coordinate (as in trimesh)
+                            texcoords[:, 1] = 1.0 - texcoords[:, 1]
+                            print(f"[load_gltf] extracted UV coordinates: {texcoords.shape}")
+                        except Exception as e:
+                            print(f"[load_gltf] failed to extract UV coordinates: {e}")
+                    
+                    # Normals
+                    if "NORMAL" in attributes and normals is None:
+                        try:
+                            normal_accessor_idx = int(attributes["NORMAL"])
+                            normals = access_data(doc, normal_accessor_idx).astype(np.float32)
+                            print(f"[load_gltf] extracted normals: {normals.shape}")
+                        except Exception as e:
+                            print(f"[load_gltf] failed to extract normals: {e}")
+                    
+                    # Vertex colors
+                    if "COLOR_0" in attributes and vertex_colors is None:
+                        try:
+                            color_accessor_idx = int(attributes["COLOR_0"])
+                            vertex_colors = access_data(doc, color_accessor_idx).astype(np.float32)
+                            if vertex_colors.shape[1] > 3:
+                                vertex_colors = vertex_colors[:, :3]  # Remove alpha channel
+                            print(f"[load_gltf] extracted vertex colors: {vertex_colors.shape}")
+                        except Exception as e:
+                            print(f"[load_gltf] failed to extract vertex colors: {e}")
+
+            # Set UV coordinates
+            mesh.vt = (
+                torch.tensor(texcoords, dtype=torch.float32, device=device)
+                if texcoords is not None
+                else None
+            )
+            mesh.ft = mesh.f if texcoords is not None else None
+
+            # Set normals
+            mesh.vn = (
+                torch.tensor(normals, dtype=torch.float32, device=device)
+                if normals is not None
+                else None
+            )
+            mesh.fn = mesh.f if normals is not None else None
+
+            # Set vertex colors
+            mesh.vc = (
+                torch.tensor(vertex_colors, dtype=torch.float32, device=device)
+                if vertex_colors is not None
+                else None
+            )
+
+            # Try to extract textures and materials
+            should_create_empty_albedo = True
+            
+            if doc.materials() and doc.textures() and doc.images():
+                try:
+                    # Take the first material
+                    material = doc.materials()[0]
+                    pbr = material.get("pbrMetallicRoughness", {})
+                    
+                    # Base texture (albedo)
+                    base_color_texture = pbr.get("baseColorTexture")
+                    if base_color_texture:
+                        texture_idx = base_color_texture.get("index", 0)
+                        if texture_idx < len(doc.textures()):
+                            texture = doc.textures()[texture_idx]
+                            image_idx = texture.get("source", 0)
+                            if image_idx < len(doc.images()):
+                                image_info = doc.images()[image_idx]
+                                
+                                # Extract image from buffer
+                                buffer_view_idx = image_info.get("bufferView")
+                                if buffer_view_idx is not None:
+                                    buffer_view = doc.bufferViews()[buffer_view_idx]
+                                    buffer_idx = buffer_view.get("buffer", 0)
+                                    byte_offset = buffer_view.get("byteOffset", 0)
+                                    byte_length = buffer_view.get("byteLength", 0)
+                                    
+                                    binary_data = get_binary_data(doc, buffer_idx)
+                                    image_bytes = binary_data[byte_offset:byte_offset + byte_length]
+                                    
+                                    # Decode image
+                                    image_array = np.frombuffer(image_bytes, dtype=np.uint8)
+                                    texture_image = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
+                                    
+                                    if texture_image is not None:
+                                        texture_image = cv2.cvtColor(texture_image, cv2.COLOR_BGR2RGB)
+                                        texture_image = texture_image.astype(np.float32) / 255.0
+                                        mesh.albedo = torch.tensor(texture_image, dtype=torch.float32, device=device).contiguous()
+                                        should_create_empty_albedo = False
+                                        print(f"[load_gltf] loaded albedo texture: {texture_image.shape}")
+                    
+                    # Metallic-Roughness texture
+                    metallic_roughness_texture = pbr.get("metallicRoughnessTexture")
+                    if metallic_roughness_texture and not should_create_empty_albedo:
+                        texture_idx = metallic_roughness_texture.get("index", 0)
+                        if texture_idx < len(doc.textures()):
+                            # Similarly for metallic-roughness
+                            # (simplified version for now)
+                            pass
+                            
+                except Exception as e:
+                    print(f"[load_gltf] failed to extract textures: {e}")
+
+            # Create empty texture if not able to load
+            if should_create_empty_albedo:
+                mesh.set_new_albedo(1024, 1024)
+                print(f"[load_gltf] created empty albedo texture with shape: {mesh.albedo.shape}")
+
+            return mesh
+
+        except Exception as e:
+            print(f"[load_gltf] failed to load {path}: {e}")
+            return None
+
     def set_new_albedo(self, res_H, res_W):
         if self.albedo is None:
             texture = np.ones((res_H, res_W, 3), dtype=np.float32) * np.array([0.5, 0.5, 0.5])
             self.albedo = torch.tensor(texture, dtype=torch.float32, device=self.device)
         else:
             self.albedo = prepare_torch_img(self.albedo.unsqueeze(0), res_H, res_W, self.device).squeeze(0).permute(1, 2, 0).contiguous() # (1, 3, H, W) -> (H, W, 3)
+    
+    def _create_empty_albedo_fast(self):
+        """Create empty albedo texture quickly (without prepare_torch_img)"""
+        if self.albedo is None:
+            texture = np.ones((1024, 1024, 3), dtype=np.float32) * np.array([0.5, 0.5, 0.5])
+            self.albedo = torch.tensor(texture, dtype=torch.float32, device=self.device)
+            print(f"[Mesh] Fast empty texture: {self.albedo.shape}")
 
     # aabb
     def aabb(self):
@@ -625,8 +833,30 @@ class Mesh:
         v_np = self.v.detach().cpu().numpy()
         f_np = self.f.detach().cpu().numpy()
 
-        _mesh = trimesh.Trimesh(vertices=v_np, faces=f_np)
-        _mesh.export(path)
+        # Simple PLY writing without trimesh
+        self._write_ply_simple(path, v_np, f_np)
+    
+    def _write_ply_simple(self, path, vertices, faces):
+        """Simple PLY writing without trimesh"""
+        with open(path, 'w') as f:
+            # PLY header
+            f.write("ply\n")
+            f.write("format ascii 1.0\n")
+            f.write(f"element vertex {len(vertices)}\n")
+            f.write("property float x\n")
+            f.write("property float y\n")
+            f.write("property float z\n")
+            f.write(f"element face {len(faces)}\n")
+            f.write("property list uchar int vertex_indices\n")
+            f.write("end_header\n")
+            
+            # Vertices
+            for v in vertices:
+                f.write(f"{v[0]} {v[1]} {v[2]}\n")
+            
+            # Faces
+            for face in faces:
+                f.write(f"3 {face[0]} {face[1]} {face[2]}\n")
 
 
     def write_glb(self, path):
@@ -897,9 +1127,407 @@ class Mesh:
         shs = np.random.random((num_pts, 3)) / 255.0
         normals = np.zeros((num_pts, 3))
         pcd = PointCloud(points=xyz, colors=SH2RGB(shs), normals=normals)
-        return pcd
+        return pcd        
+
+
+class FastMesh:
+    """
+    Fast implementation of mesh based on FastGLB without dependency on trimesh.
+    Uses direct loading of GLB/GLTF through mesh_processor.
+    """
+    
+    def __init__(
+        self,
+        v: Optional[Tensor] = None,
+        f: Optional[Tensor] = None,
+        vn: Optional[Tensor] = None,
+        fn: Optional[Tensor] = None,
+        vt: Optional[Tensor] = None,
+        ft: Optional[Tensor] = None,
+        vc: Optional[Tensor] = None,
+        albedo: Optional[Tensor] = None,
+        metallicRoughness: Optional[Tensor] = None,
+        device: Optional[torch.device] = None,
+    ):
+        """Initialize FastMesh with the same parameters as Mesh"""
+        self.device = device if device is not None else torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.v = v
+        self.vn = vn
+        self.vt = vt
+        self.f = f
+        self.fn = fn
+        self.ft = ft
+        self.vc = vc
+        self.albedo = albedo
+        self.metallicRoughness = metallicRoughness
+        self.ori_center = 0
+        self.ori_scale = 1
+    
+    @classmethod
+    def load(cls, path, resize=True, renormal=True, retex=False, clean=False, bound=0.5, front_dir='+z', **kwargs):
+        """Loading mesh through FastGLB approach"""
         
+        device = kwargs.get('device')
+        if device is None:
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
+        if path.endswith(".obj"):
+            mesh = cls._load_obj_fast(path, device=device, **kwargs)
+        elif path.endswith((".glb", ".gltf")):
+            mesh = cls._load_gltf_fast(path, device=device, **kwargs)
+        else:
+            standard_mesh = Mesh.load(path, resize=False, renormal=False, retex=False, clean=False, **kwargs)
+            mesh = cls._from_standard_mesh(standard_mesh)
+        
+        if mesh is None:
+            return None
+        
+        if clean:
+            mesh._clean_mesh()
+        
+        print(f"[FastMesh loading] v: {mesh.v.shape}, f: {mesh.f.shape}")
+        
+        if resize:
+            mesh.auto_size(bound=bound)
+        
+        if renormal or mesh.vn is None:
+            mesh.auto_normal()
+            print(f"[FastMesh loading] vn: {mesh.vn.shape}, fn: {mesh.fn.shape}")
+        
+        if retex or (mesh.albedo is not None and mesh.vt is None):
+            mesh.auto_uv(cache_path=path)
+            print(f"[FastMesh loading] vt: {mesh.vt.shape}, ft: {mesh.ft.shape}")
+        
+        if front_dir != "+z":
+            mesh._apply_front_dir_rotation(front_dir)
+        
+        return mesh
+    
+    @classmethod
+    def _load_gltf_fast(cls, path, device=None, **kwargs):
+        """Fast loading of GLB/GLTF through mesh_processor"""
+        
+        try:
+            print(f"[FastMesh] Loading GLB/GLTF: {path}")
+            
+            # Load GLTF document
+            from .io_gltf import load_gltf_or_glb, get_binary_data
+            from .mesh_ops import get_all_meshes_triangles
+            from .accessors import access_data
+            
+            doc = load_gltf_or_glb(path)
+            print(f"[FastMesh] GLTF document: {len(doc.meshes())} meshes")
+            
+            # Extract geometry
+            vertices, faces, mesh_groups = get_all_meshes_triangles(doc, transform_to_global=True)
+            
+            if len(vertices) == 0 or len(faces) == 0:
+                print(f"[FastMesh] No geometry in {path}")
+                return None
+            
+            mesh = cls(device=device)
+            mesh.v = torch.tensor(vertices, dtype=torch.float32, device=device)
+            mesh.f = torch.tensor(faces, dtype=torch.int32, device=device)
+            
+            # Extract additional data
+            cls._extract_gltf_attributes(mesh, doc, device)
+            cls._extract_gltf_textures(mesh, doc, device)
+            
+            print(f"[FastMesh] Loaded: {len(vertices)} vertices, {len(faces)} faces")
+            return mesh
+            
+        except Exception as e:
+            print(f"[FastMesh] Error loading GLB/GLTF {path}: {e}")
+            return None
+    
+    @classmethod
+    def _extract_gltf_attributes(cls, mesh, doc, device):
+        """Extract attributes from GLTF (UV, normals, colors)"""
+        
+        if not doc.meshes():
+            return
+        
+        first_mesh = doc.meshes()[0]
+        for primitive in first_mesh.get("primitives", []):
+            attributes = primitive.get("attributes", {})
+            
+            # UV coordinates
+            if "TEXCOORD_0" in attributes and mesh.vt is None:
+                try:
+                    from .accessors import access_data
+                    uv_accessor_idx = int(attributes["TEXCOORD_0"])
+                    uv_data = access_data(doc, uv_accessor_idx).astype(np.float32)
+                    uv_data[:, 1] = 1.0 - uv_data[:, 1]  # Flip V
+                    mesh.vt = torch.tensor(uv_data, dtype=torch.float32, device=device)
+                    mesh.ft = mesh.f
+                    print(f"[FastMesh] UV: {mesh.vt.shape}")
+                except Exception as e:
+                    print(f"[FastMesh] Error UV: {e}")
+            
+            # Normals
+            if "NORMAL" in attributes and mesh.vn is None:
+                try:
+                    from .accessors import access_data
+                    normal_accessor_idx = int(attributes["NORMAL"])
+                    normal_data = access_data(doc, normal_accessor_idx).astype(np.float32)
+                    mesh.vn = torch.tensor(normal_data, dtype=torch.float32, device=device)
+                    mesh.fn = mesh.f
+                    print(f"[FastMesh] Normals: {mesh.vn.shape}")
+                except Exception as e:
+                    print(f"[FastMesh] Error normals: {e}")
+            
+            # Vertex colors
+            if "COLOR_0" in attributes and mesh.vc is None:
+                try:
+                    from .accessors import access_data
+                    color_accessor_idx = int(attributes["COLOR_0"])
+                    color_data = access_data(doc, color_accessor_idx).astype(np.float32)
+                    if color_data.shape[1] > 3:
+                        color_data = color_data[:, :3]
+                    mesh.vc = torch.tensor(color_data, dtype=torch.float32, device=device)
+                    print(f"[FastMesh] Colors: {mesh.vc.shape}")
+                except Exception as e:
+                    print(f"[FastMesh] Error colors: {e}")
+    
+    @classmethod
+    def _extract_gltf_textures(cls, mesh, doc, device):
+        """Extract textures from GLTF"""
+        
+        should_create_empty = True
+        
+        try:
+            if not (doc.materials() and doc.textures() and doc.images()):
+                mesh._create_empty_albedo()
+                return
+            
+            material = doc.materials()[0]
+            pbr = material.get("pbrMetallicRoughness", {})
+            
+            # Albedo texture
+            base_color_texture = pbr.get("baseColorTexture")
+            if base_color_texture:
+                albedo_texture = cls._extract_texture_by_index(doc, base_color_texture.get("index", 0))
+                if albedo_texture is not None:
+                    albedo_float = albedo_texture.astype(np.float32) / 255.0
+                    mesh.albedo = torch.tensor(albedo_float, dtype=torch.float32, device=device).contiguous()
+                    should_create_empty = False
+                    print(f"[FastMesh] Albedo: {mesh.albedo.shape}")
+            
+            # Metallic-Roughness texture
+            mr_texture_info = pbr.get("metallicRoughnessTexture")
+            if mr_texture_info and not should_create_empty:
+                mr_texture = cls._extract_texture_by_index(doc, mr_texture_info.get("index", 0))
+                if mr_texture is not None:
+                    mr_float = mr_texture.astype(np.float32) / 255.0
+                    mesh.metallicRoughness = torch.tensor(mr_float, dtype=torch.float32, device=device).contiguous()
+                    print(f"[FastMesh] MetallicRoughness: {mesh.metallicRoughness.shape}")
+            
+        except Exception as e:
+            print(f"[FastMesh] Error extracting textures: {e}")
+        
+        if should_create_empty:
+            mesh._create_empty_albedo()
+    
+    @classmethod
+    def _extract_texture_by_index(cls, doc, texture_idx):
+        """Extract texture by index from GLTF"""
+        
+        try:
+            from .io_gltf import get_binary_data
+            
+            if texture_idx >= len(doc.textures()):
+                return None
+            
+            texture = doc.textures()[texture_idx]
+            image_idx = texture.get("source", 0)
+            
+            if image_idx >= len(doc.images()):
+                return None
+            
+            image_info = doc.images()[image_idx]
+            buffer_view_idx = image_info.get("bufferView")
+            
+            if buffer_view_idx is None:
+                return None
+            
+            buffer_view = doc.bufferViews()[buffer_view_idx]
+            buffer_idx = buffer_view.get("buffer", 0)
+            byte_offset = buffer_view.get("byteOffset", 0)
+            byte_length = buffer_view.get("byteLength", 0)
+            
+            binary_data = get_binary_data(doc, buffer_idx)
+            image_bytes = binary_data[byte_offset:byte_offset + byte_length]
+            
+            # Decode image
+            image_array = np.frombuffer(image_bytes, dtype=np.uint8)
+            texture_image = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
+            
+            if texture_image is not None:
+                texture_image = cv2.cvtColor(texture_image, cv2.COLOR_BGR2RGB)
+                return texture_image
+            
+        except Exception as e:
+            print(f"[FastMesh] Error extracting texture {texture_idx}: {e}")
+        
+        return None
+    
+    @classmethod
+    def _load_obj_fast(cls, path, device=None, **kwargs):
+        """Fast loading of OBJ (fallback to standard method)"""
+        standard_mesh = Mesh.load_obj(path, device=device, **kwargs)
+        return cls._from_standard_mesh(standard_mesh)
+    
+    @classmethod
+    def _from_standard_mesh(cls, standard_mesh):
+        """Convert standard Mesh to FastMesh"""
+        if standard_mesh is None:
+            return None
+        
+        return cls(
+            v=standard_mesh.v,
+            f=standard_mesh.f,
+            vn=standard_mesh.vn,
+            fn=standard_mesh.fn,
+            vt=standard_mesh.vt,
+            ft=standard_mesh.ft,
+            vc=standard_mesh.vc,
+            albedo=standard_mesh.albedo,
+            metallicRoughness=standard_mesh.metallicRoughness,
+            device=standard_mesh.device
+        )
+    
+    def _create_empty_albedo(self):
+        """Create empty albedo texture"""
+        texture = np.ones((1024, 1024, 3), dtype=np.float32) * np.array([0.5, 0.5, 0.5])
+        self.albedo = torch.tensor(texture, dtype=torch.float32, device=self.device)
+        print(f"[FastMesh] Empty texture: {self.albedo.shape}")
+    
+    def _clean_mesh(self):
+        """Clean mesh (simplified version)"""
+        try:
+            from kiui.mesh_utils import clean_mesh
+            vertices = self.v.detach().cpu().numpy()
+            triangles = self.f.detach().cpu().numpy()
+            vertices, triangles = clean_mesh(vertices, triangles, remesh=False)
+            self.v = torch.from_numpy(vertices).contiguous().float().to(self.device)
+            self.f = torch.from_numpy(triangles).contiguous().int().to(self.device)
+        except Exception as e:
+            print(f"[FastMesh] Error cleaning: {e}")
+    
+    def _apply_front_dir_rotation(self, front_dir):
+        """Apply rotation for aligning front_dir with +z"""
+        # Use the same logic as in standard Mesh
+        if front_dir == "+z":
+            return
+        
+        # Define transformation matrix
+        if "-z" in front_dir:
+            T = torch.tensor([[1, 0, 0], [0, 1, 0], [0, 0, -1]], device=self.device, dtype=torch.float32)
+        elif "+x" in front_dir:
+            T = torch.tensor([[0, 0, 1], [0, 1, 0], [1, 0, 0]], device=self.device, dtype=torch.float32)
+        elif "-x" in front_dir:
+            T = torch.tensor([[0, 0, -1], [0, 1, 0], [1, 0, 0]], device=self.device, dtype=torch.float32)
+        elif "+y" in front_dir:
+            T = torch.tensor([[1, 0, 0], [0, 0, 1], [0, 1, 0]], device=self.device, dtype=torch.float32)
+        elif "-y" in front_dir:
+            T = torch.tensor([[1, 0, 0], [0, 0, -1], [0, 1, 0]], device=self.device, dtype=torch.float32)
+        else:
+            T = torch.tensor([[1, 0, 0], [0, 1, 0], [0, 0, 1]], device=self.device, dtype=torch.float32)
+        
+        # Additional rotations
+        if '1' in front_dir:
+            T @= torch.tensor([[0, -1, 0], [1, 0, 0], [0, 0, 1]], device=self.device, dtype=torch.float32) 
+        elif '2' in front_dir:
+            T @= torch.tensor([[1, 0, 0], [0, -1, 0], [0, 0, 1]], device=self.device, dtype=torch.float32) 
+        elif '3' in front_dir:
+            T @= torch.tensor([[0, 1, 0], [-1, 0, 0], [0, 0, 1]], device=self.device, dtype=torch.float32) 
+        
+        # Apply transformation
+        if self.v is not None:
+            self.v @= T
+        if self.vn is not None:
+            self.vn @= T
+    
+    # Use methods from standard Mesh
+    def aabb(self):
+        """AABB mesh"""
+        return torch.min(self.v, dim=0).values, torch.max(self.v, dim=0).values
+    
+    @torch.no_grad()
+    def auto_size(self, bound=0.9):
+        """Automatic size change"""
+        vmin, vmax = self.aabb()
+        self.ori_center = (vmax + vmin) / 2
+        self.ori_scale = 2 * bound / torch.max(vmax - vmin).item()
+        self.v = (self.v - self.ori_center) * self.ori_scale
+    
+    def auto_normal(self):
+        """Automatic calculation of normals"""
+        i0, i1, i2 = self.f[:, 0].long(), self.f[:, 1].long(), self.f[:, 2].long()
+        v0, v1, v2 = self.v[i0, :], self.v[i1, :], self.v[i2, :]
+        
+        face_normals = torch.cross(v1 - v0, v2 - v0, dim=-1)
+        
+        vn = torch.zeros_like(self.v)
+        vn.scatter_add_(0, i0[:, None].repeat(1, 3), face_normals)
+        vn.scatter_add_(0, i1[:, None].repeat(1, 3), face_normals)
+        vn.scatter_add_(0, i2[:, None].repeat(1, 3), face_normals)
+        
+        vn = torch.where(
+            dot(vn, vn) > 1e-20,
+            vn,
+            torch.tensor([0.0, 0.0, 1.0], dtype=torch.float32, device=vn.device),
+        )
+        vn = safe_normalize(vn)
+        
+        self.vn = vn
+        self.fn = self.f
+    
+    def auto_uv(self, cache_path=None, vmap=True):
+        """Automatic calculation of UV (use method from standard Mesh)"""
+        # Temporarily delegate to standard Mesh
+        temp_mesh = Mesh(
+            v=self.v, f=self.f, vn=self.vn, fn=self.fn,
+            vt=self.vt, ft=self.ft, vc=self.vc,
+            albedo=self.albedo, metallicRoughness=self.metallicRoughness,
+            device=self.device
+        )
+        temp_mesh.auto_uv(cache_path=cache_path, vmap=vmap)
+        
+        # Copy result back
+        self.vt = temp_mesh.vt
+        self.ft = temp_mesh.ft
+        if vmap:
+            self.v = temp_mesh.v
+            self.f = temp_mesh.f
+            self.vn = temp_mesh.vn
+            self.fn = temp_mesh.fn
+            if temp_mesh.vc is not None:
+                self.vc = temp_mesh.vc
+    
+    def to(self, device):
+        """Move to another device"""
+        self.device = device
+        for name in ["v", "f", "vn", "fn", "vt", "ft", "albedo", "vc", "metallicRoughness"]:
+            tensor = getattr(self, name)
+            if tensor is not None:
+                setattr(self, name, tensor.to(device))
+        return self
+    
+    def write(self, path):
+        """Saving to file (use methods from standard Mesh)"""
+        # Create temporary standard Mesh for saving
+        temp_mesh = Mesh(
+            v=self.v, f=self.f, vn=self.vn, fn=self.fn,
+            vt=self.vt, ft=self.ft, vc=self.vc,
+            albedo=self.albedo, metallicRoughness=self.metallicRoughness,
+            device=self.device
+        )
+        temp_mesh.ori_center = self.ori_center
+        temp_mesh.ori_scale = self.ori_scale
+        return temp_mesh.write(path)
+
+
 class PointCloud(NamedTuple):
     points: np.array
     colors: np.array

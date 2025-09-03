@@ -598,6 +598,66 @@ def K_nearest_neighbors_func(
         else:
             return nn[0, :, :, :], idx[0, :, :], dist[0, :, :]
 
+
+def reduce_mesh_faces_inplace(mesh_obj, max_faces: int = 40000, backend="pymeshlab", optimalplacement=True, verbose=True):
+    """
+    Reduce faces for Mesh/FastMesh objects using decimate_mesh (in-place modification)
+    
+    Args:
+        mesh_obj: Mesh or FastMesh object (modified in-place)
+        max_faces: maximum number of faces
+        backend: algorithm backend ("pymeshlab" or "pyfqmr")
+        optimalplacement: optimal placement for decimation
+        verbose: print progress
+        
+    Returns:
+        Same mesh object (modified in-place)
+    """
+    
+    faces_before = mesh_obj.f.shape[0]
+    
+    # Skip if already under limit
+    if faces_before <= max_faces:
+        if verbose:
+            print(f"Mesh already has {faces_before} faces (≤ {max_faces}) - skipping")
+        return mesh_obj
+    
+    try:
+        
+        # Convert to numpy
+        vertices_np = mesh_obj.v.detach().cpu().numpy().astype(np.float32)
+        faces_np = mesh_obj.f.detach().cpu().numpy().astype(np.int32)
+        
+        # Apply decimation
+        reduced_vertices, reduced_faces = decimate_mesh(
+            vertices_np, faces_np, 
+            target=max_faces,
+            backend=backend,
+            optimalplacement=optimalplacement,
+            verbose=verbose
+        )
+        
+        # Update existing mesh object (in-place)
+        device = mesh_obj.v.device
+        mesh_obj.v = torch.from_numpy(reduced_vertices).contiguous().float().to(device)
+        mesh_obj.f = torch.from_numpy(reduced_faces).contiguous().int().to(device)
+        
+        # Recalculate normals
+        mesh_obj.auto_normal()
+        
+        # Stats
+        if verbose:
+            faces_after = mesh_obj.f.shape[0]
+            reduction_ratio = ((faces_before - faces_after) / faces_before) * 100
+        
+        return mesh_obj
+        
+    except Exception as e:
+        if verbose:
+            print(f"Face reduction error: {e}, keep original mesh")
+        return mesh_obj
+
+
 def interpolate_texture_map_attr(mesh, texture_size: int = 256, batch_size: int = 64, interpolate_color=True, interpolate_position=False):
     # Get UV coordinates and faces
     if mesh.vt is None:

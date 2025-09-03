@@ -12,7 +12,7 @@ from pytorch3d.renderer import (
     FoVOrthographicCameras,
 )
 from pytorch3d.renderer import MeshRasterizer
-from mesh_processer.mesh import Mesh
+from mesh_processor.mesh import Mesh
 
 def get_camera(world_to_cam, fov_in_degrees=60, focal_length=1 / (2**0.5), cam_type='fov'):
     # pytorch3d expects transforms as row-vectors, so flip rotation: https://github.com/facebookresearch/pytorch3d/issues/1183

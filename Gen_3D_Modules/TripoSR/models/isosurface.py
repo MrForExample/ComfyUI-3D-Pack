@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 from mcubes import marching_cubes
 
-from mesh_processer.mesh_utils import switch_vector_axis
+from mesh_processor.mesh_utils import switch_vector_axis
 
 
 class IsosurfaceHelper(nn.Module):
