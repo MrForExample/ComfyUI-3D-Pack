@@ -35,8 +35,6 @@ from .validate import validate_before_save
 from .mesh import (
     Mesh,
     FastMesh,
-    TrimeshLike,
-    TrimeshLikeLoader,
     PointCloud,
 )
 
@@ -67,8 +65,6 @@ __all__ = [
     "validate_before_save",
     "Mesh",
     "FastMesh", 
-    "TrimeshLike",
-    "TrimeshLikeLoader",
     "PointCloud",
 ]
 

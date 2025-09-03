@@ -37,8 +37,9 @@ from plyfile import PlyData
 import trimesh
 from PIL import Image
 
-from .mesh_processer.mesh import Mesh
-from .mesh_processer.mesh_utils import (
+from mesh_processor.export_utils import export_to_fastmesh, export_to_mesh
+from mesh_processor.mesh import FastMesh, Mesh
+from mesh_processor.mesh_utils import (
     ply_to_points_cloud, 
     get_target_axis_and_scale, 
     switch_ply_axis_and_scale, 
@@ -48,6 +49,7 @@ from .mesh_processer.mesh_utils import (
     color_func_to_albedo,
     interpolate_texture_map_attr,
     decimate_mesh,
+    reduce_mesh_faces_inplace
 )
 
 from FlexiCubes.flexicubes_trainer import FlexiCubesTrainer
@@ -128,6 +130,7 @@ from Gen_3D_Modules.PartCrafter.partcrafter_src.pipelines.pipeline_partcrafter i
 from Gen_3D_Modules.PartCrafter.partcrafter_src.utils.data_utils import get_colored_mesh_composition
 from Gen_3D_Modules.PartCrafter.partcrafter_src.utils.render_utils import explode_mesh
 import zipfile
+from typing import Union
 
 
 os.environ['SPCONV_ALGO'] = 'native'
@@ -4569,7 +4572,6 @@ class Hunyuan3D_V2_ShapeGen_MV:
 
         return (Mesh.load_trimesh(given_mesh=mesh),)
 
-#--------------------------------
 class Load_StableGen_Trellis_Pipeline:
     CATEGORY      = "Comfy3D/Algorithm"
     RETURN_TYPES  = ("DIFFUSERS_PIPE",)
@@ -4659,7 +4661,6 @@ class Load_StableGen_StableX_Pipeline:
         repo = self._MODES[model_name]
         pipe = self.__class__._build_pipe(repo, use_fp16)
         return (pipe,)
-
 
 class StableGen_Trellis_Image_To_3D:
     """
@@ -4766,7 +4767,6 @@ class StableGen_Trellis_Image_To_3D:
         except Exception as e:
             raise Exception(f"[StableGen_Trellis_Image_To_3D] 3D generation failed: {str(e)}")
 
-
 class StableGen_StableX_Process_Image:
     """
     Image processing pipeline using StableX model.
@@ -4814,7 +4814,7 @@ class StableGen_StableX_Process_Image:
             
         except Exception as e:
             raise Exception(f"[StableGen_StableX_Process_Image] Image processing failed: {str(e)}")
-# --- MV START ----
+
 class Load_MVAdapter_IG2MV_Pipeline:
     """Loader pipeline for MV-Adapter (Image to Multi-View)"""
     CATEGORY = "Comfy3D/Algorithm"
@@ -4851,7 +4851,6 @@ class Load_MVAdapter_IG2MV_Pipeline:
         vae_model = None if vae_model == "None" else vae_model
         lora_model = None if not lora_model else lora_model
         
-        # Подготавливаем параметры для пайплайна
         pipeline_kwargs = {
             "base_model": base_model,
             "vae_model": vae_model,
@@ -4869,6 +4868,7 @@ class Load_MVAdapter_IG2MV_Pipeline:
         
         print("MV-Adapter IG2MV pipeline loaded successfully")
         return (pipe,)
+
 
 class MVAdapter_IG2MV:
     """Generate multi-view images from single image and 3D mesh"""
@@ -4930,6 +4930,7 @@ class MVAdapter_IG2MV:
         
         return_images = pils_to_torch_imgs(images, device=DEVICE_STR)
         return (return_images,)
+
 
 class Load_MVAdapter_TG2MV_Pipeline:
     """Loader pipeline for MV-Adapter Text-Guided to Multi-View (TG2MV)"""
@@ -5044,6 +5045,7 @@ class MVAdapter_TG2MV:
         return_images = pils_to_torch_imgs(images, device=DEVICE_STR)
         return (return_images,)
             
+
 class Load_MVAdapter_Texture_Pipeline:
     """Load texture projection pipeline for MVAdapter"""
     CATEGORY = "Comfy3D/Algorithm"
@@ -5206,6 +5208,7 @@ class MVAdapter_Texture_Projection:
                 os.remove(temp_grid_path)
             raise e
 
+
 class Load_Hunyuan3D_21_ShapeGen_Pipeline:
     """Load Hunyuan3D-2.1 Shape Generation Pipeline"""
     
@@ -5273,6 +5276,7 @@ class Load_Hunyuan3D_21_ShapeGen_Pipeline:
         )
         
         return (pipeline,)
+
 
 class Load_Hunyuan3D_21_TexGen_Pipeline:
     """Load Hunyuan3D-2.1 Texture Generation Pipeline"""
@@ -5394,8 +5398,9 @@ class Load_Hunyuan3D_21_TexGen_Pipeline:
         print(f"[TexGen-Loader] Cached new pipeline {cache_key}")
         return (pipeline,)
 
+
 class Hunyuan3D_21_ShapeGen:
-    """Hunyuan3D-2.1 Shape Generation with automatic pipeline cleanup"""
+    """Hunyuan3D-2.1 Shape Generation """
     
     CATEGORY = "Comfy3D/Algorithm/Hunyuan3D-2.1"
     RETURN_TYPES = ("MESH", "IMAGE")
@@ -5414,20 +5419,20 @@ class Hunyuan3D_21_ShapeGen:
                 "octree_resolution": ("INT", {"default": 256, "min": 64, "max": 512}),
                 "remove_background": ("BOOLEAN", {"default": True}),
                 "auto_cleanup": ("BOOLEAN", {"default": True}),
+                "max_faces": ("INT", {"default": 40000, "min": 1000, "max": 1000000}),
             }
         }
 
     @torch.no_grad()
     def generate(self, shapegen_pipe, image, seed, steps, guidance_scale, octree_resolution, remove_background, auto_cleanup):
-        pil_image = torch_imgs_to_pils(image)[0].convert("RGBA")
-        
-        if remove_background or pil_image.mode == "RGB":
-            rmbg_worker = BackgroundRemover_2_1()
-            pil_image = rmbg_worker(pil_image.convert('RGB'))
-            del rmbg_worker
-
-        generator = torch.Generator(device=shapegen_pipe.device)
-        generator = generator.manual_seed(int(seed))
+        pil_image = torch_imgs_to_pils(image)[0]
+        if remove_background:
+            bg_remover = BackgroundRemover_2_1()
+            if bg_remover is not None:
+                pil_image = bg_remover(pil_image)
+            del bg_remover
+    
+        generator = torch.Generator(device=shapegen_pipe.device).manual_seed(seed)
         
         outputs = shapegen_pipe(
             image=pil_image,
@@ -5439,35 +5444,22 @@ class Hunyuan3D_21_ShapeGen:
             output_type='mesh'
         )
         
-        mesh = export_to_trimesh_2_1(outputs)[0]
+        mesh_objects = export_to_fastmesh(outputs)
+        mesh_out = mesh_objects[0] if isinstance(mesh_objects, list) else mesh_objects
         
-        face_reduce_worker = FaceReducer_2_1()
-        mesh = face_reduce_worker(mesh)
-        del face_reduce_worker
+        if mesh_out is None:
+            raise Exception("Failed to create mesh from pipeline")
         
-        # Auto cleanup pipeline if enabled
+        reduce_mesh_faces_inplace(mesh_out, max_faces=max_faces, verbose=True)
+        
         if auto_cleanup:
-            try:
-                shapegen_pipe.to('cpu')
-                if hasattr(shapegen_pipe, 'unet'):
-                    del shapegen_pipe.unet
-                if hasattr(shapegen_pipe, 'vae'):
-                    del shapegen_pipe.vae
-                if hasattr(shapegen_pipe, 'scheduler'):
-                    del shapegen_pipe.scheduler
-                del outputs
-                torch.cuda.empty_cache()
-                gc.collect()
-                print("Shape pipeline cleaned up")
-            except Exception as e:
-                print(f"Error during pipeline cleanup: {e}")
-            
-        mesh_out = Mesh.load_trimesh(given_mesh=mesh)
-        mesh_out.auto_normal()
+            torch.cuda.empty_cache()
+            gc.collect()
         
         processed_image_tensor = pils_to_torch_imgs([pil_image])
         
         return (mesh_out, processed_image_tensor)
+
 
 class Hunyuan3D_21_TexGen:
     """Hunyuan3D-2.1 Texture Generation"""
@@ -5587,7 +5579,6 @@ class Hunyuan3D_21_TexGen:
                 except:
                     pass
 
-# --------------------- PARTCRAFTER ---------------------
 
 class Load_PartCrafter_Pipeline:
     """Load PartCrafter Pipeline"""
@@ -5790,7 +5781,7 @@ class PartCrafter_Generate:
         print(f"GLB mesh path for Preview_3DMesh: {relative_scene_path}")
         
         return (zip_path, relative_scene_path, processed_image_tensor)
-#------ partcrafter scene ---------------------
+
 
 class Load_PartCrafter_Scene_Pipeline:
     """Load PartCrafter Scene Pipeline"""
@@ -5994,4 +5985,3 @@ class PartCrafter_Generate:
         print(f"GLB mesh path for Preview_3DMesh: {relative_scene_path}")
         
         return (zip_path, relative_scene_path, processed_image_tensor)
-

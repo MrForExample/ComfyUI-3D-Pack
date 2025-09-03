@@ -6,6 +6,6 @@ except ImportError:
     try:
         from .mesh_inpaint_processor_fallback import meshVerticeInpaint
         print("[WARNING] Using Python fallback mesh_inpaint_processor (slower)")
-        print("[INFO] To use faster C++ version, run: compile_mesh_painter.bat")
+        print("[INFO] To use faster C++ version, run: compile_mesh_painter.bat or compile_mesh_painter.sh")
     except ImportError:
         print("[ERROR] Neither C++ nor Python mesh_inpaint_processor found!")
