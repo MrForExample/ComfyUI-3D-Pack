@@ -5,7 +5,8 @@ Direct functions WITHOUT trimesh dependency
 
 import torch
 import numpy as np
-from .mesh import Mesh, FastMesh
+from .mesh import Mesh
+from .fastmesh import FastMesh
 
 
 def export_to_fastmesh(mesh_output, device=None):

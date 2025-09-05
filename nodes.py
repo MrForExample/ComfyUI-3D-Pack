@@ -38,7 +38,8 @@ import trimesh
 from PIL import Image
 
 from mesh_processor.export_utils import export_to_fastmesh, export_to_mesh
-from mesh_processor.mesh import FastMesh, Mesh
+from mesh_processor.fastmesh import FastMesh
+from mesh_processor.mesh import Mesh
 from mesh_processor.mesh_utils import (
     ply_to_points_cloud, 
     get_target_axis_and_scale, 
@@ -288,6 +289,7 @@ class Load_3D_Mesh:
         return {
             "required": {
                 "mesh_file_path": ("STRING", {"default": '', "multiline": False}),
+                "use_fastmesh": ("BOOLEAN", {"default": True, "tooltip": "Use FastMesh for GLB/GLTF files"}),
                 "resize":  ("BOOLEAN", {"default": False},),
                 "renormal":  ("BOOLEAN", {"default": True},),
                 "retex":  ("BOOLEAN", {"default": False},),
@@ -306,7 +308,7 @@ class Load_3D_Mesh:
     FUNCTION = "load_mesh"
     CATEGORY = "Comfy3D/Import|Export"
     
-    def load_mesh(self, mesh_file_path, resize, renormal, retex, optimizable, clean, resize_bound):
+    def load_mesh(self, mesh_file_path, use_fastmesh, resize, renormal, retex, optimizable, clean, resize_bound):
         mesh = None
         
         if not os.path.isabs(mesh_file_path):
@@ -316,7 +318,10 @@ class Load_3D_Mesh:
             folder, filename = os.path.split(mesh_file_path)
             if filename.lower().endswith(SUPPORTED_3D_EXTENSIONS):
                 with torch.inference_mode(not optimizable):
-                    mesh = Mesh.load(mesh_file_path, resize, renormal, retex, clean, resize_bound)
+                    if use_fastmesh and mesh_file_path.endswith((".glb", ".gltf")):
+                        mesh = FastMesh.load(mesh_file_path, resize, renormal, retex, clean, resize_bound)
+                    else:
+                        mesh = Mesh.load(mesh_file_path, resize, renormal, retex, clean, resize_bound)
             else:
                 cstr(f"[{self.__class__.__name__}] File name {filename} does not end with supported 3D file extensions: {SUPPORTED_3D_EXTENSIONS}").error.print()
         else:        
@@ -366,6 +371,7 @@ class Save_3D_Mesh:
             "required": {
                 "mesh": ("MESH",),
                 "save_path": ("STRING", {"default": 'Mesh_%Y-%m-%d-%M-%S-%f.glb', "multiline": False}),
+                "use_fastmesh": ("BOOLEAN", {"default": True, "tooltip": "Use FastMesh for fast saving GLB"}),
             },
         }
 
@@ -379,11 +385,26 @@ class Save_3D_Mesh:
     FUNCTION = "save_mesh"
     CATEGORY = "Comfy3D/Import|Export"
     
-    def save_mesh(self, mesh, save_path):
+    def save_mesh(self, mesh, save_path, use_fastmesh):
         save_path = parse_save_filename(save_path, comfy_paths.output_directory, SUPPORTED_3D_EXTENSIONS, self.__class__.__name__)
         
         if save_path is not None:
-            mesh.write(save_path)
+            
+            if use_fastmesh and save_path.endswith((".glb", ".ply", ".obj")):
+                if hasattr(mesh, '_write_glb_fast'):
+                    mesh.write(save_path)
+                else:
+                    fast_mesh = FastMesh(
+                        v=mesh.v, f=mesh.f, vn=mesh.vn, fn=mesh.fn,
+                        vt=mesh.vt, ft=mesh.ft, vc=mesh.vc,
+                        albedo=mesh.albedo, metallicRoughness=getattr(mesh, 'metallicRoughness', None),
+                        device=mesh.device
+                    )
+                    fast_mesh.ori_center = getattr(mesh, 'ori_center', 0)
+                    fast_mesh.ori_scale = getattr(mesh, 'ori_scale', 1)
+                    fast_mesh.write(save_path)
+            else:
+                mesh.write(save_path)
 
         return (save_path, )
     
