@@ -130,10 +130,7 @@ class FastMesh:
             if colors is not None:
                 mesh.vc = colors
                 print(f"[FastMesh] Colors: {mesh.vc.shape}")
-            if not lazy_texture:
-                cls._extract_gltf_textures(mesh, doc, device)
-            else:
-                mesh._lazy_texture_doc = doc
+            cls._extract_gltf_textures_fast(mesh, doc, device, lazy_empty=lazy_texture)
             
             print(f"[FastMesh] Loaded: {len(vertices)} vertices, {len(faces)} faces")
             return mesh
@@ -287,6 +284,50 @@ class FastMesh:
                 except Exception as e:
                     print(f"[FastMesh] Error colors: {e}")
     
+    @classmethod
+    def _extract_gltf_textures_fast(cls, mesh, doc, device, lazy_empty=True):
+        """Fast texture extraction - only load if exists, don't create empty if lazy_empty=True"""
+        
+        if not (doc.materials() and doc.textures() and doc.images()):
+            if not lazy_empty:
+                mesh._create_empty_albedo()
+                print(f"[FastMesh] No textures found - created empty albedo")
+            else:
+                print(f"[FastMesh] No textures found - skipping empty albedo creation")
+            return
+        
+        texture_loaded = False
+        
+        try:
+            material = doc.materials()[0]
+            pbr = material.get("pbrMetallicRoughness", {})
+            
+            # Albedo texture
+            base_color_texture = pbr.get("baseColorTexture")
+            if base_color_texture:
+                albedo_texture = cls._extract_texture_by_index(doc, base_color_texture.get("index", 0))
+                if albedo_texture is not None:
+                    albedo_float = albedo_texture.astype(np.float32) / 255.0
+                    mesh.albedo = torch.tensor(albedo_float, dtype=torch.float32, device=device).contiguous()
+                    texture_loaded = True
+                    print(f"[FastMesh] Albedo texture loaded: {mesh.albedo.shape}")
+            
+            # Metallic-Roughness texture
+            mr_texture_info = pbr.get("metallicRoughnessTexture")
+            if mr_texture_info and texture_loaded:
+                mr_texture = cls._extract_texture_by_index(doc, mr_texture_info.get("index", 0))
+                if mr_texture is not None:
+                    mr_float = mr_texture.astype(np.float32) / 255.0
+                    mesh.metallicRoughness = torch.tensor(mr_float, dtype=torch.float32, device=device).contiguous()
+                    print(f"[FastMesh] MetallicRoughness texture loaded: {mesh.metallicRoughness.shape}")
+            
+        except Exception as e:
+            print(f"[FastMesh] Error extracting textures: {e}")
+        
+        if not texture_loaded and not lazy_empty:
+            mesh._create_empty_albedo()
+            print(f"[FastMesh] Created empty albedo texture")
+
     @classmethod
     def _extract_gltf_textures(cls, mesh, doc, device):
         """Extract textures from GLTF"""
@@ -528,6 +569,11 @@ class FastMesh:
     def _write_glb_fast(self, path):
         """Fast GLB writing using mesh_processor"""
         try:
+            print(f"[FastMesh] Starting GLB save to: {path}")
+            print(f"[FastMesh] Mesh has albedo: {self.albedo is not None}")
+            print(f"[FastMesh] Mesh has UV: {self.vt is not None}")
+            print(f"[FastMesh] Mesh has metallicRoughness: {self.metallicRoughness is not None}")
+            
             # Prepare data
             vertices = self.v.detach().cpu().numpy().astype(np.float32)
             faces = self.f.detach().cpu().numpy().astype(np.uint32)
@@ -572,6 +618,23 @@ class FastMesh:
             primitive["attributes"] = {"POSITION": pos_accessor}
             primitive["indices"] = idx_accessor
             
+            # Add UV coordinates if available
+            if self.vt is not None:
+                uv_data = self.vt.detach().cpu().numpy().astype(np.float32)
+                uv_accessor, _ = append_accessor_and_bufferview(
+                    doc, uv_data,
+                    component_type=5126,  # FLOAT
+                    element_type="VEC2",
+                    target=34962  # ARRAY_BUFFER
+                )
+                primitive["attributes"]["TEXCOORD_0"] = uv_accessor
+                print(f"[FastMesh] Added UV coordinates: {uv_data.shape}")
+            
+            # Add texture if available
+            if self.albedo is not None and self.vt is not None:
+                self._add_texture_to_gltf(doc, primitive)
+                print(f"[FastMesh] Added albedo texture: {self.albedo.shape}")
+            
             # Save to file
             with open(path, "wb") as f:
                 save_glb(doc, f)
@@ -581,6 +644,129 @@ class FastMesh:
         except Exception as e:
             print(f"[FastMesh] Fast GLB save failed: {e}, using fallback")
             self._write_fallback(path)
+    
+    def _add_texture_to_gltf(self, doc, primitive):
+        """Add texture data to GLTF document using fast approach"""
+        try:
+            # Convert albedo texture to PNG bytes
+            albedo_np = self.albedo.detach().cpu().numpy()
+            albedo_uint8 = (albedo_np * 255).astype(np.uint8)
+            
+            # Encode as PNG
+            import cv2
+            albedo_bgr = cv2.cvtColor(albedo_uint8, cv2.COLOR_RGB2BGR)
+            success, png_bytes = cv2.imencode('.png', albedo_bgr)
+            if not success:
+                print(f"[FastMesh] Failed to encode texture as PNG")
+                return
+            
+            png_data = png_bytes.tobytes()
+            
+            # Add image data to buffer using helper function
+            image_accessor, _ = append_accessor_and_bufferview(
+                doc, np.frombuffer(png_data, dtype=np.uint8),
+                component_type=5121,  # UNSIGNED_BYTE
+                element_type="SCALAR",
+                target=None  # No specific target for image data
+            )
+            
+            # Create GLTF structures
+            gltf_json = doc.json()
+            
+            # Initialize arrays if they don't exist
+            if "materials" not in gltf_json:
+                gltf_json["materials"] = []
+            if "textures" not in gltf_json:
+                gltf_json["textures"] = []
+            if "images" not in gltf_json:
+                gltf_json["images"] = []
+            if "samplers" not in gltf_json:
+                gltf_json["samplers"] = []
+            
+            # Add image
+            image_idx = len(gltf_json["images"])
+            gltf_json["images"].append({
+                "bufferView": image_accessor,
+                "mimeType": "image/png"
+            })
+            
+            # Add sampler
+            sampler_idx = len(gltf_json["samplers"])
+            gltf_json["samplers"].append({
+                "magFilter": 9729,  # LINEAR
+                "minFilter": 9987,  # LINEAR_MIPMAP_LINEAR
+                "wrapS": 10497,     # REPEAT
+                "wrapT": 10497      # REPEAT
+            })
+            
+            # Add texture
+            texture_idx = len(gltf_json["textures"])
+            gltf_json["textures"].append({
+                "sampler": sampler_idx,
+                "source": image_idx
+            })
+            
+            # Add material
+            material_idx = len(gltf_json["materials"])
+            material = {
+                "pbrMetallicRoughness": {
+                    "baseColorTexture": {
+                        "index": texture_idx,
+                        "texCoord": 0
+                    },
+                    "metallicFactor": 0.0,
+                    "roughnessFactor": 1.0
+                },
+                "alphaMode": "OPAQUE",
+                "doubleSided": True
+            }
+            
+            # Add metallic-roughness texture if available
+            if self.metallicRoughness is not None:
+                mr_np = self.metallicRoughness.detach().cpu().numpy()
+                mr_uint8 = (mr_np * 255).astype(np.uint8)
+                mr_bgr = cv2.cvtColor(mr_uint8, cv2.COLOR_RGB2BGR)
+                mr_success, mr_png_bytes = cv2.imencode('.png', mr_bgr)
+                
+                if mr_success:
+                    mr_png_data = mr_png_bytes.tobytes()
+                    mr_image_accessor, _ = append_accessor_and_bufferview(
+                        doc, np.frombuffer(mr_png_data, dtype=np.uint8),
+                        component_type=5121,  # UNSIGNED_BYTE
+                        element_type="SCALAR",
+                        target=None
+                    )
+                    
+                    # Add MR image and texture
+                    mr_image_idx = len(gltf_json["images"])
+                    gltf_json["images"].append({
+                        "bufferView": mr_image_accessor,
+                        "mimeType": "image/png"
+                    })
+                    
+                    mr_texture_idx = len(gltf_json["textures"])
+                    gltf_json["textures"].append({
+                        "sampler": sampler_idx,  # Reuse same sampler
+                        "source": mr_image_idx
+                    })
+                    
+                    # Update material
+                    material["pbrMetallicRoughness"]["metallicRoughnessTexture"] = {
+                        "index": mr_texture_idx,
+                        "texCoord": 0
+                    }
+                    material["pbrMetallicRoughness"]["metallicFactor"] = 1.0
+                    material["pbrMetallicRoughness"]["roughnessFactor"] = 1.0
+                    
+                    print(f"[FastMesh] Added metallic-roughness texture: {mr_np.shape}")
+            
+            gltf_json["materials"].append(material)
+            
+            # Link material to primitive
+            primitive["material"] = material_idx
+            
+        except Exception as e:
+            print(f"[FastMesh] Error adding texture to GLTF: {e}")
     
     def _write_ply_fast(self, path):
         """Fast PLY writing"""
