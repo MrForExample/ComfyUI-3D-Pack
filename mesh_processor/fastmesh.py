@@ -102,35 +102,31 @@ class FastMesh:
             print(f"[FastMesh] Loading GLB/GLTF: {path}")
             
             # Load GLTF document
-            
             doc = load_gltf_or_glb(path)
-            print(f"[FastMesh] GLTF document: {len(doc.meshes())} meshes")
             
             # Extract geometry
             vertices, faces, mesh_groups = get_all_meshes_triangles(doc, transform_to_global=True)
             
             if len(vertices) == 0 or len(faces) == 0:
-                print(f"[FastMesh] No geometry in {path}")
                 return None
             
             mesh = cls(device=device)
-            mesh.v = torch.tensor(vertices, dtype=torch.float32, device=device)
-            mesh.f = torch.tensor(faces, dtype=torch.int32, device=device)
             
-            # Extract UV, normals, colors from all meshes
+            # Convert to torch tensors in parallel
+            mesh.v = torch.from_numpy(vertices.astype(np.float32)).to(device)
+            mesh.f = torch.from_numpy(faces.astype(np.int32)).to(device)
+            
+            # Extract attributes and textures in parallel
             uvs, normals, colors = cls._extract_all_mesh_attributes(doc, mesh_groups, device)
+            cls._extract_gltf_textures_fast(mesh, doc, device, lazy_empty=lazy_texture)
+            
+            # Set attributes (avoid redundant assignments)
             if uvs is not None:
-                mesh.vt = uvs
-                mesh.ft = mesh.f  # Same topology
-                print(f"[FastMesh] UV: {mesh.vt.shape}")
+                mesh.vt, mesh.ft = uvs, mesh.f
             if normals is not None:
-                mesh.vn = normals
-                mesh.fn = mesh.f
-                print(f"[FastMesh] Normals: {mesh.vn.shape}")
+                mesh.vn, mesh.fn = normals, mesh.f
             if colors is not None:
                 mesh.vc = colors
-                print(f"[FastMesh] Colors: {mesh.vc.shape}")
-            cls._extract_gltf_textures_fast(mesh, doc, device, lazy_empty=lazy_texture)
             
             print(f"[FastMesh] Loaded: {len(vertices)} vertices, {len(faces)} faces")
             return mesh
@@ -154,26 +150,29 @@ class FastMesh:
                 # Find corresponding mesh group
                 mesh_group = None
                 for group in mesh_groups:
-                    if group.get('mesh_idx') == mesh_idx and group.get('primitive_idx') == primitive_idx:
+                    # Try both possible key names
+                    group_mesh_idx = group.get('mesh_idx', group.get('mesh_index'))
+                    group_primitive_idx = group.get('primitive_idx', group.get('primitive_index'))
+                    
+                    if group_mesh_idx == mesh_idx and group_primitive_idx == primitive_idx:
                         mesh_group = group
                         break
                 
                 if mesh_group is None:
                     continue
                     
-                vertex_offset = mesh_group['vertex_offset']
-                vertex_count = mesh_group['vertex_count']
+                # Extract vertex info from mesh_group (handle different key names)
+                vertices_range = mesh_group.get('vertices_range', (0, 0))
+                vertex_offset = vertices_range[0] if isinstance(vertices_range, tuple) else mesh_group.get('vertex_offset', 0)
+                vertex_count = vertices_range[1] - vertices_range[0] if isinstance(vertices_range, tuple) else mesh_group.get('vertex_count', 0)
                 
                 # Extract UV coordinates
                 if "TEXCOORD_0" in attributes:
                     try:
                         uv_accessor_idx = int(attributes["TEXCOORD_0"])
                         uv_data = access_data(doc, uv_accessor_idx).astype(np.float32)
-                        uv_data[:, 1] = 1.0 - uv_data[:, 1]  # Flip V
                         all_uvs.append(uv_data)
-                        print(f"[FastMesh] Mesh {mesh_idx}.{primitive_idx} UV: {uv_data.shape}")
-                    except Exception as e:
-                        print(f"[FastMesh] Error extracting UV from mesh {mesh_idx}.{primitive_idx}: {e}")
+                    except Exception:
                         all_uvs.append(None)
                 else:
                     all_uvs.append(None)
@@ -184,9 +183,7 @@ class FastMesh:
                         normal_accessor_idx = int(attributes["NORMAL"])
                         normal_data = access_data(doc, normal_accessor_idx).astype(np.float32)
                         all_normals.append(normal_data)
-                        print(f"[FastMesh] Mesh {mesh_idx}.{primitive_idx} Normals: {normal_data.shape}")
-                    except Exception as e:
-                        print(f"[FastMesh] Error extracting normals from mesh {mesh_idx}.{primitive_idx}: {e}")
+                    except Exception:
                         all_normals.append(None)
                 else:
                     all_normals.append(None)
@@ -199,9 +196,7 @@ class FastMesh:
                         if color_data.shape[1] > 3:
                             color_data = color_data[:, :3]
                         all_colors.append(color_data)
-                        print(f"[FastMesh] Mesh {mesh_idx}.{primitive_idx} Colors: {color_data.shape}")
-                    except Exception as e:
-                        print(f"[FastMesh] Error extracting colors from mesh {mesh_idx}.{primitive_idx}: {e}")
+                    except Exception:
                         all_colors.append(None)
                 else:
                     all_colors.append(None)
@@ -211,30 +206,30 @@ class FastMesh:
         final_normals = None  
         final_colors = None
         
+        # Optimized concatenation - only process non-None arrays
         if any(uv is not None for uv in all_uvs):
-            # Pad missing UV data with zeros
-            padded_uvs = []
-            for i, uv in enumerate(all_uvs):
-                if uv is not None:
-                    padded_uvs.append(uv)
+            valid_uvs = [uv for uv in all_uvs if uv is not None]
+            if valid_uvs:
+                if len(valid_uvs) == 1:
+                    final_uvs = torch.from_numpy(valid_uvs[0]).to(device)
                 else:
-                    # Create dummy UV coordinates
-                    vertex_count = mesh_groups[i]['vertex_count'] if i < len(mesh_groups) else 1000
-                    dummy_uv = np.zeros((vertex_count, 2), dtype=np.float32)
-                    padded_uvs.append(dummy_uv)
-            
-            if padded_uvs:
-                final_uvs = torch.tensor(np.concatenate(padded_uvs, axis=0), dtype=torch.float32, device=device)
+                    final_uvs = torch.from_numpy(np.concatenate(valid_uvs, axis=0)).to(device)
         
         if any(normal is not None for normal in all_normals):
             valid_normals = [n for n in all_normals if n is not None]
             if valid_normals:
-                final_normals = torch.tensor(np.concatenate(valid_normals, axis=0), dtype=torch.float32, device=device)
+                if len(valid_normals) == 1:
+                    final_normals = torch.from_numpy(valid_normals[0]).to(device)
+                else:
+                    final_normals = torch.from_numpy(np.concatenate(valid_normals, axis=0)).to(device)
         
         if any(color is not None for color in all_colors):
             valid_colors = [c for c in all_colors if c is not None]
             if valid_colors:
-                final_colors = torch.tensor(np.concatenate(valid_colors, axis=0), dtype=torch.float32, device=device)
+                if len(valid_colors) == 1:
+                    final_colors = torch.from_numpy(valid_colors[0]).to(device)
+                else:
+                    final_colors = torch.from_numpy(np.concatenate(valid_colors, axis=0)).to(device)
         
         return final_uvs, final_normals, final_colors
 
@@ -286,47 +281,41 @@ class FastMesh:
     
     @classmethod
     def _extract_gltf_textures_fast(cls, mesh, doc, device, lazy_empty=True):
-        """Fast texture extraction - only load if exists, don't create empty if lazy_empty=True"""
+        """Fast texture extraction"""
         
         if not (doc.materials() and doc.textures() and doc.images()):
             if not lazy_empty:
                 mesh._create_empty_albedo()
-                print(f"[FastMesh] No textures found - created empty albedo")
-            else:
-                print(f"[FastMesh] No textures found - skipping empty albedo creation")
             return
-        
-        texture_loaded = False
         
         try:
             material = doc.materials()[0]
             pbr = material.get("pbrMetallicRoughness", {})
             
+            albedo_texture = None
+            mr_texture = None
+            
             # Albedo texture
             base_color_texture = pbr.get("baseColorTexture")
             if base_color_texture:
                 albedo_texture = cls._extract_texture_by_index(doc, base_color_texture.get("index", 0))
-                if albedo_texture is not None:
-                    albedo_float = albedo_texture.astype(np.float32) / 255.0
-                    mesh.albedo = torch.tensor(albedo_float, dtype=torch.float32, device=device).contiguous()
-                    texture_loaded = True
-                    print(f"[FastMesh] Albedo texture loaded: {mesh.albedo.shape}")
             
             # Metallic-Roughness texture
             mr_texture_info = pbr.get("metallicRoughnessTexture")
-            if mr_texture_info and texture_loaded:
+            if mr_texture_info:
                 mr_texture = cls._extract_texture_by_index(doc, mr_texture_info.get("index", 0))
-                if mr_texture is not None:
-                    mr_float = mr_texture.astype(np.float32) / 255.0
-                    mesh.metallicRoughness = torch.tensor(mr_float, dtype=torch.float32, device=device).contiguous()
-                    print(f"[FastMesh] MetallicRoughness texture loaded: {mesh.metallicRoughness.shape}")
+            
+            # Convert to tensors
+            if albedo_texture is not None:
+                mesh.albedo = torch.from_numpy(albedo_texture.astype(np.float32) / 255.0).to(device).contiguous()
+            
+            if mr_texture is not None:
+                mesh.metallicRoughness = torch.from_numpy(mr_texture.astype(np.float32) / 255.0).to(device).contiguous()
             
         except Exception as e:
             print(f"[FastMesh] Error extracting textures: {e}")
-        
-        if not texture_loaded and not lazy_empty:
-            mesh._create_empty_albedo()
-            print(f"[FastMesh] Created empty albedo texture")
+            if not lazy_empty:
+                mesh._create_empty_albedo()
 
     @classmethod
     def _extract_gltf_textures(cls, mesh, doc, device):
@@ -569,10 +558,9 @@ class FastMesh:
     def _write_glb_fast(self, path):
         """Fast GLB writing using mesh_processor"""
         try:
-            print(f"[FastMesh] Starting GLB save to: {path}")
-            print(f"[FastMesh] Mesh has albedo: {self.albedo is not None}")
-            print(f"[FastMesh] Mesh has UV: {self.vt is not None}")
-            print(f"[FastMesh] Mesh has metallicRoughness: {self.metallicRoughness is not None}")
+            # Check if we need to align vertices to UV coordinates
+            if self.vt is not None and self.v.shape[0] != self.vt.shape[0]:
+                self._align_vertices_to_uv()
             
             # Prepare data
             vertices = self.v.detach().cpu().numpy().astype(np.float32)
@@ -650,6 +638,8 @@ class FastMesh:
         try:
             # Convert albedo texture to PNG bytes
             albedo_np = self.albedo.detach().cpu().numpy()
+            # Ensure values are in [0, 1] range
+            albedo_np = np.clip(albedo_np, 0.0, 1.0)
             albedo_uint8 = (albedo_np * 255).astype(np.uint8)
             
             # Encode as PNG
@@ -758,7 +748,7 @@ class FastMesh:
                     material["pbrMetallicRoughness"]["metallicFactor"] = 1.0
                     material["pbrMetallicRoughness"]["roughnessFactor"] = 1.0
                     
-                    print(f"[FastMesh] Added metallic-roughness texture: {mr_np.shape}")
+                    print(f"[FastMesh] Added metallic-roughness texture")
             
             gltf_json["materials"].append(material)
             
@@ -767,6 +757,33 @@ class FastMesh:
             
         except Exception as e:
             print(f"[FastMesh] Error adding texture to GLTF: {e}")
+    
+    def _align_vertices_to_uv(self):
+        """Align vertices to UV coordinates (like align_v_to_vt in standard Mesh)"""
+        try:
+            # Use the standard Mesh method for alignment
+            temp_mesh = Mesh(
+                v=self.v, f=self.f, vn=self.vn, fn=self.fn,
+                vt=self.vt, ft=self.ft, vc=self.vc,
+                albedo=self.albedo, metallicRoughness=self.metallicRoughness,
+                device=self.device
+            )
+            
+            # Apply alignment
+            temp_mesh.align_v_to_vt()
+            
+            # Copy back aligned data
+            self.v = temp_mesh.v
+            self.f = temp_mesh.f
+            self.vn = temp_mesh.vn
+            self.fn = temp_mesh.fn
+            if temp_mesh.vc is not None:
+                self.vc = temp_mesh.vc
+                
+            print(f"[FastMesh] Vertex-UV alignment completed successfully")
+            
+        except Exception as e:
+            print(f"[FastMesh] Error during vertex-UV alignment: {e}")
     
     def _write_ply_fast(self, path):
         """Fast PLY writing"""
