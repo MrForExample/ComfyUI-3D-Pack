@@ -5,6 +5,7 @@ import torch
 from torch import Tensor
 import trimesh
 import numpy as np
+from PIL import Image
 
 from kiui.op import safe_normalize, dot
 from kiui.typing import *
@@ -57,9 +58,9 @@ class FastMesh:
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
         if path.endswith(".obj"):
-            mesh = cls._load_obj_fast(path, device=device, **kwargs)
+            mesh = cls._load_obj_fast(path, **{**kwargs, 'device': device})
         elif path.endswith((".glb", ".gltf")):
-            mesh = cls._load_gltf_fast(path, device=device, lazy_texture=lazy_texture, **kwargs)
+            mesh = cls._load_gltf_fast(path, lazy_texture=lazy_texture, **{**kwargs, 'device': device})
         else:
             standard_mesh = Mesh.load(path, resize=False, renormal=False, retex=False, clean=False, **kwargs)
             mesh = cls._from_standard_mesh(standard_mesh)
@@ -830,3 +831,60 @@ class FastMesh:
         temp_mesh.ori_center = self.ori_center
         temp_mesh.ori_scale = self.ori_scale
         return temp_mesh.write(path)
+    
+    @classmethod
+    def create_glb_with_pbr_materials(cls, obj_path, textures_dict, output_path, device=None):
+        """Create GLB with PBR materials from separate texture files"""
+        if device is None:
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        
+        try:
+            mesh = cls.load(obj_path, **{'device': device})
+            if mesh is None:
+                raise ValueError(f"Failed to load mesh from {obj_path}")
+            
+            # Combine metallic and roughness if both provided
+            if "metallic" in textures_dict and "roughness" in textures_dict:
+                mr_texture = cls._combine_metallic_roughness(
+                    textures_dict["metallic"], 
+                    textures_dict["roughness"]
+                )
+                mesh.metallicRoughness = torch.from_numpy(mr_texture.astype(np.float32) / 255.0).to(device).contiguous()
+            
+            # Load albedo texture
+            if "albedo" in textures_dict and os.path.exists(textures_dict["albedo"]):
+                albedo_img = np.array(Image.open(textures_dict["albedo"]).convert("RGB"))
+                mesh.albedo = torch.from_numpy(albedo_img.astype(np.float32) / 255.0).to(device).contiguous()
+            
+            # Generate UV if not present
+            if mesh.vt is None:
+                mesh.auto_uv()
+            
+            # Write GLB
+            mesh.write(output_path)
+            print(f"PBR GLB file saved: {output_path}")
+            
+        except Exception as e:
+            print(f"Error creating GLB with PBR materials: {e}")
+            raise e
+    
+    @staticmethod
+    def _combine_metallic_roughness(metallic_path, roughness_path):
+        """Combine metallic and roughness maps into single texture"""
+        metallic_img = Image.open(metallic_path).convert("L")
+        roughness_img = Image.open(roughness_path).convert("L")
+        
+        if metallic_img.size != roughness_img.size:
+            roughness_img = roughness_img.resize(metallic_img.size)
+        
+        width, height = metallic_img.size
+        metallic_array = np.array(metallic_img)
+        roughness_array = np.array(roughness_img)
+        
+        # Create combined array (R, G, B) = (AO, Roughness, Metallic)
+        combined_array = np.zeros((height, width, 3), dtype=np.uint8)
+        combined_array[:, :, 0] = 255  # R: AO (white if no AO map)
+        combined_array[:, :, 1] = roughness_array  # G: Roughness
+        combined_array[:, :, 2] = metallic_array  # B: Metallic
+        
+        return combined_array

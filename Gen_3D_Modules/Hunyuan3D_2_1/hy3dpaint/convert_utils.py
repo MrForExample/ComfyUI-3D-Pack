@@ -6,6 +6,9 @@ import base64
 import io
 import tempfile
 import os
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), "../../../"))
+from mesh_processor.fastmesh import FastMesh
 
 
 def combine_metallic_roughness(metallic_path, roughness_path, output_path):
@@ -82,7 +85,8 @@ def create_glb_with_pbr_materials(obj_path, textures_dict, output_path):
             with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as temp_mr_file:
                 mr_combined_path = temp_mr_file.name
             temp_files.append(mr_combined_path)
-            combine_metallic_roughness(textures_dict["metallic"], textures_dict["roughness"], mr_combined_path)
+            # combine_metallic_roughness(textures_dict["metallic"], textures_dict["roughness"], mr_combined_path)
+            combine_metallic_roughness_fast(textures_dict["metallic"], textures_dict["roughness"], mr_combined_path)
             textures_dict["metallicRoughness"] = mr_combined_path
 
         # 6. 添加图像到GLTF
@@ -158,3 +162,17 @@ def create_glb_with_pbr_materials(obj_path, textures_dict, output_path):
                     os.remove(temp_file)
             except Exception as e:
                 print(f"Warning: Failed to remove temporary file {temp_file}: {e}")
+
+
+# FastMesh-based functions (new optimized versions)
+def combine_metallic_roughness_fast(metallic_path, roughness_path, output_path):
+    """Fast combine metallic and roughness maps using FastMesh"""
+    combined_array = FastMesh._combine_metallic_roughness(metallic_path, roughness_path)
+    combined = Image.fromarray(combined_array)
+    combined.save(output_path)
+    return output_path
+
+
+def create_glb_with_pbr_materials_fast(obj_path, textures_dict, output_path):
+    """Fast create GLB with PBR materials using FastMesh"""
+    FastMesh.create_glb_with_pbr_materials(obj_path, textures_dict, output_path)
