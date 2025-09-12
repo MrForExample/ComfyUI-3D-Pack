@@ -50,7 +50,7 @@ class FastMesh:
         self._lazy_texture_doc = None  
     
     @classmethod
-    def load(cls, path, resize=True, renormal=True, retex=False, clean=False, bound=0.5, front_dir='+z', lazy_texture=True, **kwargs):
+    def load(cls, path, resize=True, renormal=True, retex=False, clean=False, bound=0.5, front_dir='+z', lazy_texture=True, load_pbr=True, **kwargs):
         """Loading mesh through FastGLB approach"""
         
         device = kwargs.get('device')
@@ -58,9 +58,9 @@ class FastMesh:
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
         if path.endswith(".obj"):
-            mesh = cls._load_obj_fast(path, **{**kwargs, 'device': device})
+            mesh = cls._load_obj_fast(path, load_pbr=load_pbr, **{**kwargs, 'device': device})
         elif path.endswith((".glb", ".gltf")):
-            mesh = cls._load_gltf_fast(path, lazy_texture=lazy_texture, **{**kwargs, 'device': device})
+            mesh = cls._load_gltf_fast(path, lazy_texture=lazy_texture, load_pbr=load_pbr, **{**kwargs, 'device': device})
         else:
             standard_mesh = Mesh.load(path, resize=False, renormal=False, retex=False, clean=False, **kwargs)
             mesh = cls._from_standard_mesh(standard_mesh)
@@ -71,36 +71,32 @@ class FastMesh:
         if clean:
             mesh._clean_mesh()
         
-        print(f"[FastMesh loading] v: {mesh.v.shape}, f: {mesh.f.shape}")
         
         if resize:
             mesh.auto_size(bound=bound)
         
         if renormal or mesh.vn is None:
             mesh.auto_normal()
-            print(f"[FastMesh loading] vn: {mesh.vn.shape}, fn: {mesh.fn.shape}")
         
-        print(f"[FastMesh] UV check: retex={retex}, albedo={mesh.albedo is not None}, vt={mesh.vt is not None}")
         if retex or (mesh.albedo is not None and mesh.vt is None):
-            print(f"[FastMesh] Starting UV generation for {mesh.v.shape[0]} vertices...")
             mesh.auto_uv(cache_path=path)
-            print(f"[FastMesh loading] vt: {mesh.vt.shape}, ft: {mesh.ft.shape}")
         
-        print(f"[FastMesh] Checking front_dir: {front_dir}")
         if front_dir != "+z":
-            print(f"[FastMesh] Applying front_dir rotation...")
             mesh._apply_front_dir_rotation(front_dir)
         
         print(f"[FastMesh] Loading completed successfully!")
         
+        # Show final texture status
+        has_albedo = mesh.albedo is not None
+        has_pbr = mesh.metallicRoughness is not None
+        
         return mesh
     
     @classmethod
-    def _load_gltf_fast(cls, path, device=None, lazy_texture=True, **kwargs):
+    def _load_gltf_fast(cls, path, device=None, lazy_texture=True, load_pbr=True, **kwargs):
         """Fast loading of GLB/GLTF through mesh_processor"""
         
         try:
-            print(f"[FastMesh] Loading GLB/GLTF: {path}")
             
             # Load GLTF document
             doc = load_gltf_or_glb(path)
@@ -119,7 +115,10 @@ class FastMesh:
             
             # Extract attributes and textures in parallel
             uvs, normals, colors = cls._extract_all_mesh_attributes(doc, mesh_groups, device)
-            cls._extract_gltf_textures_fast(mesh, doc, device, lazy_empty=lazy_texture)
+            if load_pbr:
+                cls._extract_gltf_textures_fast(mesh, doc, device, lazy_empty=lazy_texture)
+            else:
+                mesh._create_empty_albedo()
             
             # Set attributes (avoid redundant assignments)
             if uvs is not None:
@@ -129,7 +128,6 @@ class FastMesh:
             if colors is not None:
                 mesh.vc = colors
             
-            print(f"[FastMesh] Loaded: {len(vertices)} vertices, {len(faces)} faces")
             return mesh
             
         except Exception as e:
@@ -253,7 +251,6 @@ class FastMesh:
                     uv_data[:, 1] = 1.0 - uv_data[:, 1]  # Flip V
                     mesh.vt = torch.tensor(uv_data, dtype=torch.float32, device=device)
                     mesh.ft = mesh.f
-                    print(f"[FastMesh] UV: {mesh.vt.shape}")
                 except Exception as e:
                     print(f"[FastMesh] Error UV: {e}")
             
@@ -276,7 +273,6 @@ class FastMesh:
                     if color_data.shape[1] > 3:
                         color_data = color_data[:, :3]
                     mesh.vc = torch.tensor(color_data, dtype=torch.float32, device=device)
-                    print(f"[FastMesh] Colors: {mesh.vc.shape}")
                 except Exception as e:
                     print(f"[FastMesh] Error colors: {e}")
     
@@ -340,7 +336,6 @@ class FastMesh:
                     albedo_float = albedo_texture.astype(np.float32) / 255.0
                     mesh.albedo = torch.tensor(albedo_float, dtype=torch.float32, device=device).contiguous()
                     should_create_empty = False
-                    print(f"[FastMesh] Albedo: {mesh.albedo.shape}")
             
             # Metallic-Roughness texture
             mr_texture_info = pbr.get("metallicRoughnessTexture")
@@ -349,7 +344,6 @@ class FastMesh:
                 if mr_texture is not None:
                     mr_float = mr_texture.astype(np.float32) / 255.0
                     mesh.metallicRoughness = torch.tensor(mr_float, dtype=torch.float32, device=device).contiguous()
-                    print(f"[FastMesh] MetallicRoughness: {mesh.metallicRoughness.shape}")
             
         except Exception as e:
             print(f"[FastMesh] Error extracting textures: {e}")
@@ -399,10 +393,173 @@ class FastMesh:
         return None
     
     @classmethod
-    def _load_obj_fast(cls, path, device=None, **kwargs):
-        """Fast loading of OBJ (fallback to standard method)"""
-        standard_mesh = Mesh.load_obj(path, device=device, **kwargs)
-        return cls._from_standard_mesh(standard_mesh)
+    def _load_obj_fast(cls, path, device=None, load_pbr=True, **kwargs):
+        """Fast loading of OBJ using direct parsing"""
+        try:
+            return cls._load_obj_direct(path, device=device, load_pbr=load_pbr, **kwargs)
+        except Exception as e:
+            standard_mesh = Mesh.load_obj(path, device=device, **kwargs)
+            return cls._from_standard_mesh(standard_mesh)
+    
+    @classmethod
+    def _load_obj_direct(cls, path, device=None, load_pbr=True, **kwargs):
+        """Direct OBJ parsing without trimesh dependency"""
+        if device is None:
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        
+        # Parse OBJ file
+        vertices, normals, uvs, faces = [], [], [], []
+        mtl_path = None
+        
+        with open(path, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                
+                parts = line.split()
+                if not parts:
+                    continue
+                    
+                prefix = parts[0]
+                
+                if prefix == 'v':
+                    vertices.append([float(parts[i]) for i in (1, 2, 3)])
+                elif prefix == 'vn':
+                    normals.append([float(parts[i]) for i in (1, 2, 3)])
+                elif prefix == 'vt':
+                    u, v = float(parts[1]), float(parts[2])
+                    uvs.append([u, 1.0 - v])  # Flip V for consistency
+                elif prefix == 'f':
+                    # Parse face indices
+                    face_verts = []
+                    for vert_str in parts[1:]:
+                        indices = vert_str.split('/')
+                        vi = int(indices[0]) - 1 if indices[0] else 0
+                        ti = int(indices[1]) - 1 if len(indices) > 1 and indices[1] else 0
+                        ni = int(indices[2]) - 1 if len(indices) > 2 and indices[2] else 0
+                        face_verts.append((vi, ti, ni))
+                    
+                    # Triangulate face (fan triangulation)
+                    for i in range(1, len(face_verts) - 1):
+                        faces.extend([face_verts[0], face_verts[i], face_verts[i + 1]])
+                elif prefix == 'mtllib':
+                    mtl_path = os.path.join(os.path.dirname(path), parts[1])
+        
+        if not vertices or not faces:
+            raise ValueError("No valid geometry found in OBJ file")
+        
+        # Deduplicate vertices and build final arrays
+        pos, normal, uv, indices = cls._deduplicate_obj_vertices(
+            vertices, normals, uvs, faces
+        )
+        
+        # Create FastMesh
+        mesh = cls(device=device)
+        mesh.v = torch.tensor(pos, dtype=torch.float32, device=device)
+        mesh.f = torch.tensor(indices, dtype=torch.int32, device=device).reshape(-1, 3)
+        
+        if normal:
+            mesh.vn = torch.tensor(normal, dtype=torch.float32, device=device)
+            mesh.fn = mesh.f
+        
+        if uv:
+            mesh.vt = torch.tensor(uv, dtype=torch.float32, device=device)
+            mesh.ft = mesh.f
+        
+        # Load textures from MTL
+        if mtl_path and os.path.exists(mtl_path):
+            cls._load_mtl_textures(mesh, mtl_path, device, load_pbr=load_pbr)
+        else:
+            # Create empty texture
+            mesh._create_empty_albedo()
+        
+        return mesh
+    
+    @classmethod
+    def _deduplicate_obj_vertices(cls, vertices, normals, uvs, faces):
+        """Deduplicate vertices based on position/normal/uv combination"""
+        pos, normal, uv = [], [], []
+        vertex_map = {}
+        indices = []
+        
+        for vi, ti, ni in faces:
+            # Create unique key for this vertex combination
+            key = (vi, ti if ti < len(uvs) else -1, ni if ni < len(normals) else -1)
+            
+            if key not in vertex_map:
+                vertex_map[key] = len(pos)
+                
+                # Add vertex position
+                pos.append(vertices[vi])
+                
+                # Add UV coordinates
+                if ti < len(uvs):
+                    uv.append(uvs[ti])
+                else:
+                    uv.append([0.0, 0.0])
+                
+                # Add normal
+                if ni < len(normals):
+                    normal.append(normals[ni])
+                else:
+                    normal.append([0.0, 0.0, 1.0])
+            
+            indices.append(vertex_map[key])
+        
+        return pos, normal, uv, indices
+    
+    @classmethod
+    def _load_mtl_textures(cls, mesh, mtl_path, device, load_pbr=True):
+        """Load textures from MTL file"""
+        textures = {}
+        base_color = [1.0, 1.0, 1.0]
+        
+        try:
+            with open(mtl_path, 'r', encoding='utf-8') as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith('#'):
+                        continue
+                    
+                    parts = line.split()
+                    if not parts:
+                        continue
+                    
+                    if parts[0] == 'Kd':
+                        base_color = [float(parts[i]) for i in (1, 2, 3)]
+                    elif parts[0] == 'map_Kd':
+                        textures['albedo'] = os.path.join(os.path.dirname(mtl_path), parts[1])
+                    elif parts[0] == 'map_Pm':
+                        textures['metallic'] = os.path.join(os.path.dirname(mtl_path), parts[1])
+                    elif parts[0] == 'map_Pr':
+                        textures['roughness'] = os.path.join(os.path.dirname(mtl_path), parts[1])
+            
+            # Load albedo texture
+            if 'albedo' in textures and os.path.exists(textures['albedo']):
+                albedo_img = cv2.imread(textures['albedo'], cv2.IMREAD_COLOR)
+                if albedo_img is not None:
+                    albedo_img = cv2.cvtColor(albedo_img, cv2.COLOR_BGR2RGB)
+                    albedo_tensor = torch.from_numpy(albedo_img.astype(np.float32) / 255.0).to(device)
+                    mesh.albedo = albedo_tensor.contiguous()
+            else:
+                # Create texture with base color
+                texture = np.ones((1024, 1024, 3), dtype=np.float32) * np.array(base_color)
+                mesh.albedo = torch.tensor(texture, dtype=torch.float32, device=device)
+            
+            # Load and combine metallic/roughness textures (only if PBR requested)
+            if load_pbr and 'metallic' in textures and 'roughness' in textures:
+                if os.path.exists(textures['metallic']) and os.path.exists(textures['roughness']):
+                    mr_texture = cls._combine_metallic_roughness(
+                        textures['metallic'], textures['roughness']
+                    )
+                    mesh.metallicRoughness = torch.from_numpy(mr_texture.astype(np.float32) / 255.0).to(device).contiguous()
+            elif not load_pbr and ('metallic' in textures or 'roughness' in textures):
+                print(f"[FastMesh] PBR disabled - skipping metallic/roughness textures")
+        
+        except Exception as e:
+            print(f"[FastMesh] Error loading MTL textures: {e}")
+            mesh._create_empty_albedo()
     
     @classmethod
     def _from_standard_mesh(cls, standard_mesh):
@@ -424,10 +581,10 @@ class FastMesh:
         )
     
     def _create_empty_albedo(self):
-        """Create empty albedo texture"""
+        """Create empty albedo texture without PBR materials"""
         texture = np.ones((1024, 1024, 3), dtype=np.float32) * np.array([0.5, 0.5, 0.5])
         self.albedo = torch.tensor(texture, dtype=torch.float32, device=self.device)
-        print(f"[FastMesh] Empty texture: {self.albedo.shape}")
+        self.metallicRoughness = None  # Clear PBR materials
     
     def _clean_mesh(self):
         """Clean mesh (simplified version)"""
@@ -617,12 +774,10 @@ class FastMesh:
                     target=34962  # ARRAY_BUFFER
                 )
                 primitive["attributes"]["TEXCOORD_0"] = uv_accessor
-                print(f"[FastMesh] Added UV coordinates: {uv_data.shape}")
             
             # Add texture if available
             if self.albedo is not None and self.vt is not None:
                 self._add_texture_to_gltf(doc, primitive)
-                print(f"[FastMesh] Added albedo texture: {self.albedo.shape}")
             
             # Save to file
             with open(path, "wb") as f:
@@ -749,7 +904,6 @@ class FastMesh:
                     material["pbrMetallicRoughness"]["metallicFactor"] = 1.0
                     material["pbrMetallicRoughness"]["roughnessFactor"] = 1.0
                     
-                    print(f"[FastMesh] Added metallic-roughness texture")
             
             gltf_json["materials"].append(material)
             
@@ -781,7 +935,6 @@ class FastMesh:
             if temp_mesh.vc is not None:
                 self.vc = temp_mesh.vc
                 
-            print(f"[FastMesh] Vertex-UV alignment completed successfully")
             
         except Exception as e:
             print(f"[FastMesh] Error during vertex-UV alignment: {e}")
@@ -809,16 +962,111 @@ class FastMesh:
                 f.write(f"3 {face[0]} {face[1]} {face[2]}\n")
     
     def _write_obj_fast(self, path):
-        """Fast OBJ writing"""
+        """Fast OBJ writing with MTL support"""
         vertices = self.v.detach().cpu().numpy()
         faces = self.f.detach().cpu().numpy()
         
+        # Prepare file paths
+        mtl_path = path.replace(".obj", ".mtl")
+        albedo_path = path.replace(".obj", "_albedo.png")
+        metallic_path = path.replace(".obj", "_metallic.png")
+        roughness_path = path.replace(".obj", "_roughness.png")
+        
+        # Get UV and normal data if available
+        uvs = self.vt.detach().cpu().numpy() if self.vt is not None else None
+        normals = self.vn.detach().cpu().numpy() if self.vn is not None else None
+        uv_faces = self.ft.detach().cpu().numpy() if self.ft is not None else None
+        normal_faces = self.fn.detach().cpu().numpy() if self.fn is not None else None
+        
+        # Write OBJ file
         with open(path, 'w') as f:
+            if self.albedo is not None:
+                f.write(f"mtllib {os.path.basename(mtl_path)}\n")
+            
+            # Write vertices
             for v in vertices:
                 f.write(f"v {v[0]} {v[1]} {v[2]}\n")
             
-            for face in faces:
-                f.write(f"f {face[0]+1} {face[1]+1} {face[2]+1}\n")
+            # Write UV coordinates
+            if uvs is not None:
+                for uv in uvs:
+                    f.write(f"vt {uv[0]} {1.0 - uv[1]}\n")  # Flip V back for OBJ
+            
+            # Write normals
+            if normals is not None:
+                for n in normals:
+                    f.write(f"vn {n[0]} {n[1]} {n[2]}\n")
+            
+            # Write material usage
+            if self.albedo is not None:
+                f.write("usemtl defaultMat\n")
+            
+            # Write faces
+            for i, face in enumerate(faces):
+                face_str = "f"
+                for j in range(3):
+                    v_idx = face[j] + 1
+                    uv_idx = uv_faces[i][j] + 1 if uv_faces is not None else ""
+                    n_idx = normal_faces[i][j] + 1 if normal_faces is not None else ""
+                    
+                    if uvs is not None and normals is not None:
+                        face_str += f" {v_idx}/{uv_idx}/{n_idx}"
+                    elif uvs is not None:
+                        face_str += f" {v_idx}/{uv_idx}"
+                    elif normals is not None:
+                        face_str += f" {v_idx}//{n_idx}"
+                    else:
+                        face_str += f" {v_idx}"
+                f.write(face_str + "\n")
+        
+        # Write MTL file if we have textures
+        if self.albedo is not None:
+            self._write_mtl_file(mtl_path, albedo_path, metallic_path, roughness_path)
+            
+            # Save texture files
+            self._save_texture_files(albedo_path, metallic_path, roughness_path)
+    
+    def _write_mtl_file(self, mtl_path, albedo_path, metallic_path, roughness_path):
+        """Write MTL file for OBJ"""
+        with open(mtl_path, 'w') as f:
+            f.write("newmtl defaultMat\n")
+            f.write("Ka 1 1 1\n")
+            f.write("Kd 1 1 1\n") 
+            f.write("Ks 1 1 1\n")
+            f.write("illum 1\n")
+            f.write("Ns 10\n")
+            
+            if self.albedo is not None:
+                f.write(f"map_Kd {os.path.basename(albedo_path)}\n")
+            
+            if self.metallicRoughness is not None:
+                f.write(f"map_Pm {os.path.basename(metallic_path)}\n")
+                f.write(f"map_Pr {os.path.basename(roughness_path)}\n")
+    
+    def _save_texture_files(self, albedo_path, metallic_path, roughness_path):
+        """Save texture files for OBJ"""
+        try:
+            # Save albedo texture
+            if self.albedo is not None:
+                albedo_np = self.albedo.detach().cpu().numpy()
+                albedo_uint8 = (np.clip(albedo_np, 0, 1) * 255).astype(np.uint8)
+                albedo_bgr = cv2.cvtColor(albedo_uint8, cv2.COLOR_RGB2BGR)
+                cv2.imwrite(albedo_path, albedo_bgr)
+            
+            # Save metallic/roughness textures
+            if self.metallicRoughness is not None:
+                mr_np = self.metallicRoughness.detach().cpu().numpy()
+                mr_uint8 = (np.clip(mr_np, 0, 1) * 255).astype(np.uint8)
+                
+                # Extract metallic (B channel) and roughness (G channel)
+                metallic_uint8 = mr_uint8[:, :, 2]  # B channel
+                roughness_uint8 = mr_uint8[:, :, 1]  # G channel
+                
+                cv2.imwrite(metallic_path, metallic_uint8)
+                cv2.imwrite(roughness_path, roughness_uint8)
+                
+        except Exception as e:
+            print(f"[FastMesh] Error saving texture files: {e}")
     
     def _write_fallback(self, path):
         """Fallback to standard Mesh write method"""
@@ -888,3 +1136,143 @@ class FastMesh:
         combined_array[:, :, 2] = metallic_array  # B: Metallic
         
         return combined_array
+    
+    @classmethod
+    def obj_to_glb_converter(cls, obj_path, output_path, device=None):
+        """Convert OBJ to GLB using FastMesh direct parsing"""
+        if device is None:
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        
+        try:
+            
+            # Load OBJ using direct parsing
+            mesh = cls._load_obj_direct(obj_path, device=device)
+            if mesh is None:
+                raise ValueError(f"Failed to load OBJ file: {obj_path}")
+            
+            # Generate UV if not present
+            if mesh.vt is None and mesh.albedo is not None:
+                mesh.auto_uv()
+            
+            # Write as GLB
+            mesh.write(output_path)
+            return True
+            
+        except Exception as e:
+            print(f"[FastMesh] OBJ to GLB conversion failed: {e}")
+            return False
+    
+    @classmethod  
+    def read_obj_structure(cls, path):
+        """Read OBJ file structure like your original code"""
+        vertices, normals, uvs, faces = [], [], [], []
+        mtl_path = None
+        
+        with open(path, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                
+                parts = line.split()
+                if not parts:
+                    continue
+                    
+                prefix = parts[0]
+                
+                if prefix == 'v':
+                    vertices.append([float(parts[i]) for i in (1, 2, 3)])
+                elif prefix == 'vn':
+                    normals.append([float(parts[i]) for i in (1, 2, 3)])
+                elif prefix == 'vt':
+                    u, v = float(parts[1]), float(parts[2])
+                    uvs.append([u, 1.0 - v])  # Flip V for glTF
+                elif prefix == 'f':
+                    face_indices = []
+                    for vert_str in parts[1:]:
+                        indices = vert_str.split('/')
+                        vi = int(indices[0]) - 1 if indices[0] else 0
+                        ti = int(indices[1]) - 1 if len(indices) > 1 and indices[1] else 0
+                        ni = int(indices[2]) - 1 if len(indices) > 2 and indices[2] else 0
+                        face_indices.append((vi, ti, ni))
+                    
+                    # Triangulate (fan triangulation)
+                    for i in range(1, len(face_indices) - 1):
+                        faces.extend([face_indices[0], face_indices[i], face_indices[i + 1]])
+                elif prefix == 'mtllib':
+                    mtl_path = os.path.join(os.path.dirname(path), parts[1])
+        
+        # Parse MTL file
+        textures = {}
+        base_color = [1.0, 1.0, 1.0]
+        
+        if mtl_path and os.path.exists(mtl_path):
+            try:
+                with open(mtl_path, 'r', encoding='utf-8') as f:
+                    for line in f:
+                        line = line.strip()
+                        if not line or line.startswith('#'):
+                            continue
+                        
+                        parts = line.split()
+                        if not parts:
+                            continue
+                        
+                        if parts[0] == 'Kd':
+                            base_color = [float(parts[i]) for i in (1, 2, 3)]
+                        elif parts[0] == 'map_Kd':
+                            textures['baseColor'] = os.path.join(os.path.dirname(mtl_path), parts[1])
+                        elif parts[0] == 'map_Pm':
+                            textures['metallic'] = os.path.join(os.path.dirname(mtl_path), parts[1])
+                        elif parts[0] == 'map_Pr':
+                            textures['roughness'] = os.path.join(os.path.dirname(mtl_path), parts[1])
+                        elif parts[0] == 'map_Bump':
+                            if '-bm' in parts:
+                                idx = parts.index('-bm')
+                                textures['normal'] = os.path.join(os.path.dirname(mtl_path), parts[idx+2])
+                            else:
+                                textures['normal'] = os.path.join(os.path.dirname(mtl_path), parts[1])
+            except Exception as e:
+                print(f"[FastMesh] Error parsing MTL: {e}")
+        
+        # Deduplicate vertices
+        pos, normal, uv, indices, original_vi = cls._deduplicate_obj_vertices_with_mapping(
+            vertices, normals, uvs, faces
+        )
+        
+        return pos, normal, uv, indices, original_vi, textures, base_color
+    
+    @classmethod
+    def _deduplicate_obj_vertices_with_mapping(cls, vertices, normals, uvs, faces):
+        """Deduplicate vertices and keep original vertex mapping"""
+        pos, normal, uv = [], [], []
+        vertex_map = {}
+        indices = []
+        original_vi = []  # Maps new vertex index to original vertex index
+        
+        for vi, ti, ni in faces:
+            # Create unique key for this vertex combination
+            key = (vi, ti if ti < len(uvs) else -1, ni if ni < len(normals) else -1)
+            
+            if key not in vertex_map:
+                vertex_map[key] = len(pos)
+                
+                # Add vertex position
+                pos.append(vertices[vi])
+                original_vi.append(vi)  # Track original vertex index
+                
+                # Add UV coordinates
+                if ti < len(uvs):
+                    uv.append(uvs[ti])
+                else:
+                    uv.append([0.0, 0.0])
+                
+                # Add normal
+                if ni < len(normals):
+                    normal.append(normals[ni])
+                else:
+                    normal.append([0.0, 0.0, 1.0])
+            
+            indices.append(vertex_map[key])
+        
+        return pos, normal, uv, indices, original_vi

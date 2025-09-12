@@ -5561,15 +5561,8 @@ class Hunyuan3D_21_TexGen:
                 
                 if os.path.exists(glb_path):
                     try:
-                        glb_scene = trimesh.load(glb_path)
-                        
-                        if hasattr(glb_scene, 'geometry') and glb_scene.geometry:
-                            mesh_name = list(glb_scene.geometry.keys())[0]
-                            glb_mesh = glb_scene.geometry[mesh_name]
-                        else:
-                            glb_mesh = glb_scene
-                        
-                        mesh_out = Mesh.load_trimesh(given_mesh=glb_mesh)
+                        print(f"[Hunyuan3D] Loading GLB with PBR materials")
+                        mesh_out = FastMesh.load(glb_path, load_pbr=True)
                         mesh_out.auto_normal()
                         print(f"Loaded GLB mesh with PBR materials from: {glb_path}")
                     except Exception as e:
@@ -5578,8 +5571,7 @@ class Hunyuan3D_21_TexGen:
             
             # If PBR failed or not requested, load regular textured mesh
             if mesh_out is None:
-                textured_mesh = trimesh.load(result_path)
-                mesh_out = Mesh.load_trimesh(given_mesh=textured_mesh)
+                mesh_out = FastMesh.load(result_path, load_pbr=create_pbr)
                 mesh_out.auto_normal()
                 if create_pbr:
                     print("Warning: PBR creation failed, loaded regular textured mesh")
