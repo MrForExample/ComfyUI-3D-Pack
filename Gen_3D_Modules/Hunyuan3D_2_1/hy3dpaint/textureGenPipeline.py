@@ -29,7 +29,7 @@ from .utils.pipeline_utils import ViewProcessor
 from .utils.image_super_utils import imageSuperNet
 from .utils.uvwrap_utils import mesh_uv_wrap
 from .DifferentiableRenderer.mesh_utils import convert_obj_to_glb
-from .convert_utils import create_glb_with_pbr_materials
+from .convert_utils import create_glb_with_pbr_materials, create_glb_with_pbr_materials_fast
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -209,7 +209,9 @@ class Hunyuan3DPaintPipeline:
                 textures_dict['normal'] = normal_path
             
             try:
-                create_glb_with_pbr_materials(output_mesh_path, textures_dict, output_glb_path)
+                # create_glb_with_pbr_materials(output_mesh_path, textures_dict, output_glb_path)
+                print("Creating GLB with full PBR materials using FastMesh")
+                create_glb_with_pbr_materials_fast(output_mesh_path, textures_dict, output_glb_path)
                 print(f"Created GLB with full PBR materials: {output_glb_path}")
             except Exception as e:
                 print(f"Warning: Failed to create GLB with PBR materials: {e}")

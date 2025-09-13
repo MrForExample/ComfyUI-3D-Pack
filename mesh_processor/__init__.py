@@ -34,9 +34,9 @@ from .rigging_ops import (
 from .validate import validate_before_save
 from .mesh import (
     Mesh,
-    FastMesh,
     PointCloud,
 )
+from .fastmesh import FastMesh
 
 __all__ = [
     "GltfDocument",
