@@ -5445,7 +5445,7 @@ class Hunyuan3D_21_ShapeGen:
         }
 
     @torch.no_grad()
-    def generate(self, shapegen_pipe, image, seed, steps, guidance_scale, octree_resolution, remove_background, auto_cleanup):
+    def generate(self, shapegen_pipe, image, seed, steps, guidance_scale, octree_resolution, remove_background, auto_cleanup, max_faces):
         pil_image = torch_imgs_to_pils(image)[0]
         if remove_background:
             bg_remover = BackgroundRemover_2_1()
