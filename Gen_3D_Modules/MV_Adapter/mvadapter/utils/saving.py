@@ -18,12 +18,17 @@ from PIL import Image, ImageDraw
 
 from .typing import *
 
+# standardise input dimensions
+from torchvision import transforms
 
 def image_to_tensor(
-    images: List[Image.Image], device: str = "cuda"
+    images: List[Image.Image], device: str = "cuda", size=(512, 512)
 ) -> torch.FloatTensor:
     tensors = []
     for image in images:
+        image = image.convert("RGB")# Prepare for sizing
+        if image.size != size:# If not required dimensions
+            image = image.resize(size, Image.LANCZOS)  # Resize to required dimensions
         tensor = torch.from_numpy(np.array(image)).float() / 255.0
         tensor = tensor.to(device)
         tensors.append(tensor)
