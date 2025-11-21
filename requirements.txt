@@ -23,8 +23,8 @@ git+https://github.com/EasternJournalist/utils3d.git#egg=utils3d
 git+https://github.com/ashawkey/kiuikit.git#egg=kiui
 
 # for use ML models
-diffusers>=0.26.1
-transformers>=4.36.2
+diffusers==0.31.0
+transformers==4.46.2
 safetensors
 open_clip_torch
 mmgp
