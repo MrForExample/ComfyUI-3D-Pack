@@ -31,7 +31,7 @@ from diffusers import (
     KDPM2DiscreteScheduler,
 )
 
-from huggingface_hub import snapshot_download
+from huggingface_hub import hf_hub_download, model_info
 
 from plyfile import PlyData
 import trimesh
@@ -1537,7 +1537,7 @@ class Load_Diffusers_Pipeline:
         
         # resume download pretrained checkpoint
         ckpt_download_dir = os.path.join(CKPT_DIFFUSERS_PATH, repo_id)
-        snapshot_download(repo_id=repo_id, local_dir=ckpt_download_dir, force_download=force_download, repo_type="model", ignore_patterns=HF_DOWNLOAD_IGNORE)
+        hf_hub_download(repo_id=repo_id, local_dir=ckpt_download_dir, force_download=force_download, repo_type="model", ignore_patterns=HF_DOWNLOAD_IGNORE)
         
         diffusers_pipeline_class = DIFFUSERS_PIPE_DICT[diffusers_pipeline_name]
         
