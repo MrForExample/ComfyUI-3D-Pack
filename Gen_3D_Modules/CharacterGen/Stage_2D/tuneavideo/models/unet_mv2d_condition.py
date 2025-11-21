@@ -37,7 +37,8 @@ from diffusers.models.embeddings import (
     TimestepEmbedding,
     Timesteps,
 )
-from diffusers.models.modeling_utils import ModelMixin, load_state_dict, _load_state_dict_into_model
+from diffusers.models.modeling_utils import ModelMixin
+from diffusers.models.model_loading_utils import load_state_dict, _load_state_dict_into_model
 from diffusers.models.unets.unet_2d_blocks import (
     CrossAttnDownBlock2D,
     CrossAttnUpBlock2D,
