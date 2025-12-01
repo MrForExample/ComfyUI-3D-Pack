@@ -8,7 +8,7 @@ PyGithub
 requests
 
 # computational libraries
-numpy
+numpy>=2.2.6
 einops
 scipy
 kornia
@@ -23,8 +23,10 @@ git+https://github.com/EasternJournalist/utils3d.git#egg=utils3d
 git+https://github.com/ashawkey/kiuikit.git#egg=kiui
 
 # for use ML models
-diffusers>=0.26.1
-transformers>=4.36.2
+hf_transfer
+peft==0.17.1
+diffusers==0.31.0
+transformers==4.46.2
 safetensors
 open_clip_torch
 mmgp
@@ -50,7 +52,7 @@ plyfile
 pygltflib
 xatlas
 pymeshlab
-gpytoolbox
+gpytoolbox==0.3.7
 PyMCubes
 libigl
 pyvista

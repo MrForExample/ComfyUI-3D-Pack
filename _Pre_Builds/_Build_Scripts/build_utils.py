@@ -5,13 +5,22 @@ import platform
 import subprocess
 import time
 import glob
+import shutil
 
 PYTHON_PATH = sys.executable
+
+# Set to False to disable uv usage
+ENABLE_UV = True 
+
+def get_pip_install_cmd(args):
+    if ENABLE_UV and shutil.which("uv"):
+        return ["uv", "pip", "install", "--python", PYTHON_PATH] + args
+    return [PYTHON_PATH, "-m", "pip", "install"] + args
 
 try:
     from omegaconf import OmegaConf
 except ImportError as e:
-    subprocess.run([PYTHON_PATH, "-s", "-m", "pip", "install", "OmegaConf"])
+    subprocess.run(get_pip_install_cmd(["OmegaConf"]))
     from omegaconf import OmegaConf
 
 BUILD_SCRIPT_ROOT_ABS_PATH = dirname(os.path.abspath(__file__))
@@ -221,10 +230,9 @@ def install_remote_packages(package_names):
             if hasattr(package_attr, "url"):
                 url_option = package_attr.url_option if hasattr(package_attr, "url_option") else "--index-url"
                 
-                subprocess.run([
-                    PYTHON_PATH, "-s", "-m", "pip", "install", 
+                subprocess.run(get_pip_install_cmd([
                     package_name, url_option, package_attr.url
-                ])
+                ]))
                 continue
         else:
             # Check if package is already installed
@@ -234,7 +242,7 @@ def install_remote_packages(package_names):
             
             print(f"Installing {original_package_name}...")
 
-        subprocess.run([PYTHON_PATH, "-s", "-m", "pip", "install", package_name])
+        subprocess.run(get_pip_install_cmd([package_name]))
 
 def install_platform_packages():
     if hasattr(build_config, 'platform_packages') and OS_TYPE in build_config.platform_packages:
@@ -248,7 +256,7 @@ def install_platform_packages():
                 continue
             
             print(f"Installing platform package {package}...")
-            subprocess.run([PYTHON_PATH, "-s", "-m", "pip", "install", package])
+            subprocess.run(get_pip_install_cmd([package]))
 
 def install_isolated_packages(package_names):
     """Install packages with special flags like --no-build-isolation"""
@@ -265,7 +273,7 @@ def install_isolated_packages(package_names):
             
             if hasattr(package_attr, "url"):
                 # Build command with install flags
-                cmd = [PYTHON_PATH, "-s", "-m", "pip", "install"]
+                cmd = get_pip_install_cmd([])
                 if hasattr(package_attr, "install_flags"):
                     cmd.extend(package_attr.install_flags)
                 cmd.append(package_attr.url)
