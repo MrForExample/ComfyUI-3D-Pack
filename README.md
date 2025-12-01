@@ -20,8 +20,8 @@ This is an extensive node suite that enables ComfyUI to process 3D inputs (Mesh 
 - [Pre-builds](https://github.com/MrForExample/Comfy3D_Pre_Builds) are available for:
   - Windows 10/11
   - Python 3.12
-  - CUDA 12.4
-  - torch 2.5.1+cu124
+  - CUDA 12.8
+  - torch 2.7.0+cu128
 - [install.py](install.py) will download & install Pre-builds automatically according to your runtime environment, if it couldn't find corresponding Pre-builds, then [build script](_Pre_Builds/_Build_Scripts/auto_build_all.py) will start automatically, if automatic build doesn't work for you, then please check out [Semi-Automatic Build Guide](_Pre_Builds/README.md#build-required-packages-semi-automatically)
 - If you have any missing node in any open Comfy3D workflow, try simply click [Install Missing Custom Nodes](https://github.com/ltdrdata/ComfyUI-Manager?tab=readme-ov-file#support-of-missing-nodes-installation) in ComfyUI-Manager
 - In case there is missing python library, you can check [all the python dependencies of my dev environment](my-reqs.txt)
@@ -127,7 +127,7 @@ Your ComfyUI Root Directory\python_embeded\python.exe install.py
     1. Single image to 3D Mesh shape only
     2. 3D Mesh shape + Single reference image to 3D Mesh with RGB texture
   - Model weights: https://huggingface.co/tencent/Hunyuan3D-2/tree/main
-  - [Workflows](https://github.com/DenisKochetov/ComfyUI-3D-Pack/tree/dev/example_workflows/Hunyuan3D_V2)
+  - [Workflows](./example_workflows/Hunyuan3D_V2)
 
   <video controls autoplay loop src="https://github.com/user-attachments/assets/da6a8f8b-8dab-4460-90a6-44769ec9bb09"></video>
 

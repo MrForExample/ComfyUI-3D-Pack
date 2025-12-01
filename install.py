@@ -24,6 +24,9 @@ try:
         install_platform_packages,
         install_isolated_packages,
         wheels_dir_exists_and_not_empty,
+        is_package_installed,
+        get_pip_install_cmd,
+        ENABLE_UV,
         build_config,
         PYTHON_PATH,
         WHEELS_ROOT_ABS_PATH,
@@ -37,6 +40,13 @@ try:
     except ImportError:
         subprocess.run([sys.executable, "-m", "pip", "install", "PyGithub"])
 
+    # Install uv if enabled
+    if ENABLE_UV:
+        try:
+            subprocess.run([sys.executable, "-m", "pip", "install", "uv"])
+        except Exception:
+            print("Failed to install uv, continuing with standard pip...")
+
     def install_local_wheels(builds_dir):
         """Install all wheels from local directory"""
         wheel_files = glob.glob(os.path.join(builds_dir, "**/*.whl"), recursive=True)
@@ -46,7 +56,23 @@ try:
             
         success_count = 0
         for wheel_path in wheel_files:
-            result = subprocess.run([PYTHON_PATH, "-s", "-m", "pip", "install", "--no-deps", "--force-reinstall", wheel_path], 
+            # Try to parse package name and version from filename to check if installed
+            # Wheel filename format: {distribution}-{version}(-{build tag})?-{python tag}-{abi tag}-{platform tag}.whl
+            try:
+                filename = os.path.basename(wheel_path)
+                parts = filename.split('-')
+                package_name = parts[0]
+                version = parts[1] if len(parts) > 1 else None
+                
+                # Check if installed (check both raw name and normalized name with dashes)
+                if is_package_installed(package_name, version) or is_package_installed(package_name.replace('_', '-'), version):
+                    cstr(f"Wheel {filename} is already installed, skipping...").msg.print()
+                    success_count += 1
+                    continue
+            except Exception:
+                pass
+
+            result = subprocess.run(get_pip_install_cmd(["--no-deps", wheel_path]), 
                                   text=True, capture_output=True)
             if result.returncode == 0:
                 cstr(f"Successfully installed wheel: {os.path.basename(wheel_path)}").msg.print()
@@ -125,7 +151,7 @@ try:
         except ImportError:
             cstr(f"Installing {tool}...").msg.print()
             result = subprocess.run(
-                [PYTHON_PATH, "-m", "pip", "install", "--upgrade", tool],
+                get_pip_install_cmd(["--upgrade", tool]),
                 text=True, capture_output=True
             )
             if result.returncode != 0:
