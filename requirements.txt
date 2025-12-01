@@ -69,3 +69,15 @@ OmegaConf
 pyhocon
 iopath
 easydict
+
+# comfyui 
+comfyui-workflow-templates
+comfyui-embedded-docs
+torchsde
+sentencepiece
+alembic
+SQLAlchemy
+av>=14.2.0
+spandrel
+pydantic~=2.0
+pydantic-settings~=2.0
