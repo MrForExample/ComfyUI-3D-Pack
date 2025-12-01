@@ -23,12 +23,21 @@ def ensure_little_endian(array: np.ndarray, dtype: Optional[np.dtype] = None) ->
     """Return an array with little-endian dtype (copy if needed)."""
     if dtype is not None:
         array = array.astype(dtype, copy=False)
-    if array.dtype.byteorder in (">", "|"):
-        return array.byteswap().newbyteorder("<")
+
+    # Big-endian → Little-endian
+    if array.dtype.byteorder == ">":
+        return array.byteswap().view(array.dtype.newbyteorder("<"))
+
+    # "|" = non-byte-order type → treat as big-endian-compatible
+    if array.dtype.byteorder == "|":
+        return array.view(array.dtype.newbyteorder("<"))
+
+    # Already little-endian
     if array.dtype.byteorder == "<":
         return array
-    # native without explicit endianness
-    return array.astype(array.dtype.newbyteorder("<"), copy=False)
+
+    # Native ("=") without explicit endianness → convert explicitly
+    return array.view(array.dtype.newbyteorder("<"))
 
 
 def as_uint8_buffer(array: np.ndarray) -> np.ndarray:

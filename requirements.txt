@@ -8,7 +8,7 @@ PyGithub
 requests
 
 # computational libraries
-numpy
+numpy>=2.2.6
 einops
 scipy
 kornia
@@ -23,6 +23,8 @@ git+https://github.com/EasternJournalist/utils3d.git#egg=utils3d
 git+https://github.com/ashawkey/kiuikit.git#egg=kiui
 
 # for use ML models
+hf_transfer
+peft==0.17.1
 diffusers==0.31.0
 transformers==4.46.2
 safetensors
@@ -50,7 +52,7 @@ plyfile
 pygltflib
 xatlas
 pymeshlab
-gpytoolbox
+gpytoolbox==0.3.7
 PyMCubes
 libigl
 pyvista
@@ -67,3 +69,15 @@ OmegaConf
 pyhocon
 iopath
 easydict
+
+# comfyui 
+comfyui-workflow-templates
+comfyui-embedded-docs
+torchsde
+sentencepiece
+alembic
+SQLAlchemy
+av>=14.2.0
+spandrel
+pydantic~=2.0
+pydantic-settings~=2.0
