@@ -19,14 +19,16 @@ slangtorch
 cumm==0.7.11 
 spconv-cu126
 
-git+https://github.com/EasternJournalist/utils3d.git#egg=utils3d
+utils3d @ git+https://github.com/EasternJournalist/utils3d.git@e87d195da7270f575d9680d884d6aad2588864aa
 git+https://github.com/ashawkey/kiuikit.git#egg=kiui
 
 # for use ML models
 hf_transfer
+hf_xet
 peft==0.17.1
 diffusers==0.31.0
 transformers==4.46.2
+accelerate==1.1.1
 safetensors
 open_clip_torch
 mmgp
@@ -35,7 +37,6 @@ mmgp
 torchmetrics
 pytorch_msssim
 pytorch-lightning
-peft
 
 # for process images & videos
 rembg
@@ -72,6 +73,7 @@ easydict
 
 # comfyui 
 comfyui-workflow-templates
+comfyui-frontend-package
 comfyui-embedded-docs
 torchsde
 sentencepiece
