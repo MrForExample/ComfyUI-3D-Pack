@@ -48,7 +48,7 @@ def _try_import_sageattention() -> bool:
     try:
         import torch.nn.functional as F
         from sageattention import sageattn
-        F.scaled_dot_product_attention = sageattn
+        #F.scaled_dot_product_attention = sageattn
         #import sageattention
         return True
     except ImportError:
