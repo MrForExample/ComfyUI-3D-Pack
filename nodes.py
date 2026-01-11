@@ -5300,6 +5300,7 @@ class Load_Hunyuan3D_21_TexGen_Pipeline:
 
     @staticmethod 
     def _ensure_weights():
+        # 1. Main Model (Hunyuan3D-2.1)
         repo_id = f"{Load_Hunyuan3D_21_TexGen_Pipeline._REPO_ID_BASE}/{Load_Hunyuan3D_21_TexGen_Pipeline._REPO_NAME}"
         safe_repo_name = Load_Hunyuan3D_21_TexGen_Pipeline._REPO_NAME.replace(".", "_")
         base_dir = os.path.join(CKPT_DIFFUSERS_PATH, f"{Load_Hunyuan3D_21_TexGen_Pipeline._REPO_ID_BASE}/{safe_repo_name}")
@@ -5334,7 +5335,21 @@ class Load_Hunyuan3D_21_TexGen_Pipeline:
         else:
             print(f"Hunyuan3D-2.1 TexGen weights already loaded")
 
-        return base_dir
+        # 2. DINOv2
+        dino_repo = "facebook/dinov2-giant"
+        dino_dir = os.path.join(CKPT_ROOT_PATH, "facebookresearch/dinov2-giant")
+        if not os.path.exists(os.path.join(dino_dir, "config.json")):
+            print(f"Loading DINOv2 folder: {dino_repo}")
+            snapshot_download(
+                repo_id=dino_repo,
+                local_dir=dino_dir,
+                resume_download=True,
+                ignore_patterns=HF_DOWNLOAD_IGNORE
+            )
+        else:
+            print(f"DINOv2 weights already loaded")
+
+        return base_dir, dino_dir
 
     @staticmethod
     def _ensure_realesrgan():
@@ -5368,12 +5383,17 @@ class Load_Hunyuan3D_21_TexGen_Pipeline:
             print(f"[TexGen-Loader] Using cached pipeline {cache_key}")
             return (self._cache[cache_key],)
 
-        base_dir = self._ensure_weights()
+        base_dir, dino_dir = self._ensure_weights()
         realesrgan_path = self._ensure_realesrgan()
         
         # Configure pipeline
-        conf = Hunyuan3DPaintConfig_2_1(max_num_view=max_num_view, resolution=resolution)
-        conf.realesrgan_ckpt_path = realesrgan_path
+        conf = Hunyuan3DPaintConfig_2_1(
+            max_num_view=max_num_view, 
+            resolution=resolution,
+            multiview_pretrained_path=base_dir,
+            dino_ckpt_path=dino_dir,
+            realesrgan_ckpt_path=realesrgan_path
+        )
         conf.multiview_cfg_path = os.path.join(ROOT_PATH, "Gen_3D_Modules/Hunyuan3D_2_1/hy3dpaint/cfgs/hunyuan-paint-pbr.yaml")
         conf.custom_pipeline = os.path.join(ROOT_PATH, "Gen_3D_Modules/Hunyuan3D_2_1/hy3dpaint/hunyuanpaintpbr")
 

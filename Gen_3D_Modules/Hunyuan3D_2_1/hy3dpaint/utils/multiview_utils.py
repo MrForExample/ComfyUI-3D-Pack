@@ -34,17 +34,26 @@ class multiviewDiffusionNet:
         self.cfg = cfg
         self.mode = self.cfg.model.params.stable_diffusion_config.custom_pipeline[2:]
 
-        model_path = huggingface_hub.snapshot_download(
-            repo_id=config.multiview_pretrained_path,
-            allow_patterns=["hunyuan3d-paintpbr-v2-1/*"],
-        )
+        if os.path.isdir(config.multiview_pretrained_path):
+            print(f"[multiviewDiffusionNet] Using local model path: {config.multiview_pretrained_path}")
+            model_path = config.multiview_pretrained_path
+        else:
+            print(f"[multiviewDiffusionNet] Checking/Downloading model from HF: {config.multiview_pretrained_path}...")
+            model_path = huggingface_hub.snapshot_download(
+                repo_id=config.multiview_pretrained_path,
+                allow_patterns=["hunyuan3d-paintpbr-v2-1/*"],
+            )
+        print(f"[multiviewDiffusionNet] model_path: {model_path}")
 
         model_path = os.path.join(model_path, "hunyuan3d-paintpbr-v2-1")
+        print(f"[multiviewDiffusionNet] Loading DiffusionPipeline from {model_path}...")
+        print(f"[multiviewDiffusionNet] Custom pipeline: {custom_pipeline}")
         pipeline = DiffusionPipeline.from_pretrained(
             model_path,
             custom_pipeline=custom_pipeline, 
             torch_dtype=torch.float16
         )
+        print(f"[multiviewDiffusionNet] DiffusionPipeline loaded.")
 
         pipeline.scheduler = UniPCMultistepScheduler.from_config(pipeline.scheduler.config, timestep_spacing="trailing")
         pipeline.set_progress_bar_config(disable=True)
