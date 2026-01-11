@@ -39,14 +39,14 @@ diffusers_logging.set_verbosity(50)
 
 
 class Hunyuan3DPaintConfig:
-    def __init__(self, max_num_view, resolution):
+    def __init__(self, max_num_view, resolution, multiview_pretrained_path=None, dino_ckpt_path=None, realesrgan_ckpt_path=None):
         self.device = "cuda"
 
         self.multiview_cfg_path = "cfgs/hunyuan-paint-pbr.yaml"
         self.custom_pipeline = "hunyuanpaintpbr"
-        self.multiview_pretrained_path = "tencent/Hunyuan3D-2.1"
-        self.dino_ckpt_path = "facebook/dinov2-giant"
-        self.realesrgan_ckpt_path = "/home/ubuntu/oldrigger/AutoRigger/auto_rigger/models/ComfyUI/custom_nodes/ComfyUI-3D-Pack/Checkpoints/Diffusers/tencent/Hunyuan3D-2.1/RealESRGAN_x4plus.pth"
+        self.multiview_pretrained_path = multiview_pretrained_path or "tencent/Hunyuan3D-2.1"
+        self.dino_ckpt_path = dino_ckpt_path or "facebook/dinov2-giant"
+        self.realesrgan_ckpt_path = realesrgan_ckpt_path or "RealESRGAN_x4plus.pth"
 
         self.raster_mode = "cr"
         self.bake_mode = "back_sample"

@@ -48,8 +48,10 @@ class Dino_v2(nn.Module):
 
     def __init__(self, dino_v2_path):
         super(Dino_v2, self).__init__()
+        print(f"[Dino_v2] Loading DINOv2 from: {dino_v2_path}...")
         self.dino_processor = AutoImageProcessor.from_pretrained(dino_v2_path)
         self.dino_v2 = AutoModel.from_pretrained(dino_v2_path)
+        print(f"[Dino_v2] DINOv2 loaded successfully")
 
         for param in self.parameters():
             param.requires_grad = False
